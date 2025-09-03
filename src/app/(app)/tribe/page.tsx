@@ -11,7 +11,7 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { allUsers, currentUser } from "@/lib/mock-data";
-import { Bot, Users, ShieldAlert, CheckCircle, XCircle, MessageSquare, Info, UserX, UserCheck, Heart, History } from "lucide-react";
+import { Bot, Users, ShieldAlert, CheckCircle, XCircle, MessageSquare, Info, UserX, UserCheck, Heart, History, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -34,6 +34,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+
 
 type MatchedUser = MatchUsersByPersonalityOutput[0] & {
   user: User;
@@ -311,11 +313,19 @@ export default function TribePage() {
                                                <DialogTitle>Decline Invitation</DialogTitle>
                                                <DialogDescription>Please provide a reason for declining. This will be shared with the rest of your tribe.</DialogDescription>
                                            </DialogHeader>
-                                           <Textarea 
-                                             placeholder="E.g., Sorry, I have a prior commitment."
-                                             value={rejectionReason}
-                                             onChange={(e) => setRejectionReason(e.target.value)}
-                                           />
+                                           <div className="space-y-4">
+                                                <Textarea 
+                                                placeholder="E.g., Sorry, I have a prior commitment."
+                                                value={rejectionReason}
+                                                onChange={(e) => setRejectionReason(e.target.value)}
+                                                />
+                                                <Alert variant="destructive">
+                                                    <AlertTriangle className="h-4 w-4" />
+                                                    <AlertDescription>
+                                                        You will not be able to join this tribe again or any other tribe until next Monday.
+                                                    </AlertDescription>
+                                                </Alert>
+                                           </div>
                                            <DialogFooter>
                                                <Button variant="outline" onClick={() => setIsDeclineDialogOpen(false)}>Cancel</Button>
                                                <Button variant="destructive" onClick={handleDeclineSubmit}>Submit</Button>
