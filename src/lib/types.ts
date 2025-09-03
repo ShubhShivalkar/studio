@@ -13,6 +13,8 @@ export type User = {
   interestedInMeetups?: boolean;
   availableDates?: string[]; // YYYY-MM-DD
   personaLastGenerated?: string; // ISO date string
+  hobbies?: string[];
+  interests?: string[];
 };
 
 export type Connection = {

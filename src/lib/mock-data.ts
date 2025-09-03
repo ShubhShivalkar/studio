@@ -41,6 +41,8 @@ export let currentUser: User = {
   persona: undefined,
   interestedInMeetups: false,
   personaLastGenerated: undefined,
+  hobbies: ["Reading", "Cooking", "Coding", "Sketching", "Pottery"],
+  interests: ["Podcasts", "Space", "Minimalism", "Documentaries", "Learning Languages"],
 };
 
 const samplePersonas = [
@@ -56,6 +58,24 @@ const samplePersonas = [
   "A minimalist and mindful yoga instructor who values experiences over possessions. They start each day with meditation and find peace in nature, healthy cooking, and journaling. They are calm, centered, and radiate a peaceful energy.",
   // Strong match: Intellectually driven, enjoys coding/building.
   "A logical and forward-thinking data scientist who is fascinated by patterns and future technologies. They enjoy sci-fi novels, building complex personal projects, and engaging in deep discussions about AI ethics. They are intellectually driven and value precision.",
+];
+
+const userHobbies = [
+    ["Hiking", "Podcasts", "Sketching", "Cooking"],
+    ["Reading", "Writing", "Documentaries", "Baking"],
+    ["Music", "Travel", "Art", "Learning Languages"],
+    ["Reading", "Vintage Films", "Bookstores", "Tea"],
+    ["Yoga", "Meditation", "Healthy Cooking", "Nature Walks"],
+    ["Coding", "Sci-fi Novels", "AI Ethics", "Data Science"]
+];
+
+const userInterests = [
+    ["Software Engineering", "Nature", "Creative Expression"],
+    ["Fantasy Novels", "Meaningful Connections", "Quiet Evenings"],
+    ["Surrealist Art", "New Experiences", "Spontaneity"],
+    ["Classic Literature", "Storytelling", "Cozy Atmospheres"],
+    ["Mindfulness", "Minimalism", "Wellness"],
+    ["Future Tech", "Problem Solving", "Intellectual Discussions"]
 ];
 
 const generateWeekendDatesForMonth = (year: number, month: number) => {
@@ -94,6 +114,8 @@ export const allUsers: User[] = Array.from({ length: 6 }, (_, i) => {
         interestedInMeetups: true, 
         availableDates: weekendDates,
         personaLastGenerated: undefined,
+        hobbies: userHobbies[i],
+        interests: userInterests[i],
     };
 });
 

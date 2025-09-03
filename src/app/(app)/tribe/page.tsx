@@ -10,12 +10,12 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { allUsers, currentUser } from "@/lib/mock-data";
-import { Bot, Users } from "lucide-react";
+import { Bot, Users, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { User } from "@/lib/types";
-import { differenceInYears, parseISO } from "date-fns";
+import { differenceInYears, parseISO, format } from "date-fns";
 import type { MatchUsersByPersonalityOutput } from "@/ai/flows/match-users-by-personality";
 import { ProfileCard } from "@/components/profile-card";
 import {
@@ -25,9 +25,11 @@ import {
   DialogTitle,
   DialogDescription,
   DialogTrigger,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-
+import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
 
 type MatchedUser = MatchUsersByPersonalityOutput[0] & {
   user: User;
@@ -83,6 +85,7 @@ const staticTribe: Tribe = {
 export default function TribePage() {
   const [tribeState, setTribeState] = useState<"loading" | "no-persona" | "not-interested" | "finding" | "found">("loading");
   const [tribe, setTribe] = useState<Tribe | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     // Check for persona and interest first
@@ -99,6 +102,14 @@ export default function TribePage() {
     setTribe(staticTribe);
     setTribeState("found");
   }, []);
+
+  const handleReport = (userName: string) => {
+    toast({
+        variant: "destructive",
+        title: "User Reported",
+        description: `Thank you for your feedback. We have received your report for ${userName} and will review it.`
+    })
+  }
 
   return (
     <Card>
@@ -178,18 +189,49 @@ export default function TribePage() {
                                         <AvatarFallback>{member.user.name.charAt(0)}</AvatarFallback>
                                     </Avatar>
                                     <DialogTitle className="font-headline">{member.user.name}</DialogTitle>
-                                    <DialogDescription>{member.user.gender}, {getAge(member.user.dob)} years old</DialogDescription>
+                                    <DialogDescription>{member.user.gender}, Born {format(parseISO(member.user.dob), 'MMMM d, yyyy')} ({getAge(member.user.dob)} years old)</DialogDescription>
                                 </DialogHeader>
                                 <div className="space-y-4">
                                     <div>
                                         <h3 className="font-semibold">Persona Summary</h3>
                                         <p className="text-sm text-muted-foreground italic">"{member.persona}"</p>
                                     </div>
+                                    
+                                     {member.user.hobbies && member.user.hobbies.length > 0 && (
+                                        <div>
+                                            <h3 className="font-semibold mb-2">Hobbies</h3>
+                                            <div className="flex flex-wrap gap-2">
+                                                {member.user.hobbies.map((hobby, index) => (
+                                                    <Badge key={index} variant="secondary">{hobby}</Badge>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {member.user.interests && member.user.interests.length > 0 && (
+                                        <div>
+                                            <h3 className="font-semibold mb-2">Interests</h3>
+                                            <div className="flex flex-wrap gap-2">
+                                                {member.user.interests.map((interest, index) => (
+                                                    <Badge key={index} variant="secondary">{interest}</Badge>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
                                      <div>
                                         <h3 className="font-semibold">Why you're a good match</h3>
                                         <p className="text-sm text-muted-foreground">{member.matchReason}</p>
                                     </div>
                                 </div>
+                                { member.user.id !== currentUser.id && (
+                                     <DialogFooter className="pt-4">
+                                        <Button variant="outline" size="sm" onClick={() => handleReport(member.user.name)}>
+                                            <ShieldAlert className="h-4 w-4 mr-2" />
+                                            Report User
+                                        </Button>
+                                     </DialogFooter>
+                                )}
                             </DialogContent>
                         </Dialog>
                     ))}
@@ -200,5 +242,3 @@ export default function TribePage() {
     </Card>
   );
 }
-
-    
