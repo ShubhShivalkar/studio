@@ -1,0 +1,134 @@
+
+"use client";
+
+import { useState } from 'react';
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { User as UserIcon } from 'lucide-react';
+import type { User } from '@/lib/types';
+import { useToast } from '@/hooks/use-toast';
+import { format, parseISO } from 'date-fns';
+
+interface EditProfileDialogProps {
+  user: User;
+  onUpdate: (updatedUser: Partial<User>) => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+export function EditProfileDialog({ user, onUpdate, open, onOpenChange }: EditProfileDialogProps) {
+  const [avatarPreview, setAvatarPreview] = useState<string>(user.avatar);
+  const [profession, setProfession] = useState(user.profession || '');
+  const [religion, setReligion] = useState(user.religion || '');
+  const { toast } = useToast();
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = reader.result as string;
+        setAvatarPreview(result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSaveChanges = () => {
+    const updatedUser: Partial<User> = {
+      avatar: avatarPreview,
+      profession: profession.trim(),
+      religion: religion.trim(),
+    };
+    onUpdate(updatedUser);
+    toast({
+      title: 'Profile Updated',
+      description: 'Your changes have been saved successfully.',
+    });
+    onOpenChange(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Edit Profile</DialogTitle>
+          <DialogDescription>
+            Make changes to your profile here. Click save when you're done.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-4 py-4">
+          <div className="flex flex-col items-center space-y-4">
+            <Avatar className="w-24 h-24 border-4 border-primary/20">
+              <AvatarImage src={avatarPreview} alt={user.name} data-ai-hint="person photo" />
+              <AvatarFallback>
+                <UserIcon className="w-12 h-12 text-muted-foreground" />
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <Label htmlFor="picture" className="sr-only">Upload Picture</Label>
+              <Input id="picture" type="file" accept="image/*" onChange={handleFileChange} className="text-sm" />
+            </div>
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="name" className="text-right">
+              Name
+            </Label>
+            <Input id="name" value={user.name} disabled className="col-span-3" />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="dob" className="text-right">
+              Birth Date
+            </Label>
+            <Input id="dob" value={user.dob ? format(parseISO(user.dob), 'MMMM d, yyyy') : ''} disabled className="col-span-3" />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="profession" className="text-right">
+              Profession
+            </Label>
+            <Input
+              id="profession"
+              value={profession}
+              onChange={(e) => setProfession(e.target.value)}
+              placeholder="Your profession"
+              className="col-span-3"
+            />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="religion" className="text-right">
+              Religion
+            </Label>
+            <Input
+              id="religion"
+              value={religion}
+              onChange={(e) => setReligion(e.target.value)}
+              placeholder="Your religion"
+              className="col-span-3"
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button type="button" variant="secondary">
+              Cancel
+            </Button>
+          </DialogClose>
+          <Button type="button" onClick={handleSaveChanges}>
+            Save changes
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}

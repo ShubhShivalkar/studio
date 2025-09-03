@@ -11,10 +11,12 @@ export type User = {
   journalEntries?: string[];
   phone: string;
   interestedInMeetups?: boolean;
-  availableDates?: string[]; // YYYY-MM-DD
+  availableDates?: string[]; // YYY-MM-DD
   personaLastGenerated?: string; // ISO date string
   hobbies?: string[];
   interests?: string[];
+  profession?: string;
+  religion?: string;
 };
 
 export type Connection = {
