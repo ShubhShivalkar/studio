@@ -262,7 +262,7 @@ export default function CalendarPage() {
                         <div className="space-y-1 text-sm">
                             <p className="flex items-center gap-2"><Clock className="h-4 w-4" /> Time: {selectedSummary.meetupDetails.time}</p>
                             <p className="flex items-center gap-2"><MapPin className="h-4 w-4" /> Location: {selectedSummary.meetupDetails.location}</p>
-                            <p className="flex items-center gap-2">Tribe ID: <Badge variant="outline" className="bg-background/20 border-background/50">{selectedSummary.meetupDetails.tribeId}</Badge></p>
+                            <div className="flex items-center gap-2">Tribe ID: <Badge variant="outline" className="bg-background/20 border-background/50">{selectedSummary.meetupDetails.tribeId}</Badge></div>
                         </div>
                     </div>
                 )}
@@ -414,3 +414,5 @@ export default function CalendarPage() {
     </div>
   );
 }
+
+    
