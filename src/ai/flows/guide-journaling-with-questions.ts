@@ -13,7 +13,7 @@ import {z} from 'genkit';
 const GuideJournalingWithQuestionsInputSchema = z.object({
   topic: z
     .string()
-    .describe('The topic or theme for the journaling session.'),
+    .describe('The topic or theme for the journaling session, based on the user\'s previous response.'),
 });
 export type GuideJournalingWithQuestionsInput = z.infer<
   typeof GuideJournalingWithQuestionsInputSchema
@@ -36,7 +36,11 @@ const prompt = ai.definePrompt({
   name: 'guideJournalingWithQuestionsPrompt',
   input: {schema: GuideJournalingWithQuestionsInputSchema},
   output: {schema: GuideJournalingWithQuestionsOutputSchema},
-  prompt: `You are a helpful journaling assistant. Your goal is to guide the user in reflecting on their thoughts and experiences related to the topic: {{{topic}}}. Ask a thought-provoking question to encourage them to write about it.`,
+  prompt: `You are a helpful and friendly journaling assistant named Anu. Your goal is to guide the user in reflecting on their day. 
+  
+Ask a gentle, encouraging question related to their previous response about "{{{topic}}}". 
+Focus on their activities, hobbies pursued, things they learned, or feelings they experienced today. 
+Avoid deep philosophical questions. Keep the conversation light, positive, and reflective, helping them scratch the surface of their day.`,
 });
 
 const guideJournalingWithQuestionsFlow = ai.defineFlow(
