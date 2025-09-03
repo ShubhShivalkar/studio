@@ -1,10 +1,8 @@
 import {
   BookText,
   Calendar,
-  HeartHandshake,
   PenLine,
   UserCircle,
-  Users,
 } from "lucide-react";
 import Link from "next/link";
 import { type ReactNode } from "react";
@@ -16,8 +14,6 @@ import { Header } from "@/components/header";
 const navLinks = [
   { href: "/journal", label: "Journal", icon: <BookText className="h-5 w-5" /> },
   { href: "/calendar", label: "Calendar", icon: <Calendar className="h-5 w-5" /> },
-  { href: "/discover", label: "Discover", icon: <Users className="h-5 w-5" /> },
-  { href: "/connections", label: "Connections", icon: <HeartHandshake className="h-5 w-5" /> },
   { href: "/profile", label: "Profile", icon: <UserCircle className="h-5 w-5" /> },
 ];
 
