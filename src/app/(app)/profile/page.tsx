@@ -1,7 +1,9 @@
 "use client";
 
+import type { GeneratePersonalityPersonaOutput } from "@/ai/flows/generate-personality-persona";
 import { generatePersonalityPersona } from "@/ai/flows/generate-personality-persona";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -11,12 +13,13 @@ import { Bot } from "lucide-react";
 import { useState } from "react";
 
 export default function ProfilePage() {
-  const [persona, setPersona] = useState<string | null>(null);
+  const [persona, setPersona] = useState<GeneratePersonalityPersonaOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
   const handleGeneratePersona = async () => {
     setIsLoading(true);
+    setPersona(null);
     try {
       const journalEntries = currentUser.journalEntries?.join("\n\n") || "";
       if (!journalEntries) {
@@ -29,7 +32,7 @@ export default function ProfilePage() {
           return;
       }
       const result = await generatePersonalityPersona({ journalEntries });
-      setPersona(result.persona);
+      setPersona(result);
     } catch (error) {
       console.error("Failed to generate persona:", error);
       toast({
@@ -78,13 +81,47 @@ export default function ProfilePage() {
           </CardHeader>
           <CardContent className="min-h-[12rem]">
             {isLoading ? (
-                <div className="space-y-2">
+                <div className="space-y-4">
                     <Skeleton className="h-4 w-full" />
                     <Skeleton className="h-4 w-full" />
                     <Skeleton className="h-4 w-4/5" />
+                    <div className="flex flex-wrap gap-2 pt-2">
+                        <Skeleton className="h-6 w-20" />
+                        <Skeleton className="h-6 w-24" />
+                        <Skeleton className="h-6 w-16" />
+                    </div>
                 </div>
             ) : persona ? (
-                <p className="italic text-foreground/80">{persona}</p>
+                <div className="space-y-4">
+                    <p className="italic text-foreground/80">{persona.persona}</p>
+                    
+                    <div>
+                        <h3 className="font-semibold mb-2">Personality Traits</h3>
+                        <div className="flex flex-wrap gap-2">
+                            {persona.personalityTraits.map((trait, index) => (
+                                <Badge key={index} variant="secondary">{trait}</Badge>
+                            ))}
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h3 className="font-semibold mb-2">Hobbies</h3>
+                        <div className="flex flex-wrap gap-2">
+                            {persona.hobbies.map((hobby, index) => (
+                                <Badge key={index} variant="secondary">{hobby}</Badge>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 className="font-semibold mb-2">Interests</h3>
+                        <div className="flex flex-wrap gap-2">
+                            {persona.interests.map((interest, index) => (
+                                <Badge key={index} variant="secondary">{interest}</Badge>
+                            ))}
+                        </div>
+                    </div>
+                </div>
             ) : (
                 <div className="text-center text-muted-foreground py-8">
                     <p>Your persona will appear here once generated.</p>

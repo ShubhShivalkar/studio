@@ -19,7 +19,10 @@ const GeneratePersonalityPersonaInputSchema = z.object({
 export type GeneratePersonalityPersonaInput = z.infer<typeof GeneratePersonalityPersonaInputSchema>;
 
 const GeneratePersonalityPersonaOutputSchema = z.object({
-  persona: z.string().describe('The generated personality persona.'),
+  persona: z.string().describe('A summary of the generated personality persona.'),
+  hobbies: z.array(z.string()).describe("A list of the user's hobbies."),
+  interests: z.array(z.string()).describe("A list of the user's interests."),
+  personalityTraits: z.array(z.string()).describe("A list of the user's personality traits."),
 });
 export type GeneratePersonalityPersonaOutput = z.infer<typeof GeneratePersonalityPersonaOutputSchema>;
 
@@ -31,7 +34,7 @@ const prompt = ai.definePrompt({
   name: 'generatePersonalityPersonaPrompt',
   input: {schema: GeneratePersonalityPersonaInputSchema},
   output: {schema: GeneratePersonalityPersonaOutputSchema},
-  prompt: `You are an AI personality generator. You will generate a personality persona based on the user's journal entries.
+  prompt: `You are an AI personality generator. You will generate a personality persona based on the user's journal entries. Analyze the entries to identify hobbies, interests, and key personality traits, in addition to a summary persona.
 
 Journal Entries: {{{journalEntries}}}`,
 });
