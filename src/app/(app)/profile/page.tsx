@@ -11,7 +11,7 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { currentUser } from "@/lib/mock-data";
-import { Bot, LogOut, Users } from "lucide-react";
+import { Bot, LogOut, Users, BookOpen, Flame } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Switch } from "@/components/ui/switch";
@@ -30,6 +30,7 @@ export default function ProfilePage() {
   const journalEntriesCount = currentUser.journalEntries?.length || 0;
   const progress = Math.min((journalEntriesCount / 15) * 100, 100);
   const canGenerate = journalEntriesCount >= 15;
+  const streakDays = 15; // As per mock data assumption
 
   const handleGeneratePersona = async () => {
     setIsLoading(true);
@@ -188,11 +189,28 @@ export default function ProfilePage() {
                 </div>
             ) : (
                 <div className="text-center text-muted-foreground py-8 flex flex-col items-center justify-center gap-4">
-                    <p className="text-sm">You need at least 15 journal entries to generate a persona.</p>
-                    <div className="w-full max-w-sm space-y-2">
-                        <Progress value={progress} />
-                        <p className="text-xs">{journalEntriesCount} of 15 entries completed.</p>
-                    </div>
+                    {canGenerate ? (
+                        <div className="flex items-center gap-6">
+                            <div className="flex items-center gap-2">
+                                <BookOpen className="h-5 w-5 text-primary"/>
+                                <span className="font-semibold">{journalEntriesCount}</span>
+                                <span className="text-xs">Entries</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Flame className="h-5 w-5 text-amber-500"/>
+                                <span className="font-semibold">{streakDays}</span>
+                                <span className="text-xs">Day Streak</span>
+                            </div>
+                        </div>
+                    ) : (
+                        <>
+                            <p className="text-sm">You need at least 15 journal entries to generate a persona.</p>
+                            <div className="w-full max-w-sm space-y-2">
+                                <Progress value={progress} />
+                                <p className="text-xs">{journalEntriesCount} of 15 entries completed.</p>
+                            </div>
+                        </>
+                    )}
                 </div>
             )}
           </CardContent>
