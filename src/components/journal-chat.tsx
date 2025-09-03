@@ -8,7 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import type { Message } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { dailySummaries, currentUser } from "@/lib/mock-data";
+import { dailySummaries, currentUser, reminders, checklists } from "@/lib/mock-data";
 import { Bot, SendHorizonal, CheckCircle, RotateCcw } from "lucide-react";
 import { useEffect, useRef, useState, useMemo } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -37,7 +37,7 @@ export function JournalChat() {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   
-  const userName = useMemo(() => currentUser.name.split(' ')[0], [currentUser.name]);
+  const userName = useMemo(() => currentUser.name.split(' ')[0], []);
   const initialMessage = useMemo(() => getInitialMessage(currentUser.name), [currentUser.name]);
 
 
@@ -116,7 +116,20 @@ export function JournalChat() {
      setIsLoading(true);
      try {
       const journalHistory = currentUser.journalEntries?.join("\n\n") || "";
-      const { question } = await guideJournalingWithQuestions({ topic, userName, journalHistory });
+      
+      const remindersText = reminders.map(r => `- ${r.title} on ${r.date} at ${r.time}`).join("\n");
+      
+      const checklistsText = checklists.map(c => 
+        `List: ${c.title}\n` + c.items.map(i => `  - [${i.completed ? 'x' : ' '}] ${i.text}`).join("\n")
+      ).join("\n\n");
+
+      const { question } = await guideJournalingWithQuestions({ 
+          topic, 
+          userName, 
+          journalHistory,
+          reminders: remindersText,
+          checklists: checklistsText
+      });
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
         sender: "ai",

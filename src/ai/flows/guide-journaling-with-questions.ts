@@ -16,6 +16,8 @@ const GuideJournalingWithQuestionsInputSchema = z.object({
     .string()
     .describe('The topic or theme for the journaling session, based on the user\'s previous response.'),
   journalHistory: z.string().optional().describe("A summary of the user's past journal entries."),
+  reminders: z.string().optional().describe("A list of the user's upcoming reminders."),
+  checklists: z.string().optional().describe("A list of the user's checklists and their items."),
 });
 export type GuideJournalingWithQuestionsInput = z.infer<
   typeof GuideJournalingWithQuestionsInputSchema
@@ -46,10 +48,21 @@ Ask a gentle, encouraging question related to their previous response about "{{{
 Focus on their activities, hobbies pursued, things they learned, or feelings they experienced today. 
 Avoid deep philosophical questions. Keep the conversation light, positive, and reflective, helping them scratch the surface of their day.
 
+To provide better context, you can draw upon the user's past entries, reminders, and checklists. You can follow up on reminders or checklist items to see if they were completed.
+
 {{#if journalHistory}}
-To provide better context, you can draw upon the user's past journal entries.
 Past Entries:
 {{{journalHistory}}}
+{{/if}}
+
+{{#if reminders}}
+Upcoming Reminders:
+{{{reminders}}}
+{{/if}}
+
+{{#if checklists}}
+Checklists:
+{{{checklists}}}
 {{/if}}`,
 });
 
