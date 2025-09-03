@@ -10,13 +10,13 @@ import {
   CardTitle,
   CardFooter,
 } from "@/components/ui/card";
-import { currentUser, dailySummaries } from "@/lib/mock-data";
+import { currentUser, dailySummaries, allUsers } from "@/lib/mock-data";
 import { Bot, Users, ShieldAlert, CheckCircle, XCircle, MessageSquare, Info, UserX, UserCheck, Heart, History, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { User } from "@/lib/types";
-import { differenceInYears, parseISO, format } from "date-fns";
+import { differenceInYears, parseISO, format, addDays } from "date-fns";
 import type { MatchUsersByPersonalityOutput } from "@/ai/flows/match-users-by-personality";
 import { ProfileCard } from "@/components/profile-card";
 import {
@@ -81,6 +81,69 @@ export default function TribePage() {
 
     setTribe(null);
     setTribeState("finding");
+
+    // Simulate finding a tribe
+    const timer = setTimeout(() => {
+        const nextSaturday = addDays(new Date(), (6 - new Date().getDay() + 7) % 7);
+
+        const members: MatchedUser[] = [
+            {
+                userId: currentUser.id,
+                compatibilityScore: 100,
+                persona: currentUser.persona!,
+                user: currentUser,
+                matchReason: "You are the center of this tribe, bringing everyone together with your thoughtful nature.",
+                rsvpStatus: 'pending',
+            },
+            {
+                userId: allUsers[0].id,
+                compatibilityScore: 92,
+                persona: allUsers[0].persona!,
+                user: allUsers[0],
+                matchReason: "Alex's adventurous spirit and love for deep conversations complement your reflective journaling.",
+                rsvpStatus: 'accepted',
+            },
+            {
+                userId: allUsers[1].id,
+                compatibilityScore: 88,
+                persona: allUsers[1].persona!,
+                user: allUsers[1],
+                matchReason: "Brenda's focus on mindfulness and wellness aligns with your journey of self-discovery.",
+                rsvpStatus: 'accepted',
+            },
+            {
+                userId: allUsers[2].id,
+                compatibilityScore: 85,
+                persona: allUsers[2].persona!,
+                user: allUsers[2],
+                matchReason: "Carlos's passion for learning and creativity will surely spark interesting discussions.",
+                rsvpStatus: 'rejected',
+                rejectionReason: "Sorry, something urgent came up at work. Hope you all have a great time!",
+            },
+            {
+                userId: allUsers[3].id,
+                compatibilityScore: 82,
+                persona: allUsers[3].persona!,
+                user: allUsers[3],
+                matchReason: "Diana's kind-hearted and social nature makes her a wonderful addition to any group.",
+                rsvpStatus: 'pending',
+            },
+        ];
+
+        const mockTribe: Tribe = {
+            id: 'tribe-12345',
+            members,
+            meetupDate: format(nextSaturday, 'yyyy-MM-dd'),
+            meetupTime: '2:00 PM',
+            location: 'The Cozy Corner Cafe',
+        };
+
+        setTribe(mockTribe);
+        setTribeState("found");
+
+    }, 2000); // 2-second delay to simulate searching
+
+    return () => clearTimeout(timer);
   }, []);
 
   const updateCalendarEvent = (tribe: Tribe, accepted: boolean) => {
