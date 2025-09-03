@@ -54,9 +54,15 @@ const generatePersonalityPersonaFlow = ai.defineFlow(
       if (error instanceof Error && error.message.includes('503')) {
         console.warn('AI model is overloaded, retrying in 2 seconds...');
         await new Promise(resolve => setTimeout(resolve, 2000));
-        // Retry the request
-        const {output} = await prompt(input);
-        return output!;
+        try {
+          // Retry the request
+          const {output} = await prompt(input);
+          return output!;
+        } catch (retryError) {
+          console.error('AI model retry failed:', retryError);
+          // After a failed retry, re-throw the error to be handled by the client.
+          throw new Error("The AI model is currently overloaded. Please try again in a few moments.");
+        }
       }
       // For other types of errors, or if the retry fails, re-throw.
       console.error('An unexpected error occurred in the persona generation flow:', error);
