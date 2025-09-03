@@ -47,6 +47,11 @@ export type DailySummary = {
     hobbies?: { icon: LucideIcon, name: string }[];
     isAvailable?: boolean;
     hasMeetup?: boolean;
+    meetupDetails?: {
+      location: string;
+      time: string;
+      tribeId: string;
+    }
 };
 
 export type ChecklistItem = {

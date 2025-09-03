@@ -10,7 +10,7 @@ import {
   CardTitle,
   CardFooter,
 } from "@/components/ui/card";
-import { currentUser } from "@/lib/mock-data";
+import { currentUser, dailySummaries } from "@/lib/mock-data";
 import { Bot, Users, ShieldAlert, CheckCircle, XCircle, MessageSquare, Info, UserX, UserCheck, Heart, History, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -82,6 +82,38 @@ export default function TribePage() {
     setTribe(null);
     setTribeState("finding");
   }, []);
+
+  const updateCalendarEvent = (tribe: Tribe, accepted: boolean) => {
+    const summaryIndex = dailySummaries.findIndex(d => d.date === tribe.meetupDate);
+
+    if (accepted) {
+      const meetupDetails = {
+        location: tribe.location,
+        time: tribe.meetupTime || 'TBD',
+        tribeId: tribe.id,
+      };
+
+      if (summaryIndex > -1) {
+        dailySummaries[summaryIndex].hasMeetup = true;
+        dailySummaries[summaryIndex].meetupDetails = meetupDetails;
+      } else {
+        dailySummaries.push({
+          date: tribe.meetupDate,
+          hasMeetup: true,
+          meetupDetails: meetupDetails,
+          isAvailable: false, // If they have a meetup, they are not "available" for others
+        });
+      }
+    } else {
+      // If declining, remove the meetup details
+      if (summaryIndex > -1) {
+        dailySummaries[summaryIndex].hasMeetup = false;
+        delete dailySummaries[summaryIndex].meetupDetails;
+        // Optionally, reset isAvailable if you want them to be available again
+        dailySummaries[summaryIndex].isAvailable = true;
+      }
+    }
+  };
   
   const handleRsvp = (status: 'accepted' | 'rejected') => {
     if (!tribe) return;
@@ -96,6 +128,7 @@ export default function TribePage() {
         member.userId === currentUser.id ? { ...member, rsvpStatus: 'accepted', rejectionReason: undefined } : member
     );
     setTribe({ ...tribe, members: updatedMembers });
+    updateCalendarEvent(tribe, true);
     toast({ title: "RSVP Confirmed!", description: "You've accepted the invitation. See you there!" });
   }
 
@@ -108,6 +141,7 @@ export default function TribePage() {
         member.userId === currentUser.id ? { ...member, rsvpStatus: 'rejected', rejectionReason: rejectionReason } : member
     );
     setTribe({ ...tribe, members: updatedMembers });
+    updateCalendarEvent(tribe, false);
     toast({ title: "RSVP Updated", description: "You have declined the invitation." });
     setRejectionReason("");
     setIsDeclineDialogOpen(false);

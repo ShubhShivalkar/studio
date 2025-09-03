@@ -10,12 +10,13 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "
 import { dailySummaries, reminders as mockReminders, checklists as mockChecklists } from "@/lib/mock-data";
 import type { DailySummary, Reminder, Checklist } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { Pencil, Trash2, Bell, ListTodo, CheckCircle } from 'lucide-react';
+import { Pencil, Trash2, Bell, ListTodo, CheckCircle, MapPin, Clock, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { DayContent, DayContentProps } from 'react-day-picker';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
 
 function CustomDayContent(props: DayContentProps) {
     const dayData = dailySummaries.find(d => isSameDay(parseISO(d.date), props.date));
@@ -254,10 +255,24 @@ export default function CalendarPage() {
             {selectedSummary || selectedReminders.length > 0 || selectedChecklists.length > 0 ? (
               <div className="space-y-4">
                 
+                {selectedSummary?.hasMeetup && selectedSummary.meetupDetails && (
+                    <div className="p-3 bg-secondary rounded-lg text-secondary-foreground">
+                        <h3 className="font-semibold mb-2 flex items-center gap-2">
+                            <Users className="h-5 w-5" />
+                            Tribe Meetup
+                        </h3>
+                        <div className="space-y-1 text-sm">
+                            <p className="flex items-center gap-2"><Clock className="h-4 w-4" /> Time: {selectedSummary.meetupDetails.time}</p>
+                            <p className="flex items-center gap-2"><MapPin className="h-4 w-4" /> Location: {selectedSummary.meetupDetails.location}</p>
+                            <p className="flex items-center gap-2">Tribe ID: <Badge variant="outline" className="bg-background/20 border-background/50">{selectedSummary.meetupDetails.tribeId}</Badge></p>
+                        </div>
+                    </div>
+                )}
+                
                 {selectedChecklists.length > 0 && (
                   <div className="space-y-2">
                     {selectedChecklists.map(checklist => (
-                      <div key={checklist.id} className="p-3 bg-secondary rounded-lg">
+                      <div key={checklist.id} className="p-3 bg-card border rounded-lg">
                         <div className="flex justify-between items-start mb-2">
                            <div className="flex items-center gap-3">
                             <ListTodo className="h-5 w-5 text-primary flex-shrink-0" />
@@ -287,7 +302,7 @@ export default function CalendarPage() {
                 {selectedReminders.length > 0 && (
                     <div className="space-y-2">
                         {selectedReminders.map(reminder => (
-                            <div key={reminder.id} className="flex items-start gap-3 p-3 bg-secondary rounded-lg">
+                            <div key={reminder.id} className="flex items-start gap-3 p-3 bg-card border rounded-lg">
                                 <Bell className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
                                 <div className="flex-grow">
                                     <h3 className="font-semibold">{reminder.title}</h3>
@@ -344,11 +359,11 @@ export default function CalendarPage() {
                     </>
                 )}
                 
-                 {selectedSummary && (
+                 {selectedSummary && !selectedSummary.hasMeetup && (
                     <div>
                         <h3 className="font-semibold">Availability</h3>
                         <p className="text-sm text-muted-foreground">
-                            {selectedSummary.hasMeetup ? "Scheduled meetup ☕️" : selectedSummary.isAvailable ? "Available to meet ❤️" : "Not available"}
+                            {selectedSummary.isAvailable ? "Available to meet ❤️" : "Not available"}
                         </p>
                     </div>
                  )}
@@ -366,6 +381,7 @@ export default function CalendarPage() {
                                 id="tribe-availability"
                                 checked={isAvailableForTribe}
                                 onCheckedChange={handleAvailabilityChange}
+                                disabled={selectedSummary?.hasMeetup}
                             />
                         </div>
                     </div>
