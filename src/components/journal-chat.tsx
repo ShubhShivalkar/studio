@@ -19,10 +19,13 @@ const STORAGE_KEY_MESSAGES = 'journalChatMessages';
 const STORAGE_KEY_DATE = 'journalChatDate';
 
 
-const initialMessage: Message = {
-    id: '0',
-    sender: 'ai',
-    text: "Hi, I'm Anu, your journaling companion. What's on your mind today?"
+const getInitialMessage = (name?: string) => {
+    const userName = name ? `, ${name.split(' ')[0]}` : '';
+    return {
+        id: '0',
+        sender: 'ai' as const,
+        text: `Hi${userName}, I'm Anu, your journaling companion. What's on your mind today?`
+    };
 };
 
 export function JournalChat() {
@@ -33,6 +36,9 @@ export function JournalChat() {
   const [isComplete, setIsComplete] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [isInitialized, setIsInitialized] = useState(false);
+  
+  const userName = useMemo(() => currentUser.name.split(' ')[0], [currentUser.name]);
+  const initialMessage = useMemo(() => getInitialMessage(currentUser.name), [currentUser.name]);
 
 
   const aiQuestionCount = useMemo(() => {
@@ -75,7 +81,7 @@ export function JournalChat() {
         setMessages([initialMessage]);
     }
     setIsInitialized(true);
-  }, []);
+  }, [initialMessage]);
 
   useEffect(() => {
     if (isInitialized) {
@@ -109,7 +115,7 @@ export function JournalChat() {
   const getNewQuestion = async (topic: string) => {
      setIsLoading(true);
      try {
-      const { question } = await guideJournalingWithQuestions({ topic });
+      const { question } = await guideJournalingWithQuestions({ topic, userName });
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
         sender: "ai",

@@ -11,6 +11,7 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const GuideJournalingWithQuestionsInputSchema = z.object({
+  userName: z.string().describe("The user's first name."),
   topic: z
     .string()
     .describe('The topic or theme for the journaling session, based on the user\'s previous response.'),
@@ -38,6 +39,8 @@ const prompt = ai.definePrompt({
   output: {schema: GuideJournalingWithQuestionsOutputSchema},
   prompt: `You are a helpful and friendly journaling assistant named Anu. Your goal is to guide the user in reflecting on their day. 
   
+Address the user by their first name, which is {{{userName}}}.
+
 Ask a gentle, encouraging question related to their previous response about "{{{topic}}}". 
 Focus on their activities, hobbies pursued, things they learned, or feelings they experienced today. 
 Avoid deep philosophical questions. Keep the conversation light, positive, and reflective, helping them scratch the surface of their day.`,
