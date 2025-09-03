@@ -8,7 +8,7 @@ export default function Home() {
     <div className="flex flex-col min-h-screen">
       <header className="px-4 lg:px-6 h-14 flex items-center">
         <Link href="#" className="flex items-center justify-center" prefetch={false}>
-          <PenLine className="h-6 w-6 text-primary" />
+          <PenLine className="h-6 w-6 text-white" />
           <span className="sr-only">Soulful Sync</span>
         </Link>
       </header>
@@ -16,11 +16,11 @@ export default function Home() {
         <section className="w-full py-12 md:py-24 lg:py-32 xl:py-48">
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center space-y-4 text-center">
-              <div className="space-y-2">
-                <h1 className="font-headline text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl">
+              <div className="space-y-2 text-white">
+                <h1 className="font-headline text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl overflow-hidden whitespace-nowrap animate-typing border-r-4 border-r-white">
                   Soulful Sync
                 </h1>
-                <p className="mx-auto max-w-[700px] text-foreground/80 md:text-xl">
+                <p className="mx-auto max-w-[700px] md:text-xl">
                   Discover deeper connections with yourself and others through the power of guided journaling and AI-driven personality insights.
                 </p>
               </div>
