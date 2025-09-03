@@ -90,7 +90,7 @@ export default function CalendarPage() {
                 month: "space-y-4 flex-1 flex flex-col",
                 table: "w-full border-collapse space-y-1 flex-1",
                 head_row: "flex",
-                row: "flex w-full mt-2 flex-1",
+                row: "flex w-full mt-2 min-h-[6rem] flex-1",
                 cell: "text-center text-sm p-0 relative flex-1",
                 day: cn(
                     "w-full h-full rounded-md",
