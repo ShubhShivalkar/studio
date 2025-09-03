@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -74,24 +75,17 @@ export default function CalendarPage() {
 
   return (
     <div className="grid gap-6 md:grid-cols-3 h-full">
-      <Card className="md:col-span-2 h-full">
-        <CardContent className="p-2 h-full">
+      <Card className="md:col-span-2">
+        <CardContent className="p-2 md:p-6 flex justify-center items-start">
           <Calendar
             mode="single"
             selected={date}
             onSelect={handleDateSelect}
-            className="h-full w-full"
+            className="w-full"
             classNames={{
-                root: "h-full flex flex-col",
-                months: "flex-1",
-                month: "h-full flex flex-col",
-                table: "h-full flex-1",
-                tbody: "h-full",
-                head_row: "flex justify-around",
-                row: "flex h-full w-full justify-around",
-                cell: "h-auto w-full p-0 text-center",
+                cell: "h-16 w-full text-center",
                 day: cn(
-                    "h-full w-full rounded-none data-[is-selected]:bg-accent data-[is-selected]:text-accent-foreground",
+                    "w-full h-full rounded-md",
                     "hover:bg-accent/50 transition-colors"
                 ),
             }}
