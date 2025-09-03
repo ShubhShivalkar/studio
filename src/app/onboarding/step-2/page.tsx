@@ -6,9 +6,11 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import useOnboardingStore from '@/store/onboarding';
 
 export default function Step2Page() {
   const router = useRouter();
+  const { name, setData } = useOnboardingStore();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,7 +28,13 @@ export default function Step2Page() {
         <CardContent>
           <div className="space-y-2">
             <Label htmlFor="name">Full Name</Label>
-            <Input id="name" placeholder="Enter your full name" required />
+            <Input 
+              id="name" 
+              placeholder="Enter your full name" 
+              required 
+              value={name}
+              onChange={(e) => setData({ name: e.target.value })}
+            />
           </div>
         </CardContent>
         <CardFooter className="gap-2">

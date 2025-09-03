@@ -9,17 +9,21 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { User } from 'lucide-react';
 import { useState } from 'react';
 import { Progress } from '@/components/ui/progress';
+import useOnboardingStore from '@/store/onboarding';
 
 export default function Step4Page() {
   const router = useRouter();
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const { avatar, setData } = useOnboardingStore();
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(avatar || null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setAvatarPreview(reader.result as string);
+        const result = reader.result as string;
+        setAvatarPreview(result);
+        setData({ avatar: result });
       };
       reader.readAsDataURL(file);
     }

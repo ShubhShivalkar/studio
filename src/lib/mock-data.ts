@@ -1,18 +1,13 @@
 import { BookOpen, Brush, Mountain } from 'lucide-react';
 import type { User, Connection, DailySummary, Reminder, Checklist } from './types';
 
-export const currentUser: User = {
+export let currentUser: User = {
   id: 'user-0',
-  name: 'Alex Doe',
-  avatar: 'https://picsum.photos/seed/alex/200/200',
-  dob: '1995-08-15',
-  gender: 'Male',
-  journalEntries: [
-    "Today was a whirlwind of activity. I felt a deep sense of accomplishment after finishing a major project at work. It's moments like these that make the long hours feel worth it. In the evening, I took a long walk in the park to clear my head. The quiet rustle of leaves and the cool breeze were incredibly calming.",
-    "Feeling a bit introspective today. I've been thinking a lot about my goals for the next five years. It's a bit daunting, but also exciting. I want to travel more and learn a new language. I spent some time reading a book on philosophy, which always helps put things in perspective.",
-    "Had a wonderful time with friends tonight. We went out for dinner and just talked for hours. It's so important to have that human connection. I feel energized and grateful for the people in my life. Laughter really is the best medicine.",
-    "Journal entry 4", "Journal entry 5", "Journal entry 6", "Journal entry 7", "Journal entry 8", "Journal entry 9", "Journal entry 10", "Journal entry 11", "Journal entry 12", "Journal entry 13", "Journal entry 14", "Journal entry 15"
-  ],
+  name: 'New User',
+  avatar: '',
+  dob: '',
+  gender: 'Prefer not to say',
+  journalEntries: [],
 };
 
 export const otherUsers: User[] = [

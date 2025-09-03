@@ -5,12 +5,23 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Button } from '@/components/ui/button';
 import { CheckCircle } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
+import useOnboardingStore from '@/store/onboarding';
+import { currentUser } from '@/lib/mock-data';
 
 export default function Step5Page() {
   const router = useRouter();
+  const onboardingData = useOnboardingStore((state) => state);
 
   const handleFinish = () => {
-    // Here you would typically save all the collected data
+    // Save the collected data to the mock current user object
+    currentUser.id = `user-${Date.now()}`;
+    currentUser.name = onboardingData.name;
+    currentUser.dob = onboardingData.dob;
+    currentUser.gender = onboardingData.gender as 'Male' | 'Female' | 'Other' | 'Prefer not to say';
+    currentUser.avatar = onboardingData.avatar;
+    currentUser.journalEntries = [];
+    
+    // In a real app, you would save this to a backend.
     router.push('/journal');
   };
 

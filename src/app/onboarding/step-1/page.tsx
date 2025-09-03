@@ -6,9 +6,11 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import useOnboardingStore from '@/store/onboarding';
 
 export default function Step1Page() {
   const router = useRouter();
+  const { phone, setData } = useOnboardingStore();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,7 +28,14 @@ export default function Step1Page() {
         <CardContent>
           <div className="space-y-2">
             <Label htmlFor="phone">Mobile Number</Label>
-            <Input id="phone" type="tel" placeholder="Enter your mobile number" required />
+            <Input 
+              id="phone" 
+              type="tel" 
+              placeholder="Enter your mobile number" 
+              required 
+              value={phone}
+              onChange={(e) => setData({ phone: e.target.value })}
+            />
           </div>
         </CardContent>
         <CardFooter>
