@@ -75,10 +75,10 @@ export default function ProfilePage() {
             <div className="flex justify-between items-start">
                 <div>
                     <CardTitle className="font-headline flex items-center gap-2">
-                        <Bot className="text-primary"/> Your AI-Generated Persona
+                        <Bot className="text-primary"/> Your Persona by Anu
                     </CardTitle>
                     <CardDescription>
-                        Based on your journal entries, this is how our AI understands your personality.
+                        Based on your journal entries, this is how Anu understands your personality.
                     </CardDescription>
                 </div>
                 <Button onClick={handleGeneratePersona} disabled={isLoading || !canGenerate}>

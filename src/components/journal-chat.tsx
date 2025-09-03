@@ -1,3 +1,4 @@
+
 "use client";
 
 import { guideJournalingWithQuestions } from "@/ai/flows/guide-journaling-with-questions";
@@ -13,7 +14,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 const initialMessage: Message = {
     id: '0',
     sender: 'ai',
-    text: "Welcome to your journal. What's on your mind today?"
+    text: "Hi, I'm Anu, your journaling companion. What's on your mind today?"
 };
 
 export function JournalChat() {
@@ -85,7 +86,7 @@ export function JournalChat() {
               {message.sender === "ai" && (
                 <Avatar className="h-8 w-8">
                   <AvatarFallback className="bg-primary text-primary-foreground">
-                    AI
+                    Anu
                   </AvatarFallback>
                 </Avatar>
               )}
@@ -105,7 +106,7 @@ export function JournalChat() {
             <div className="flex items-start gap-3 justify-start">
                <Avatar className="h-8 w-8">
                   <AvatarFallback className="bg-primary text-primary-foreground">
-                    AI
+                    Anu
                   </AvatarFallback>
                 </Avatar>
               <div className="bg-card border rounded-lg p-3">
