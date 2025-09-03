@@ -3,33 +3,58 @@
 import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { User } from 'lucide-react';
+import { useState } from 'react';
 import { Progress } from '@/components/ui/progress';
 
 export default function Step4Page() {
   const router = useRouter();
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
 
-  const handleFinish = () => {
-    // Here you would typically save all the collected data
-    router.push('/journal');
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatarPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    router.push('/onboarding/step-5');
   };
 
   return (
-    <Card className="text-center">
+    <Card>
       <CardHeader>
-        <CardTitle className="font-headline">You're all set!</CardTitle>
-        <CardDescription>You are ready to begin your journey with Soulful Sync.</CardDescription>
-        <Progress value={100} className="mt-2" />
+        <CardTitle className="font-headline">Set your profile picture</CardTitle>
+        <CardDescription>A picture helps others connect with you.</CardDescription>
+        <Progress value={80} className="mt-2" />
       </CardHeader>
-      <CardContent className="flex flex-col items-center space-y-4 py-8">
-        <CheckCircle className="w-16 h-16 text-green-500" />
-        <p>Your profile has been created.</p>
-      </CardContent>
-      <CardFooter>
-        <Button onClick={handleFinish} className="w-full">
-          Start Journaling
-        </Button>
-      </CardFooter>
+      <form onSubmit={handleSubmit}>
+        <CardContent className="flex flex-col items-center space-y-4">
+          <Avatar className="w-32 h-32 border-4 border-primary/20">
+            <AvatarImage src={avatarPreview || ''} alt="Profile preview" data-ai-hint="person photo" />
+            <AvatarFallback className="bg-muted">
+              <User className="w-16 h-16 text-muted-foreground" />
+            </AvatarFallback>
+          </Avatar>
+          <div className="w-full">
+            <Label htmlFor="picture" className="sr-only">Upload Picture</Label>
+            <Input id="picture" type="file" accept="image/*" onChange={handleFileChange} />
+          </div>
+        </CardContent>
+        <CardFooter className="gap-2">
+          <Button variant="outline" className="w-full" onClick={() => router.back()}>Back</Button>
+          <Button type="submit" className="w-full">Continue</Button>
+        </CardFooter>
+      </form>
     </Card>
   );
 }

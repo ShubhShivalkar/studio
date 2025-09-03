@@ -19,14 +19,14 @@ export default function Step1Page() {
     <Card>
       <CardHeader>
         <CardTitle className="font-headline">Welcome! Let's get started.</CardTitle>
-        <CardDescription>First, what's your name?</CardDescription>
-        <Progress value={25} className="mt-2" />
+        <CardDescription>First, what's your mobile number?</CardDescription>
+        <Progress value={20} className="mt-2" />
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent>
           <div className="space-y-2">
-            <Label htmlFor="name">Full Name</Label>
-            <Input id="name" placeholder="Enter your full name" required />
+            <Label htmlFor="phone">Mobile Number</Label>
+            <Input id="phone" type="tel" placeholder="Enter your mobile number" required />
           </div>
         </CardContent>
         <CardFooter>
