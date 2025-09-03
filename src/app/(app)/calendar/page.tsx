@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from 'react';
-import { format, isSameDay, parseISO } from 'date-fns';
+import { format, isSameDay, parseISO, isWeekend } from 'date-fns';
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent } from "@/components/ui/card";
@@ -13,6 +13,8 @@ import { cn } from '@/lib/utils';
 import { Pencil, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { DayContent, DayContentProps } from 'react-day-picker';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 
 function CustomDayContent(props: DayContentProps) {
     const dayData = dailySummaries.find(d => isSameDay(parseISO(d.date), props.date));
@@ -42,6 +44,7 @@ export default function CalendarPage() {
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [selectedSummary, setSelectedSummary] = useState<DailySummary | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [isAvailableForTribe, setIsAvailableForTribe] = useState(false);
   const { toast } = useToast();
 
   const handleDateSelect = (selectedDate: Date | undefined) => {
@@ -49,12 +52,25 @@ export default function CalendarPage() {
     if (selectedDate) {
       const summary = dailySummaries.find(d => isSameDay(parseISO(d.date), selectedDate)) || null;
       setSelectedSummary(summary);
+      setIsAvailableForTribe(summary?.isAvailable || false);
       setIsSheetOpen(true);
     } else {
       setSelectedSummary(null);
       setIsSheetOpen(false);
     }
   };
+
+  const handleAvailabilityChange = (checked: boolean) => {
+    setIsAvailableForTribe(checked);
+    if (selectedSummary) {
+        // In a real app, you'd update this in your backend.
+        // For now, we just show a toast.
+        toast({
+            title: "Availability Updated",
+            description: `You are now marked as ${checked ? 'available' : 'unavailable'} for tribe meetups on this day.`
+        });
+    }
+  }
 
   const handleEdit = () => {
     if (!selectedSummary) return;
@@ -74,6 +90,8 @@ export default function CalendarPage() {
     setIsSheetOpen(false);
     setSelectedSummary(null); 
   }
+
+  const isSelectedDateWeekend = date ? isWeekend(date) : false;
 
   return (
     <div className="h-full flex flex-col">
@@ -124,7 +142,7 @@ export default function CalendarPage() {
           </SheetHeader>
           <div className="py-4">
             {selectedSummary ? (
-              <div>
+              <div className="space-y-4">
                 <div className="flex justify-between items-start">
                   <div>
                     <h3 className="font-semibold">Summary</h3>
@@ -142,13 +160,13 @@ export default function CalendarPage() {
                   </div>
                 </div>
 
-                <div className="mt-4">
+                <div>
                     <h3 className="font-semibold">Vibe</h3>
                     <p className="text-2xl">{selectedSummary.mood}</p>
                 </div>
                 
                 {selectedSummary.hobbies.length > 0 && (
-                     <div className="mt-4">
+                     <div>
                         <h3 className="font-semibold">Hobbies</h3>
                         <div className="flex gap-2 items-center">
                             {selectedSummary.hobbies.map((hobby, index) => (
@@ -161,17 +179,52 @@ export default function CalendarPage() {
                     </div>
                 )}
                 
-                <div className="mt-4">
+                <div>
                     <h3 className="font-semibold">Availability</h3>
                     <p className="text-sm text-muted-foreground">
                         {selectedSummary.hasMeetup ? "Scheduled meetup ☕️" : selectedSummary.isAvailable ? "Available to meet ❤️" : "Not available"}
                     </p>
                 </div>
+                
+                {isSelectedDateWeekend && (
+                    <div className="border-t pt-4">
+                        <div className="flex items-center justify-between">
+                             <div>
+                                <h3 className="font-semibold">Tribe Meetups</h3>
+                                <Label htmlFor="tribe-availability" className="text-sm text-muted-foreground">
+                                    Mark yourself as available for a tribe meetup on this day.
+                                </Label>
+                             </div>
+                            <Switch 
+                                id="tribe-availability"
+                                checked={isAvailableForTribe}
+                                onCheckedChange={handleAvailabilityChange}
+                            />
+                        </div>
+                    </div>
+                )}
 
               </div>
             ) : (
               <div className="text-center text-muted-foreground pt-8">
                 <p>No summary for this day.</p>
+                {isSelectedDateWeekend && (
+                     <div className="mt-4 border-t pt-4">
+                        <div className="flex items-center justify-between max-w-sm mx-auto">
+                             <div>
+                                <h3 className="font-semibold text-left">Tribe Meetups</h3>
+                                <Label htmlFor="tribe-availability" className="text-sm text-muted-foreground">
+                                    Mark yourself as available for a tribe meetup on this day.
+                                </Label>
+                             </div>
+                            <Switch 
+                                id="tribe-availability"
+                                checked={isAvailableForTribe}
+                                onCheckedChange={handleAvailabilityChange}
+                            />
+                        </div>
+                    </div>
+                )}
               </div>
             )}
           </div>
