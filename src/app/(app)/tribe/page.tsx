@@ -190,12 +190,6 @@ export default function TribePage() {
                   We'll connect you with people who understand your VIbe
                 </CardDescription>
             </div>
-            <Button asChild variant="outline" size="sm">
-                <Link href="/tribe/history">
-                    <History className="mr-2" />
-                    Tribe History
-                </Link>
-            </Button>
         </div>
       </CardHeader>
       <CardContent className="min-h-[30rem] flex items-center justify-center p-2 sm:p-6">

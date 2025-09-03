@@ -5,17 +5,18 @@ import { useState, useEffect } from 'react';
 import { format, isSameDay, parseISO, isWeekend } from 'date-fns';
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { dailySummaries, reminders as mockReminders, checklists as mockChecklists } from "@/lib/mock-data";
 import type { DailySummary, Reminder, Checklist } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { Pencil, Trash2, Bell, ListTodo, CheckCircle } from 'lucide-react';
+import { Pencil, Trash2, Bell, ListTodo, CheckCircle, History } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { DayContent, DayContentProps } from 'react-day-picker';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
+import Link from 'next/link';
 
 function CustomDayContent(props: DayContentProps) {
     const dayData = dailySummaries.find(d => isSameDay(parseISO(d.date), props.date));
@@ -203,7 +204,18 @@ export default function CalendarPage() {
   return (
     <div className="h-full flex flex-col">
       <Card className="flex-1 flex flex-col">
-        <CardContent className="flex-1 flex flex-col p-2 md:p-6">
+         <CardHeader>
+            <div className="flex justify-between items-center">
+                <CardTitle className="font-headline">Your Calendar</CardTitle>
+                <Button asChild variant="outline" size="sm">
+                    <Link href="/tribe/history">
+                        <History className="mr-2" />
+                        Tribe History
+                    </Link>
+                </Button>
+            </div>
+        </CardHeader>
+        <CardContent className="flex-1 flex flex-col p-2 md:p-6 pt-0">
           <Calendar
             mode="single"
             selected={date}
