@@ -12,6 +12,7 @@ export type User = {
   phone: string;
   interestedInMeetups?: boolean;
   availableDates?: string[]; // YYYY-MM-DD
+  personaLastGenerated?: string; // ISO date string
 };
 
 export type Connection = {

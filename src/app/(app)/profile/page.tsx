@@ -13,9 +13,10 @@ import { useToast } from "@/hooks/use-toast";
 import { currentUser } from "@/lib/mock-data";
 import { Bot, LogOut, Users, BookOpen, Flame } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { differenceInDays, parseISO } from 'date-fns';
 
 export default function ProfilePage() {
   const [persona, setPersona] = useState<GeneratePersonalityPersonaOutput | null>(
@@ -23,6 +24,7 @@ export default function ProfilePage() {
   );
   const [isLoading, setIsLoading] = useState(false);
   const [isInterested, setIsInterested] = useState(currentUser.interestedInMeetups || false);
+  const [canRegenerate, setCanRegenerate] = useState(true);
 
   const { toast } = useToast();
   const router = useRouter();
@@ -31,6 +33,17 @@ export default function ProfilePage() {
   const progress = Math.min((journalEntriesCount / 15) * 100, 100);
   const canGenerate = journalEntriesCount >= 15;
   const streakDays = 15; // As per mock data assumption
+
+  useEffect(() => {
+    if (currentUser.personaLastGenerated) {
+        const lastGeneratedDate = parseISO(currentUser.personaLastGenerated);
+        const daysSinceLastGeneration = differenceInDays(new Date(), lastGeneratedDate);
+        if (daysSinceLastGeneration < 7) {
+            setCanRegenerate(false);
+        }
+    }
+  }, []);
+
 
   const handleGeneratePersona = async () => {
     setIsLoading(true);
@@ -45,11 +58,23 @@ export default function ProfilePage() {
           setIsLoading(false);
           return;
       }
+       if (!canRegenerate && currentUser.persona) {
+            toast({
+                variant: 'destructive',
+                title: 'Regeneration Limit',
+                description: 'You can only regenerate your persona once a week.'
+            });
+            setIsLoading(false);
+            setPersona({ persona: currentUser.persona, hobbies: [], interests: [], personalityTraits: [] }); // Restore persona view
+            return;
+        }
       const entriesText = currentUser.journalEntries.join("\n\n");
       const result = await generatePersonalityPersona({ journalEntries: entriesText });
       setPersona(result);
       // Also save to our mock currentUser
       currentUser.persona = result.persona;
+      currentUser.personaLastGenerated = new Date().toISOString();
+      setCanRegenerate(false);
     } catch (error) {
       console.error("Failed to generate persona:", error);
       toast({
@@ -121,7 +146,7 @@ export default function ProfilePage() {
             </Card>
         )}
       </div>
-      <div className="md:col-span-2">
+      <div className="md:col-span-2 space-y-6">
         <Card>
           <CardHeader>
             <div className="flex justify-between items-start">
@@ -133,7 +158,7 @@ export default function ProfilePage() {
                         Based on your journal entries, this is how Anu understands your personality.
                     </CardDescription>
                 </div>
-                <Button onClick={handleGeneratePersona} disabled={isLoading || !canGenerate}>
+                <Button onClick={handleGeneratePersona} disabled={isLoading || !canGenerate || (!!currentUser.persona && !canRegenerate)}>
                     {isLoading ? "Generating..." : persona ? "Regenerate Persona" : "Generate Persona"}
                 </Button>
             </div>
@@ -189,20 +214,7 @@ export default function ProfilePage() {
                 </div>
             ) : (
                 <div className="text-center text-muted-foreground py-8 flex flex-col items-center justify-center gap-4">
-                    {canGenerate ? (
-                        <div className="flex items-center gap-6">
-                            <div className="flex items-center gap-2">
-                                <BookOpen className="h-5 w-5 text-primary"/>
-                                <span className="font-semibold">{journalEntriesCount}</span>
-                                <span className="text-xs">Entries</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <Flame className="h-5 w-5 text-amber-500"/>
-                                <span className="font-semibold">{streakDays}</span>
-                                <span className="text-xs">Day Streak</span>
-                            </div>
-                        </div>
-                    ) : (
+                    { !canGenerate && (
                         <>
                             <p className="text-sm">You need at least 15 journal entries to generate a persona.</p>
                             <div className="w-full max-w-sm space-y-2">
@@ -215,6 +227,30 @@ export default function ProfilePage() {
             )}
           </CardContent>
         </Card>
+
+        {canGenerate && (
+             <Card>
+                <CardHeader>
+                    <CardTitle className="font-headline">Journal Stats</CardTitle>
+                </CardHeader>
+                <CardContent className="flex items-center gap-8">
+                     <div className="flex items-center gap-2">
+                        <BookOpen className="h-5 w-5 text-primary"/>
+                        <div>
+                            <p className="font-semibold">{journalEntriesCount}</p>
+                            <p className="text-xs text-muted-foreground">Total Entries</p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Flame className="h-5 w-5 text-amber-500"/>
+                        <div>
+                            <p className="font-semibold">{streakDays}</p>
+                            <p className="text-xs text-muted-foreground">Day Streak</p>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+        )}
       </div>
     </div>
   );

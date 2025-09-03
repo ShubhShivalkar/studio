@@ -40,6 +40,7 @@ export let currentUser: User = {
   // Persona is initially undefined until generated
   persona: undefined,
   interestedInMeetups: false,
+  personaLastGenerated: undefined,
 };
 
 // This represents our "database" of all users in the system.
@@ -60,7 +61,8 @@ export const allUsers: User[] = Array.from({ length: 25 }, (_, i) => {
         phone: `${i+1}000000000`,
         persona: `This is the unique persona for User ${i + 1}. They have interests that may or may not align with the current user. They are of the ${gender} gender and their age is ${getAge(dob)}.`,
         interestedInMeetups: (i % 3 !== 0), // About 2/3 of users are interested
-        availableDates: [`2024-07-${20 + (i%5)}`, `2024-07-${27 + (i%2)}`] // Example weekend availability
+        availableDates: [`2024-07-${20 + (i%5)}`, `2024-07-${27 + (i%2)}`], // Example weekend availability
+        personaLastGenerated: undefined,
     };
 });
 
