@@ -10,13 +10,12 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "
 import { dailySummaries, reminders as mockReminders, checklists as mockChecklists } from "@/lib/mock-data";
 import type { DailySummary, Reminder, Checklist } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { Pencil, Trash2, Bell, ListTodo, CheckCircle, History } from 'lucide-react';
+import { Pencil, Trash2, Bell, ListTodo, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { DayContent, DayContentProps } from 'react-day-picker';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
-import Link from 'next/link';
 
 function CustomDayContent(props: DayContentProps) {
     const dayData = dailySummaries.find(d => isSameDay(parseISO(d.date), props.date));
@@ -205,15 +204,7 @@ export default function CalendarPage() {
     <div className="h-full flex flex-col">
       <Card className="flex-1 flex flex-col">
          <CardHeader>
-            <div className="flex justify-between items-center">
-                <CardTitle className="font-headline">Your Calendar</CardTitle>
-                <Button asChild variant="outline" size="sm">
-                    <Link href="/tribe/history">
-                        <History className="mr-2" />
-                        Tribe History
-                    </Link>
-                </Button>
-            </div>
+            <CardTitle className="font-headline">Your Calendar</CardTitle>
         </CardHeader>
         <CardContent className="flex-1 flex flex-col p-2 md:p-6 pt-0">
           <Calendar
