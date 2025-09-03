@@ -37,11 +37,11 @@ export type Reminder = {
 
 export type DailySummary = {
     date: string; // YYYY-MM-DD
-    summary: string;
-    mood: '😊' | '😢' | '😠' | '😮' | '😐';
-    hobbies: { icon: LucideIcon, name: string }[];
-    isAvailable: boolean;
-    hasMeetup: boolean;
+    summary?: string;
+    mood?: '😊' | '😢' | '😠' | '😮' | '😐';
+    hobbies?: { icon: LucideIcon, name: string }[];
+    isAvailable?: boolean;
+    hasMeetup?: boolean;
 };
 
 export type ChecklistItem = {

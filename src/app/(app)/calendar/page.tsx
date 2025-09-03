@@ -32,8 +32,8 @@ function CustomDayContent(props: DayContentProps) {
         <div className="flex text-xs md:text-sm gap-1 mt-1 absolute bottom-2 items-center">
             {dayData && (
               <>
-                <span>{dayData.mood}</span>
-                {dayData.hobbies.map((hobby, index) => (
+                {dayData.mood && <span>{dayData.mood}</span>}
+                {dayData.hobbies && dayData.hobbies.map((hobby, index) => (
                   <hobby.icon key={index} className="w-3 h-3 md:w-4 md:h-4 text-muted-foreground" />
                 ))}
                 {dayData.hasMeetup && <span>☕️</span>}
@@ -51,7 +51,7 @@ export default function CalendarPage() {
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [reminders, setReminders] = useState(mockReminders);
   const [checklists, setChecklists] = useState(mockChecklists);
-  const [selectedSummary, setSelectedSummary] = useState<DailySummary | null>(null);
+  const [selectedSummary, setSelectedSummary] = useState<Partial<DailySummary> | null>(null);
   const [selectedReminders, setSelectedReminders] = useState<Reminder[]>([]);
   const [selectedChecklists, setSelectedChecklists] = useState<Checklist[]>([]);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -61,6 +61,7 @@ export default function CalendarPage() {
 
   useEffect(() => {
     setIsClient(true);
+    // Set initial date only on the client
     setDate(new Date());
   }, []);
 
@@ -148,14 +149,10 @@ export default function CalendarPage() {
         if (summaryIndex > -1) {
             dailySummaries[summaryIndex].isAvailable = checked;
         } else {
-            // Create a new summary for this day if it doesn't exist
+            // Create a new minimal summary for this day if it doesn't exist
             dailySummaries.push({
                 date: dateStr,
-                summary: "No journal entry for this day.",
-                mood: '😐',
-                hobbies: [],
                 isAvailable: checked,
-                hasMeetup: false,
             });
         }
         
@@ -169,6 +166,7 @@ export default function CalendarPage() {
     }
   }
 
+
   const handleEdit = () => {
     if (!selectedSummary) return;
     toast({
@@ -178,14 +176,22 @@ export default function CalendarPage() {
   }
   
   const handleDelete = () => {
-    if (!selectedSummary) return;
+    if (!selectedSummary || !selectedSummary.date) return;
+    const dateStr = selectedSummary.date;
+    const summaryIndex = dailySummaries.findIndex(d => d.date === dateStr);
+    if (summaryIndex > -1) {
+        dailySummaries.splice(summaryIndex, 1);
+    }
+    
     toast({
         variant: "destructive",
         title: "Deleted Summary",
-        description: `Entry for ${selectedSummary.date} has been deleted. (Frontend only)`
+        description: `Entry for ${dateStr} has been deleted. (Frontend only)`
     })
+    
     setIsSheetOpen(false);
-    setSelectedSummary(null); 
+    setSelectedSummary(null);
+    setDate(date ? new Date(date) : undefined); // Force re-render
   }
 
   const isSelectedDateWeekend = date ? isWeekend(date) : false;
@@ -295,7 +301,7 @@ export default function CalendarPage() {
                     </div>
                 )}
                 
-                {selectedSummary && (
+                {selectedSummary && selectedSummary.summary && (
                     <>
                         <div className="flex justify-between items-start pt-4 border-t">
                         <div>
@@ -319,7 +325,7 @@ export default function CalendarPage() {
                             <p className="text-2xl">{selectedSummary.mood}</p>
                         </div>
                         
-                        {selectedSummary.hobbies.length > 0 && (
+                        {selectedSummary.hobbies && selectedSummary.hobbies.length > 0 && (
                             <div>
                                 <h3 className="font-semibold">Hobbies</h3>
                                 <div className="flex gap-2 items-center">
@@ -332,15 +338,17 @@ export default function CalendarPage() {
                                 </div>
                             </div>
                         )}
-                        
-                        <div>
-                            <h3 className="font-semibold">Availability</h3>
-                            <p className="text-sm text-muted-foreground">
-                                {selectedSummary.hasMeetup ? "Scheduled meetup ☕️" : selectedSummary.isAvailable ? "Available to meet ❤️" : "Not available"}
-                            </p>
-                        </div>
                     </>
                 )}
+                
+                 {selectedSummary && (
+                    <div>
+                        <h3 className="font-semibold">Availability</h3>
+                        <p className="text-sm text-muted-foreground">
+                            {selectedSummary.hasMeetup ? "Scheduled meetup ☕️" : selectedSummary.isAvailable ? "Available to meet ❤️" : "Not available"}
+                        </p>
+                    </div>
+                 )}
                 
                 {isSelectedDateWeekend && (
                     <div className="border-t pt-4">
@@ -389,5 +397,3 @@ export default function CalendarPage() {
     </div>
   );
 }
-
-    
