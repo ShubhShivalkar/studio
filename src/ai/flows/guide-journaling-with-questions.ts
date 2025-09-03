@@ -84,8 +84,8 @@ const guideJournalingWithQuestionsFlow = ai.defineFlow(
       const {output} = await prompt(input);
       return output!;
     } catch (error) {
-      if (error instanceof Error && error.message.includes('503')) {
-        console.warn('AI model is overloaded, retrying in 2 seconds...');
+      if (error instanceof Error && (error.message.includes('429') || error.message.includes('503'))) {
+        console.warn('AI model is overloaded or rate-limited, retrying in 2 seconds...');
         await new Promise(resolve => setTimeout(resolve, 2000));
         try {
           const {output} = await prompt(input);
