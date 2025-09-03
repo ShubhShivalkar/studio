@@ -173,7 +173,7 @@ export default function TribePage() {
       <CardHeader>
         <CardTitle className="font-headline">Meet Your Tribe</CardTitle>
         <CardDescription>
-          Connect with like-minded people based on your personality, availability, and age.
+          We'll connect you with people who understand your VIbe
         </CardDescription>
       </CardHeader>
       <CardContent className="min-h-[30rem] flex items-center justify-center p-2 sm:p-6">
