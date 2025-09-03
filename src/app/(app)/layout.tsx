@@ -1,9 +1,11 @@
+
 import {
   BookText,
   Calendar,
   PenLine,
   UserCircle,
   Users,
+  Bell,
 } from "lucide-react";
 import Link from "next/link";
 import { type ReactNode } from "react";
@@ -16,6 +18,7 @@ const navLinks = [
   { href: "/journal", label: "Journal", icon: <BookText className="h-5 w-5" /> },
   { href: "/calendar", label: "Calendar", icon: <Calendar className="h-5 w-5" /> },
   { href: "/tribe", label: "Tribe", icon: <Users className="h-5 w-5" /> },
+  { href: "/reminders", label: "Reminders", icon: <Bell className="h-5 w-5" /> },
   { href: "/profile", label: "Profile", icon: <UserCircle className="h-5 w-5" /> },
 ];
 

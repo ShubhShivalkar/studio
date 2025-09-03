@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -24,6 +25,7 @@ const navLinks = [
   { href: "/journal", label: "Journal" },
   { href: "/calendar", label: "Calendar" },
   { href: "/tribe", label: "Tribe" },
+  { href: "/reminders", label: "Reminders" },
   { href: "/profile", label: "Profile" },
 ];
 
@@ -75,9 +77,11 @@ export function Header() {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem>
-            <AlarmClock className="mr-2 h-4 w-4" />
-            <span>Set Reminder</span>
+          <DropdownMenuItem asChild>
+            <Link href="/reminders">
+              <AlarmClock className="mr-2 h-4 w-4" />
+              <span>Set Reminder</span>
+            </Link>
           </DropdownMenuItem>
           <DropdownMenuItem>
             <StickyNote className="mr-2 h-4 w-4" />
