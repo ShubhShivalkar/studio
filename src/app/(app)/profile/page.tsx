@@ -11,13 +11,15 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { currentUser } from "@/lib/mock-data";
-import { Bot } from "lucide-react";
+import { Bot, LogOut } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export default function ProfilePage() {
   const [persona, setPersona] = useState<GeneratePersonalityPersonaOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const router = useRouter();
 
   const journalEntriesCount = currentUser.journalEntries?.length || 0;
   const progress = Math.min((journalEntriesCount / 15) * 100, 100);
@@ -52,6 +54,10 @@ export default function ProfilePage() {
     }
   };
 
+  const handleSignOut = () => {
+    router.push('/');
+  };
+
   return (
     <div className="grid gap-6 md:grid-cols-3">
       <div className="md:col-span-1">
@@ -64,8 +70,12 @@ export default function ProfilePage() {
             <CardTitle className="font-headline">{currentUser.name}</CardTitle>
             <CardDescription>{currentUser.gender}, Born {currentUser.dob}</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-2">
             <Button className="w-full" variant="outline">Edit Profile</Button>
+            <Button className="w-full" variant="destructive" onClick={handleSignOut}>
+                <LogOut className="mr-2 h-4 w-4" />
+                Sign Out
+            </Button>
           </CardContent>
         </Card>
       </div>
