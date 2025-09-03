@@ -204,7 +204,7 @@ export default function TribePage() {
              <Button asChild variant="outline" size="sm">
                 <Link href="/tribe/history">
                     <History className="mr-2" />
-                    Tribe History
+                    Meet-up History
                 </Link>
             </Button>
         </div>

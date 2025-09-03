@@ -42,7 +42,7 @@ export default function TribeHistoryPage() {
       <CardHeader>
         <div className="flex items-center justify-between">
             <div>
-                <CardTitle className="font-headline">Tribe History</CardTitle>
+                <CardTitle className="font-headline">Meet-up History</CardTitle>
                 <CardDescription>
                 A record of all your past tribe meetups.
                 </CardDescription>
