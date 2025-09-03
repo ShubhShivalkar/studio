@@ -18,7 +18,7 @@ export const allUsers: User[] = [
   {
     id: 'user-1',
     name: 'Samira Khan',
-    avatar: 'https://picsum.photos/seed/samira/200/200',
+    avatar: 'https://picsum.photos/seed/indian-woman/200/200',
     dob: '1992-04-22',
     gender: 'Female',
     persona: 'A creative and empathetic soul with a love for art and nature. They are a thoughtful observer of the world, finding beauty in the small details and expressing themselves through various creative outlets. Deeply value meaningful connections.',
@@ -122,11 +122,11 @@ export let checklists: Checklist[] = [
     {
         id: 'cl-1',
         date: '2024-07-22',
-        title: 'Project Phoenix Tasks',
+        title: 'Weekly Goals',
         items: [
-            { id: 'item-1-1', text: 'Finalize design mockups', completed: true },
-            { id: 'item-1-2', text: 'Develop login page', completed: true },
-            { id: 'item-1-3', text: 'Integrate API endpoints', completed: false },
+            { id: 'item-1-1', text: 'Go for a run 3 times', completed: true },
+            { id: 'item-1-2', text: 'Read for 1 hour every day', completed: true },
+            { id: 'item-1-3', text: 'Meditate for 10 minutes daily', completed: false },
         ]
     }
 ];
