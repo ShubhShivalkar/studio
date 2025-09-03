@@ -10,7 +10,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "
 import { dailySummaries, reminders as mockReminders, checklists as mockChecklists } from "@/lib/mock-data";
 import type { DailySummary, Reminder, Checklist } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { Pencil, Trash2, Bell, ListTodo } from 'lucide-react';
+import { Pencil, Trash2, Bell, ListTodo, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { DayContent, DayContentProps } from 'react-day-picker';
 import { Label } from '@/components/ui/label';
@@ -37,7 +37,7 @@ function CustomDayContent(props: DayContentProps) {
                   <hobby.icon key={index} className="w-3 h-3 md:w-4 md:h-4 text-muted-foreground" />
                 ))}
                 {dayData.hasMeetup && <span>☕️</span>}
-                {dayData.isAvailable && !dayData.hasMeetup && <span>❤️</span>}
+                {dayData.isAvailable && !dayData.hasMeetup && <CheckCircle className="w-3 h-3 md:w-4 md:h-4 text-green-500" />}
               </>
             )}
             {dayReminders.length > 0 && <Bell className="w-3 h-3 md:w-4 md:h-4 text-primary" />}
@@ -320,7 +320,7 @@ export default function CalendarPage() {
                                 <h3 className="font-semibold">Tribe Meetups</h3>
                                 <Label htmlFor="tribe-availability" className="text-sm text-muted-foreground">
                                     Mark yourself as available for a tribe meetup on this day.
-                                </Label>
+                                 </Label>
                              </div>
                             <Switch 
                                 id="tribe-availability"
