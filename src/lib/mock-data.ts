@@ -8,7 +8,7 @@ export let currentUser: User = {
   id: 'user-0',
   name: 'New User',
   avatar: '',
-  dob: format(subYears(new Date(), 26), 'yyyy-MM-dd'),
+  dob: '1999-05-26',
   gender: 'Female',
   journalEntries: [
     "Today was a really peaceful day. I spent the afternoon reading in the park and it felt so good to just disconnect.",
