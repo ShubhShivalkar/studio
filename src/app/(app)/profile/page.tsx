@@ -46,16 +46,7 @@ export default function ProfilePage() {
 
 
   const handleGeneratePersona = async () => {
-    if (isLoading) return;
-    
-    if (!canRegenerate && currentUser.persona) {
-        toast({
-            variant: 'destructive',
-            title: 'Regeneration Limit',
-            description: 'You can only regenerate your persona once a week.'
-        });
-        return;
-    }
+    if (isLoading || (persona && !canRegenerate)) return;
 
     setIsLoading(true);
     setPersona(null);
@@ -160,7 +151,7 @@ export default function ProfilePage() {
                         Based on your journal entries, this is how Anu understands your personality.
                     </CardDescription>
                 </div>
-                <Button onClick={handleGeneratePersona} disabled={isLoading || !canGenerate}>
+                <Button onClick={handleGeneratePersona} disabled={isLoading || !canGenerate || (!!persona && !canRegenerate)}>
                     {isLoading ? "Generating..." : persona ? "Regenerate Persona" : "Generate Persona"}
                 </Button>
             </div>
