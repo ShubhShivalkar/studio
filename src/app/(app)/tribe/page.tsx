@@ -52,58 +52,10 @@ type Tribe = {
     location: string;
 }
 
-const getAge = (dob: string) => differenceInYears(new Date(), parseISO(dob));
-
-const staticTribe: Tribe = {
-    id: 'tribe-static-123',
-    meetupDate: '2025-09-06',
-    meetupTime: '4:30 PM',
-    location: '70 Beans Cafe, Navi Mumbai',
-    members: [
-        {
-            userId: currentUser.id,
-            compatibilityScore: 100,
-            persona: currentUser.persona || "This is you!",
-            user: currentUser,
-            matchReason: "This is you!",
-            rsvpStatus: 'pending', // Start as pending
-        },
-        {
-            userId: allUsers[0].id,
-            compatibilityScore: 92,
-            persona: allUsers[0].persona!,
-            user: allUsers[0],
-            matchReason: "High compatibility based on shared interests in creative pursuits and introspective activities.",
-            rsvpStatus: 'accepted',
-        },
-        {
-            userId: allUsers[1].id,
-            compatibilityScore: 88,
-            persona: allUsers[1].persona!,
-            user: allUsers[1],
-            matchReason: "Strong alignment in valuing quiet moments, nature, and deep conversations.",
-            rsvpStatus: 'accepted',
-        },
-        {
-            userId: allUsers[2].id,
-            compatibilityScore: 85,
-            persona: allUsers[2].persona!,
-            user: allUsers[2],
-            matchReason: "You both share a love for learning new things and expressing creativity, suggesting great conversations.",
-            rsvpStatus: 'rejected',
-            rejectionReason: "Sorry, I have a prior commitment that weekend!",
-        },
-         {
-            userId: allUsers[3].id,
-            compatibilityScore: 82,
-            persona: allUsers[3].persona!,
-            user: allUsers[3],
-            matchReason: "Your shared appreciation for literature and quiet, cozy atmospheres could lead to some wonderful conversations.",
-            rsvpStatus: 'accepted',
-        },
-    ]
-};
-
+const getAge = (dob: string) => {
+    if (!dob) return '';
+    return differenceInYears(new Date(), parseISO(dob));
+}
 
 export default function TribePage() {
   const [tribeState, setTribeState] = useState<"loading" | "no-persona" | "not-interested" | "finding" | "found">("loading");
@@ -123,9 +75,10 @@ export default function TribePage() {
         return;
     }
 
-    // Directly set the static tribe
-    setTribe(staticTribe);
-    setTribeState("found");
+    // In a real app, you'd fetch this. For now, we simulate the "finding" state
+    // as there is no static tribe for a new user.
+    setTribe(null);
+    setTribeState("finding");
   }, []);
   
   const handleRsvp = (status: 'accepted' | 'rejected') => {
