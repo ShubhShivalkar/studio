@@ -53,7 +53,7 @@ export default function ProfilePage() {
           console.error("Error fetching location:", error);
         }
       }, (error) => {
-          console.error("Geolocation error:", error);
+          console.error("Geolocation error:", { code: error.code, message: error.message });
           if (error.code === error.PERMISSION_DENIED) {
               toast({
                   variant: "destructive",
@@ -63,7 +63,7 @@ export default function ProfilePage() {
           }
       });
     }
-  }, []);
+  }, [toast, userData.location]);
 
   useEffect(() => {
     if (userData.persona) {
@@ -146,14 +146,14 @@ export default function ProfilePage() {
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <div className="lg:col-span-1 space-y-6">
           <Card>
-            <CardHeader className="items-center">
+            <CardHeader className="items-center text-center">
               <Avatar className="w-24 h-24 mb-4 border-4 border-primary/20">
                 <AvatarImage src={userData.avatar} alt={userData.name} data-ai-hint="person photo" />
                 <AvatarFallback>{userData.name.charAt(0)}</AvatarFallback>
               </Avatar>
               <CardTitle className="font-headline">{userData.name}</CardTitle>
               <CardDescription>
-                  {userData.gender}{userData.dob && `, Born ${userData.dob}`}
+                  {userData.gender}{userData.dob && `, Born ${format(parseISO(userData.dob), 'MMMM d, yyyy')}`}
                   {userData.location && (
                     <span className="flex items-center justify-center gap-1 mt-1">
                         <MapPin className="h-4 w-4" /> {userData.location}
@@ -161,17 +161,17 @@ export default function ProfilePage() {
                   )}
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 text-center">
                 {(userData.profession || userData.religion) && (
                   <div className="space-y-2 text-sm text-muted-foreground border-t pt-4">
                     {userData.profession && (
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center justify-center gap-2">
                         <Briefcase className="h-4 w-4" />
                         <span>{userData.profession}</span>
                       </div>
                     )}
                     {userData.religion && (
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center justify-center gap-2">
                         <HandHeart className="h-4 w-4" />
                         <span>{userData.religion}</span>
                       </div>
