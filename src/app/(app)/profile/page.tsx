@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { GeneratePersonalityPersonaOutput } from "@/ai/flows/generate-personality-persona";
@@ -21,17 +22,18 @@ export default function ProfilePage() {
     setIsLoading(true);
     setPersona(null);
     try {
-      const journalEntries = currentUser.journalEntries?.join("\n\n") || "";
-      if (!journalEntries) {
+      const journalEntries = currentUser.journalEntries || [];
+      if (journalEntries.length < 15) {
           toast({
               variant: 'destructive',
               title: 'Not enough data',
-              description: 'Please write a few journal entries first to generate a persona.'
+              description: 'You need at least 15 journal entries to generate a persona.'
           });
           setIsLoading(false);
           return;
       }
-      const result = await generatePersonalityPersona({ journalEntries });
+      const entriesText = journalEntries.join("\n\n");
+      const result = await generatePersonalityPersona({ journalEntries: entriesText });
       setPersona(result);
     } catch (error) {
       console.error("Failed to generate persona:", error);
