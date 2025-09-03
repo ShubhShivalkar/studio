@@ -15,11 +15,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User as UserIcon } from 'lucide-react';
+import { User as UserIcon, Trash2 } from 'lucide-react';
 import type { User } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { format, parseISO } from 'date-fns';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from './ui/separator';
 
 interface EditProfileDialogProps {
   user: User;
@@ -76,6 +77,15 @@ export function EditProfileDialog({ user, onUpdate, open, onOpenChange }: EditPr
     });
     onOpenChange(false);
   };
+
+  const handleDeleteProfile = () => {
+    // In a real app, this would trigger a confirmation and then a call to the backend.
+    toast({
+        variant: "destructive",
+        title: "Profile Deletion",
+        description: "Profile deletion functionality is not implemented in this demo.",
+    });
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -149,6 +159,16 @@ export function EditProfileDialog({ user, onUpdate, open, onOpenChange }: EditPr
             Save changes
           </Button>
         </DialogFooter>
+        <Separator />
+        <div className="pt-2">
+            <Button variant="destructive" className="w-full justify-start" onClick={handleDeleteProfile}>
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete Profile
+            </Button>
+            <p className="text-xs text-muted-foreground mt-2 px-1">
+                Permanently delete your account and all your data. This action cannot be undone.
+            </p>
+        </div>
       </DialogContent>
     </Dialog>
   );
