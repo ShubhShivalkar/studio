@@ -8,8 +8,8 @@ export let currentUser: User = {
   id: 'user-0',
   name: 'New User',
   avatar: '',
-  dob: '',
-  gender: 'Prefer not to say',
+  dob: format(subYears(new Date(), 26), 'yyyy-MM-dd'),
+  gender: 'Female',
   journalEntries: [
     "Today was a really peaceful day. I spent the afternoon reading in the park and it felt so good to just disconnect.",
     "I tried a new recipe for dinner tonight - a spicy lentil soup. It turned out surprisingly well! I love the feeling of creating something delicious from scratch.",
