@@ -57,8 +57,10 @@ export default function CalendarPage() {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isAvailableForTribe, setIsAvailableForTribe] = useState(false);
   const { toast } = useToast();
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
+    setIsClient(true);
     setDate(new Date());
   }, []);
 
@@ -168,6 +170,10 @@ export default function CalendarPage() {
   }
 
   const isSelectedDateWeekend = date ? isWeekend(date) : false;
+
+  if (!isClient) {
+    return null; // or a skeleton loader
+  }
 
   return (
     <div className="h-full flex flex-col">
