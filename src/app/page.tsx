@@ -1,7 +1,8 @@
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { PenLine, Bot, Users, Edit } from "lucide-react";
+import { PenLine, Bot, Users, Edit, Heart } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default function Home() {
   return (
@@ -90,6 +91,32 @@ export default function Home() {
             </div>
           </div>
         </section>
+
+        <section className="w-full py-12 md:py-24 lg:py-32 bg-background">
+          <div className="container px-4 md:px-6">
+            <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
+               <div className="flex justify-center">
+                 <Avatar className="w-48 h-48 border-8 border-primary/10">
+                  <AvatarImage src="https://picsum.photos/seed/anu-ai/200/200" alt="Anu" data-ai-hint="person photo" />
+                  <AvatarFallback className="bg-primary text-primary-foreground text-6xl">
+                    <Heart />
+                  </AvatarFallback>
+                </Avatar>
+               </div>
+              <div className="space-y-4">
+                 <div className="inline-block rounded-lg bg-secondary px-3 py-1 text-sm text-secondary-foreground">Your AI Companion</div>
+                <h2 className="text-3xl font-headline font-bold tracking-tighter sm:text-4xl md:text-5xl">Meet Anu</h2>
+                <p className="text-foreground/80 md:text-lg">
+                  Anu is a gentle and caring companion with a very empathetic nature. She is understanding and curious about you. Instead of giving advice, she prefers to listen, asking thoughtful questions to help you explore your own thoughts and feelings.
+                </p>
+                <p className="text-foreground/80 md:text-lg">
+                   Her goal is to make you feel comfortable and warm, subtly learning about your personality and interests to help create a persona that truly reflects who you are.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
       </main>
       <footer className="flex flex-col gap-2 sm:flex-row py-6 w-full shrink-0 items-center px-4 md:px-6 border-t">
         <p className="text-xs text-foreground/60">&copy; 2024 Soulful Sync. All rights reserved.</p>
