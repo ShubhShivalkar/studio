@@ -9,16 +9,15 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { allUsers, currentUser, dailySummaries } from "@/lib/mock-data";
+import { allUsers, currentUser } from "@/lib/mock-data";
 import { Bot, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { User } from "@/lib/types";
 import { differenceInYears, parseISO } from "date-fns";
-import { matchUsersByPersonality, type MatchUsersByPersonalityOutput } from "@/ai/flows/match-users-by-personality";
+import type { MatchUsersByPersonalityOutput } from "@/ai/flows/match-users-by-personality";
 import { ProfileCard } from "@/components/profile-card";
-import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
   DialogContent,
@@ -44,158 +43,62 @@ type Tribe = {
 
 const getAge = (dob: string) => differenceInYears(new Date(), parseISO(dob));
 
-// Fisher-Yates shuffle algorithm
-function shuffleArray<T>(array: T[]): T[] {
-  const newArray = [...array];
-  for (let i = newArray.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
-  }
-  return newArray;
-}
+const staticTribe: Tribe = {
+    id: 'tribe-static-123',
+    meetupDate: '2025-09-06',
+    location: '70 Beans Cafe, Navi Mumbai',
+    members: [
+        {
+            userId: currentUser.id,
+            compatibilityScore: 100,
+            persona: currentUser.persona || "This is you!",
+            user: currentUser,
+            matchReason: "This is you!"
+        },
+        {
+            userId: allUsers[0].id,
+            compatibilityScore: 92,
+            persona: allUsers[0].persona!,
+            user: allUsers[0],
+            matchReason: "High compatibility based on shared interests in creative pursuits and introspective activities."
+        },
+        {
+            userId: allUsers[1].id,
+            compatibilityScore: 88,
+            persona: allUsers[1].persona!,
+            user: allUsers[1],
+            matchReason: "Strong alignment in valuing quiet moments, nature, and deep conversations."
+        },
+        {
+            userId: allUsers[2].id,
+            compatibilityScore: 85,
+            persona: allUsers[2].persona!,
+            user: allUsers[2],
+            matchReason: "You both share a love for learning new things and expressing creativity, suggesting great conversations."
+        },
+    ]
+};
 
 
 export default function TribePage() {
   const [tribeState, setTribeState] = useState<"loading" | "no-persona" | "not-interested" | "finding" | "found">("loading");
   const [tribe, setTribe] = useState<Tribe | null>(null);
-  const { toast } = useToast();
 
   useEffect(() => {
-    const runMatchingLogic = async () => {
-      if (!currentUser.persona) {
+    // Check for persona and interest first
+    if (!currentUser.persona) {
         setTribeState("no-persona");
         return;
-      }
-      if (!currentUser.interestedInMeetups) {
+    }
+    if (!currentUser.interestedInMeetups) {
         setTribeState("not-interested");
         return;
-      }
+    }
 
-      setTribeState("finding");
-
-      try {
-        // 1. Find common availability for the current month
-        const currentMonthPrefix = new Date().toISOString().substring(0, 7);
-        const userAvailableDates = new Set(
-          dailySummaries
-            .filter(d => d.isAvailable && d.date.startsWith(currentMonthPrefix))
-            .map(d => d.date)
-        );
-        
-        if (userAvailableDates.size === 0) {
-            setTribe(null);
-            setTribeState("finding"); // Keep showing finding if no availability
-            return;
-        }
-
-        const otherUsersWithAvailability = allUsers
-            .filter(u => u.id !== currentUser.id && u.interestedInMeetups)
-            .map(u => ({
-                ...u,
-                availableDates: u.availableDates?.filter(d => d.startsWith(currentMonthPrefix) && userAvailableDates.has(d)) || []
-            }))
-            .filter(u => u.availableDates.length > 0);
-
-        if (otherUsersWithAvailability.length === 0) {
-            setTribe(null);
-            setTribeState("finding");
-            return;
-        }
-
-        const bestMeetupDate = Array.from(userAvailableDates)[0]; // Simplistic: pick the first common date
-
-        // 2. Filter by Age
-        const currentUserAge = getAge(currentUser.dob);
-        const ageFilteredUsers = otherUsersWithAvailability.filter(u => {
-            const userAge = getAge(u.dob);
-            return Math.abs(currentUserAge - userAge) <= 2;
-        });
-
-        if(ageFilteredUsers.length < 3){ // Need at least 3 others for a tribe of 4
-            setTribe(null);
-            setTribeState("finding");
-            return;
-        }
-        
-        // 3. Select a random subset of users to check for compatibility
-        const shuffledUsers = shuffleArray(ageFilteredUsers);
-        const randomSubset = shuffledUsers.slice(0, 15); // Check up to 15 random users
-
-        // 4. Call AI for Persona Matching on the random subset
-        const personasToMatch = randomSubset.map(u => `${u.id}::${u.persona}`);
-        const matches = await matchUsersByPersonality({
-            userPersona: currentUser.persona,
-            otherUserPersonas: personasToMatch
-        });
-        
-        // 5. Filter by score and add user object back
-        const highScoringMatches = matches
-            .filter(m => m.compatibilityScore > 75)
-            .map(match => {
-                const user = ageFilteredUsers.find(u => u.id === match.userId)!;
-                return { 
-                    ...match, 
-                    user,
-                    matchReason: `High compatibility (${match.compatibilityScore}%) based on shared interests in creative pursuits and introspective activities.` // Example reason
-                };
-            });
-
-        // 6. Assemble Tribe with 1:1 Gender Ratio
-        let maleMatches = highScoringMatches.filter(m => m.user.gender === 'Male');
-        let femaleMatches = highScoringMatches.filter(m => m.user.gender === 'Female');
-        
-        const finalTribeMembers: MatchedUser[] = [];
-        const maxMembersPerGender = Math.min(maleMatches.length, femaleMatches.length, 5); // up to 10 members total
-
-        if (maxMembersPerGender > 0) {
-             if (currentUser.gender === 'Male') {
-                 // Need 1 less male to make room for current user
-                 if (maxMembersPerGender >= 1) {
-                    finalTribeMembers.push(...maleMatches.slice(0, maxMembersPerGender - 1));
-                    finalTribeMembers.push(...femaleMatches.slice(0, maxMembersPerGender));
-                 }
-            } else { // current user is female
-                // Need 1 less female to make room for current user
-                if (maxMembersPerGender >= 1) {
-                    finalTribeMembers.push(...maleMatches.slice(0, maxMembersPerGender));
-                    finalTribeMembers.push(...femaleMatches.slice(0, maxMembersPerGender - 1));
-                }
-            }
-
-            // Add current user to their own tribe object for display
-             const currentUserForTribe: MatchedUser = {
-                userId: currentUser.id,
-                compatibilityScore: 100,
-                persona: currentUser.persona,
-                user: currentUser,
-                matchReason: "This is you!"
-            };
-            
-            finalTribeMembers.push(currentUserForTribe);
-            finalTribeMembers.sort((a, b) => b.compatibilityScore - a.compatibilityScore);
-        }
-
-        if (finalTribeMembers.length >= 4 && finalTribeMembers.length <= 10) {
-             setTribe({
-                id: `tribe-${Date.now()}`,
-                members: finalTribeMembers,
-                meetupDate: bestMeetupDate,
-                location: "70 Beans Cafe, Navi Mumbai"
-            });
-            setTribeState("found");
-        } else {
-            setTribe(null);
-            setTribeState("finding");
-        }
-      } catch (error) {
-        console.error("Tribe matching failed:", error);
-        toast({ variant: "destructive", title: "Could not find a tribe", description: "An error occurred during matching. Please try again later." });
-        setTribeState("finding"); // Keep it on finding state on error
-      }
-    };
-
-    runMatchingLogic();
-  }, [toast]);
+    // Directly set the static tribe
+    setTribe(staticTribe);
+    setTribeState("found");
+  }, []);
 
   return (
     <Card>
@@ -260,7 +163,7 @@ export default function TribePage() {
                         <p className="text-xs text-muted-foreground">Tribe ID: {tribe.id}</p>
                     </CardContent>
                 </Card>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                     {tribe.members.map(member => (
                         <Dialog key={member.userId}>
                             <DialogTrigger asChild>
@@ -271,7 +174,7 @@ export default function TribePage() {
                             <DialogContent>
                                 <DialogHeader className="items-center">
                                     <Avatar className="w-24 h-24 mb-4 border-4 border-primary/20">
-                                        <AvatarImage src={member.user.avatar} alt={member.user.name} />
+                                        <AvatarImage src={member.user.avatar} alt={member.user.name} data-ai-hint="person photo"/>
                                         <AvatarFallback>{member.user.name.charAt(0)}</AvatarFallback>
                                     </Avatar>
                                     <DialogTitle className="font-headline">{member.user.name}</DialogTitle>
@@ -297,3 +200,5 @@ export default function TribePage() {
     </Card>
   );
 }
+
+    
