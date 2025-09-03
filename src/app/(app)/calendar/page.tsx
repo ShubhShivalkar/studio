@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { format, isSameDay, parseISO, isWeekend } from 'date-fns';
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -48,7 +48,7 @@ function CustomDayContent(props: DayContentProps) {
 }
 
 export default function CalendarPage() {
-  const [date, setDate] = useState<Date | undefined>(new Date());
+  const [date, setDate] = useState<Date | undefined>(undefined);
   const [reminders, setReminders] = useState(mockReminders);
   const [checklists, setChecklists] = useState(mockChecklists);
   const [selectedSummary, setSelectedSummary] = useState<DailySummary | null>(null);
@@ -57,6 +57,10 @@ export default function CalendarPage() {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isAvailableForTribe, setIsAvailableForTribe] = useState(false);
   const { toast } = useToast();
+
+  useEffect(() => {
+    setDate(new Date());
+  }, []);
 
   const handleDateSelect = (selectedDate: Date | undefined) => {
     setDate(selectedDate);
@@ -360,3 +364,5 @@ export default function CalendarPage() {
     </div>
   );
 }
+
+    
