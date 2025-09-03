@@ -1,4 +1,6 @@
 
+"use client";
+
 import {
   BookText,
   Calendar,
@@ -8,6 +10,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { type ReactNode } from "react";
+import { usePathname } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -21,10 +24,7 @@ const navLinks = [
 ];
 
 export default function AppLayout({ children }: { children: ReactNode }) {
-  // Mocking pathname for active link styling, since usePathname is a client hook
-  // In a real app, this part would be client-side to be dynamic.
-  // For this static generation, we default to journal.
-  const pathname = "/journal"; 
+  const pathname = usePathname(); 
 
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
