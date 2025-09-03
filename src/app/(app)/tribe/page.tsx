@@ -81,7 +81,6 @@ const staticTribe: Tribe = {
             user: allUsers[1],
             matchReason: "Strong alignment in valuing quiet moments, nature, and deep conversations.",
             rsvpStatus: 'accepted',
-            rejectionReason: undefined,
         },
         {
             userId: allUsers[2].id,
@@ -89,6 +88,15 @@ const staticTribe: Tribe = {
             persona: allUsers[2].persona!,
             user: allUsers[2],
             matchReason: "You both share a love for learning new things and expressing creativity, suggesting great conversations.",
+            rsvpStatus: 'rejected',
+            rejectionReason: "Sorry, I have a prior commitment that weekend!",
+        },
+         {
+            userId: allUsers[3].id,
+            compatibilityScore: 82,
+            persona: allUsers[3].persona!,
+            user: allUsers[3],
+            matchReason: "Your shared appreciation for literature and quiet, cozy atmospheres could lead to some wonderful conversations.",
             rsvpStatus: 'accepted',
         },
     ]
