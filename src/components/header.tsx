@@ -24,6 +24,7 @@ import {
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { usePathname } from "next/navigation";
+import { ThemeToggle } from "./theme-toggle";
 
 const navLinks = [
   { href: "/journal", label: "Journal", icon: <BookText className="h-5 w-5" /> },
@@ -75,28 +76,31 @@ export function Header() {
       <div className="w-full flex-1">
         <h1 className="font-headline text-xl md:text-2xl">{pageTitle}</h1>
       </div>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="default" size="sm" className="ml-auto gap-1">
-            <Plus className="h-4 w-4" />
-            <span>New</span>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem asChild>
-            <Link href="/reminders">
-              <AlarmClock className="mr-2 h-4 w-4" />
-              <span>Set Reminder</span>
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link href="/checklist">
-              <ListTodo className="mr-2 h-4 w-4" />
-              <span>Add Checklist</span>
-            </Link>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <div className="flex items-center gap-2">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="default" size="sm" className="ml-auto gap-1">
+              <Plus className="h-4 w-4" />
+              <span>New</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem asChild>
+              <Link href="/reminders">
+                <AlarmClock className="mr-2 h-4 w-4" />
+                <span>Set Reminder</span>
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/checklist">
+                <ListTodo className="mr-2 h-4 w-4" />
+                <span>Add Checklist</span>
+              </Link>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <ThemeToggle />
+      </div>
     </header>
   );
 }
