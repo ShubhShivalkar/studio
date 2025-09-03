@@ -239,7 +239,7 @@ export function JournalChat() {
             >
               {message.sender === "ai" && (
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src="https://picsum.photos/seed/woman-portrait/200/200" alt="Anu" data-ai-hint="woman portrait" />
+                  <AvatarImage src="https://picsum.photos/seed/indian-woman/200/200" alt="Anu" data-ai-hint="indian woman" />
                   <AvatarFallback className="bg-primary text-primary-foreground">
                     <Bot />
                   </AvatarFallback>
@@ -260,7 +260,7 @@ export function JournalChat() {
           {isLoading && (
             <div className="flex items-start gap-3 justify-start">
                <Avatar className="h-8 w-8">
-                  <AvatarImage src="https://picsum.photos/seed/woman-portrait/200/200" alt="Anu" data-ai-hint="woman portrait" />
+                  <AvatarImage src="https://picsum.photos/seed/indian-woman/200/200" alt="Anu" data-ai-hint="indian woman" />
                   <AvatarFallback className="bg-primary text-primary-foreground">
                     <Bot />
                   </AvatarFallback>
