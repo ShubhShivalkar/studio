@@ -84,6 +84,6 @@ body {
   }
   body {
     @apply text-foreground;
-    background: linear-gradient(135deg, #fff5e1, #ffe4e9, #ffdac1);
+    background: linear-gradient(135deg, #f89b29, #ff0f7b);
   }
 }
