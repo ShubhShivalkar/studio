@@ -77,23 +77,20 @@ const samplePersonas = [
   "A sophisticated and cultured art curator with a keen eye for detail. They enjoy visiting galleries, attending the opera, and hosting elegant dinner parties. They are eloquent, polished, and appreciate the finer things in life.",
 ];
 
-const generateWeekendDatesForCurrentMonth = () => {
+const generateWeekendDatesForMonth = (year: number, month: number) => {
     const dates: string[] = [];
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = today.getMonth();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const daysInMonth = new Date(year, month, 0).getDate();
 
     for (let day = 1; day <= daysInMonth; day++) {
-        const date = new Date(year, month, day);
+        const date = new Date(year, month - 1, day); // month is 1-based
         if (date.getDay() === 0 || date.getDay() === 6) { // 0 is Sunday, 6 is Saturday
-            dates.push(`${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`);
+            dates.push(`${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`);
         }
     }
     return dates;
 };
 
-const weekendDates = generateWeekendDatesForCurrentMonth();
+const weekendDates = generateWeekendDatesForMonth(2025, 9); // September 2025
 
 
 // This represents our "database" of all users in the system.
@@ -128,7 +125,8 @@ export let checklists: Checklist[] = [];
 export const dailySummaries: DailySummary[] = [];
 
 // Dynamically add availability for the current month's weekends for the currentUser
-weekendDates.forEach(dateStr => {
+const currentMonthWeekendDates = generateWeekendDatesForMonth(new Date().getFullYear(), new Date().getMonth() + 1);
+currentMonthWeekendDates.forEach(dateStr => {
     dailySummaries.push({ date: dateStr, isAvailable: true });
 });
 
