@@ -411,7 +411,10 @@ export default function TribePage() {
                                                     <AvatarFallback>{member.user.name.charAt(0)}</AvatarFallback>
                                                 </Avatar>
                                                 <DialogTitle className="font-headline">{member.user.name}</DialogTitle>
-                                                <DialogDescription>{member.user.gender}, Born {format(parseISO(member.user.dob), 'MMMM d, yyyy')} ({getAge(member.user.dob)} years old)</DialogDescription>
+                                                <DialogDescription>
+                                                    {member.user.gender}
+                                                    {member.user.dob && `, Born ${format(parseISO(member.user.dob), 'MMMM d, yyyy')} (${getAge(member.user.dob)} years old)`}
+                                                </DialogDescription>
                                                 <Badge variant={member.rsvpStatus === 'accepted' ? 'secondary' : member.rsvpStatus === 'pending' ? 'outline' : 'destructive'}>
                                                     <CheckCircle className="mr-1.5" />
                                                     Attending
