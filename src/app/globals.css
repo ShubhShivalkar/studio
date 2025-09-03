@@ -84,6 +84,6 @@ body {
   }
   body {
     @apply text-foreground;
-    background: linear-gradient(135deg, hsl(207, 100%, 25%), hsl(207, 100%, 15%));
+    background: white;
   }
 }
