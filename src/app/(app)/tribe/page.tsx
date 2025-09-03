@@ -407,9 +407,9 @@ export default function TribePage() {
 
                          <Alert className="mt-6">
                             <Info className="h-4 w-4"/>
-                            <AlertTitle>Tribe Lock-in</AlertTitle>
+                            <AlertTitle>Tribe Matching Schedule</AlertTitle>
                             <AlertDescription>
-                                Once your RSVP is set, you are part of this tribe for the week. New tribes are formed every other Monday, so you won't be able to join another one until then.
+                                Once your RSVP is set, you are part of this tribe for the week. New tribes will be formed and matched every Monday, so you won't be able to join another one until then.
                             </AlertDescription>
                         </Alert>
                     </>
