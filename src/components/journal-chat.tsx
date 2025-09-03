@@ -15,6 +15,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { format } from 'date-fns';
 
 const MAX_AI_QUESTIONS = 10;
+const STORAGE_KEY_MESSAGES = 'journalChatMessages';
+const STORAGE_KEY_DATE = 'journalChatDate';
+
 
 const initialMessage: Message = {
     id: '0',
@@ -23,12 +26,14 @@ const initialMessage: Message = {
 };
 
 export function JournalChat() {
-  const [messages, setMessages] = useState<Message[]>([initialMessage]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSummarizing, setIsSummarizing] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
+
 
   const aiQuestionCount = useMemo(() => {
     // We subtract 1 to not count the initial greeting
@@ -45,8 +50,40 @@ export function JournalChat() {
   };
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    const todayStr = format(new Date(), 'yyyy-MM-dd');
+    const storedDate = localStorage.getItem(STORAGE_KEY_DATE);
+    
+    if (storedDate === todayStr) {
+        const storedMessages = localStorage.getItem(STORAGE_KEY_MESSAGES);
+        if (storedMessages) {
+            try {
+                const parsedMessages = JSON.parse(storedMessages);
+                setMessages(parsedMessages);
+                const lastMessage = parsedMessages[parsedMessages.length - 1];
+                if (lastMessage && lastMessage.text.includes("I've saved this as your journal entry.")) {
+                    setIsComplete(true);
+                }
+            } catch (e) {
+                setMessages([initialMessage]);
+            }
+        } else {
+             setMessages([initialMessage]);
+        }
+    } else {
+        localStorage.removeItem(STORAGE_KEY_MESSAGES);
+        localStorage.removeItem(STORAGE_KEY_DATE);
+        setMessages([initialMessage]);
+    }
+    setIsInitialized(true);
+  }, []);
+
+  useEffect(() => {
+    if (isInitialized) {
+        localStorage.setItem(STORAGE_KEY_MESSAGES, JSON.stringify(messages));
+        localStorage.setItem(STORAGE_KEY_DATE, format(new Date(), 'yyyy-MM-dd'));
+        scrollToBottom();
+    }
+  }, [messages, isInitialized]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -150,6 +187,10 @@ export function JournalChat() {
         setIsLoading(false);
         setIsSummarizing(false);
     }
+  }
+
+  if (!isInitialized) {
+    return null; // or a loading spinner
   }
 
   return (
