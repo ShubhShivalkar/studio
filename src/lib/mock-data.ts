@@ -75,11 +75,10 @@ const samplePersonas = [
   "A quirky and imaginative fantasy author who lives partly in the worlds they create. They enjoy Dungeons & Dragons, collecting rare books, and believe a little bit of magic exists in everyday life. They are creative and have a unique perspective on things.",
   "A practical and resourceful homesteader who finds joy in self-sufficiency. They love gardening, canning, and learning traditional skills. They are down-to-earth, hardworking, and deeply connected to the cycles of nature.",
   "A sophisticated and cultured art curator with a keen eye for detail. They enjoy visiting galleries, attending the opera, and hosting elegant dinner parties. They are eloquent, polished, and appreciate the finer things in life.",
-  "A playful and innovative video game developer who sees life as a series of interesting puzzles. They are a team player who enjoys collaborative projects, LAN parties, and experimenting with new game mechanics. They are fun-loving and endlessly creative."
 ];
 
 // This represents our "database" of all users in the system.
-export const allUsers: User[] = Array.from({ length: 25 }, (_, i) => {
+export const allUsers: User[] = Array.from({ length: 24 }, (_, i) => {
     const gender = i % 2 === 0 ? 'Male' : 'Female';
     // Generates birth years for ages 24-26 in 2024 (1998, 1999, 2000)
     const year = 1998 + (i % 3); 
@@ -117,3 +116,21 @@ export const dailySummaries: DailySummary[] = [
     { date: '2024-07-27', isAvailable: true },
     { date: '2024-07-28', isAvailable: true },
 ];
+
+// Dynamically add availability for the current month's weekends for the currentUser
+const today = new Date();
+const year = today.getFullYear();
+const month = today.getMonth();
+const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+for (let day = 1; day <= daysInMonth; day++) {
+    const date = new Date(year, month, day);
+    const dayOfWeek = date.getDay(); // 0 = Sunday, 6 = Saturday
+    if (dayOfWeek === 0 || dayOfWeek === 6) {
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        // Add only if it doesn't already exist to avoid duplicates
+        if (!dailySummaries.some(d => d.date === dateStr)) {
+            dailySummaries.push({ date: dateStr, isAvailable: true });
+        }
+    }
+}
