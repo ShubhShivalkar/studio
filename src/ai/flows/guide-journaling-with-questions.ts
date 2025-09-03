@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A guided journaling AI agent that provides conversational prompts and questions.
@@ -73,7 +74,19 @@ const guideJournalingWithQuestionsFlow = ai.defineFlow(
     outputSchema: GuideJournalingWithQuestionsOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
-    return output!;
+    try {
+      const {output} = await prompt(input);
+      return output!;
+    } catch (error) {
+      // Check if the error is a 503 and retry once.
+      if (error instanceof Error && error.message.includes('503')) {
+        console.warn('AI model is overloaded, retrying in 2 seconds...');
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        const {output} = await prompt(input);
+        return output!;
+      }
+      // If it's another type of error, re-throw it.
+      throw error;
+    }
   }
 );
