@@ -98,7 +98,7 @@ const guideJournalingWithQuestionsFlow = ai.defineFlow(
       }
       // For other types of errors, we can still throw them.
       console.error('An unexpected error occurred in the journaling flow:', error);
-      throw error;
+      return { question: "I'm sorry, an unexpected error occurred. Let's try again in a bit." };
     }
   }
 );

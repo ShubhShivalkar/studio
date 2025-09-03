@@ -57,11 +57,13 @@ const summarizeJournalConversationFlow = ai.defineFlow(
           return output!;
         } catch (retryError) {
           console.error('AI model retry failed:', retryError);
-          throw new Error("The AI model is currently busy. Please try again in a few moments.");
+          // Return a summary indicating failure.
+          return { summary: "I'm sorry, I had trouble summarizing our conversation. Please try again later.", mood: '😐' };
         }
       }
       console.error('An unexpected error occurred in the summary flow:', error);
-      throw error;
+      // Return a summary indicating failure.
+      return { summary: "An unexpected error occurred while creating your summary.", mood: '😐' };
     }
   }
 );
