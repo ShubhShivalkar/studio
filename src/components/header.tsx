@@ -36,6 +36,7 @@ const navLinks = [
 export function Header() {
   const pathname = usePathname();
   const pageTitle = navLinks.find(link => link.href === pathname)?.label || "Soulful Sync";
+  const showNewButton = pathname === '/calendar';
 
   return (
     <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
@@ -75,28 +76,30 @@ export function Header() {
         <h1 className="font-headline text-xl md:text-2xl">{pageTitle}</h1>
       </div>
       <div className="flex items-center gap-2">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="default" size="sm" className="ml-auto gap-1">
-              <Plus className="h-4 w-4" />
-              <span>New</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem asChild>
-              <Link href="/reminders">
-                <AlarmClock className="mr-2 h-4 w-4" />
-                <span>Set Reminder</span>
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link href="/checklist">
-                <ListTodo className="mr-2 h-4 w-4" />
-                <span>Add Checklist</span>
-              </Link>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {showNewButton && (
+            <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="default" size="sm" className="ml-auto gap-1">
+                <Plus className="h-4 w-4" />
+                <span>New</span>
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild>
+                <Link href="/reminders">
+                    <AlarmClock className="mr-2 h-4 w-4" />
+                    <span>Set Reminder</span>
+                </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                <Link href="/checklist">
+                    <ListTodo className="mr-2 h-4 w-4" />
+                    <span>Add Checklist</span>
+                </Link>
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+            </DropdownMenu>
+        )}
         <ThemeToggle />
       </div>
     </header>

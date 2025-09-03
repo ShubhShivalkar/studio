@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI agent that summarizes a journal conversation.
@@ -44,7 +45,23 @@ const summarizeJournalConversationFlow = ai.defineFlow(
     outputSchema: SummarizeJournalConversationOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
-    return output!;
+    try {
+      const {output} = await prompt(input);
+      return output!;
+    } catch (error) {
+      if (error instanceof Error && (error.message.includes('429') || error.message.includes('503'))) {
+        console.warn('AI model is overloaded or rate-limited, retrying in 2 seconds...');
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        try {
+          const {output} = await prompt(input);
+          return output!;
+        } catch (retryError) {
+          console.error('AI model retry failed:', retryError);
+          throw new Error("The AI model is currently busy. Please try again in a few moments.");
+        }
+      }
+      console.error('An unexpected error occurred in the summary flow:', error);
+      throw error;
+    }
   }
 );

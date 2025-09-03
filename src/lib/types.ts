@@ -13,6 +13,8 @@ export type User = {
   interestedInMeetups?: boolean;
   availableDates?: string[]; // YYYY-MM-DD
   personaLastGenerated?: string; // ISO date string
+  hobbies?: string[];
+  interests?: string[];
 };
 
 export type Connection = {
@@ -55,4 +57,11 @@ export type Checklist = {
   title: string;
   date: string; // YYYY-MM-DD
   items: ChecklistItem[];
+};
+
+export type PastTribe = {
+    id: string;
+    meetupDate: string; // YYYY-MM-DD
+    location: string;
+    attendance: 'attended' | 'not attended';
 };

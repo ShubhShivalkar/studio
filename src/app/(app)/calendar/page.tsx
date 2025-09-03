@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { format, isSameDay, parseISO, isWeekend } from 'date-fns';
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { dailySummaries, reminders as mockReminders, checklists as mockChecklists } from "@/lib/mock-data";
 import type { DailySummary, Reminder, Checklist } from '@/lib/types';
@@ -203,7 +203,10 @@ export default function CalendarPage() {
   return (
     <div className="h-full flex flex-col">
       <Card className="flex-1 flex flex-col">
-        <CardContent className="flex-1 flex flex-col p-2 md:p-6">
+         <CardHeader>
+            <CardTitle className="font-headline">Your Calendar</CardTitle>
+        </CardHeader>
+        <CardContent className="flex-1 flex flex-col p-2 md:p-6 pt-0">
           <Calendar
             mode="single"
             selected={date}

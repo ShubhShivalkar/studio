@@ -1,9 +1,10 @@
+
 'use server';
 /**
  * @fileOverview Matches users based on the compatibility of their personality traits derived from journal entries.
  *
  * - matchUsersByPersonality - A function that matches users based on personality traits.
- * - MatchUsersByPersonalityInput - The input type for the matchUsersByPersonality function.
+ * - MatchUsersByPersonalityInput - The input type for the matchUsersBypersonality function.
  * - MatchUsersByPersonalityOutput - The return type for the matchUsersByPersonality function.
  */
 
@@ -71,7 +72,25 @@ const matchUsersByPersonalityFlow = ai.defineFlow(
     outputSchema: MatchUsersByPersonalityOutputSchema,
   },
   async input => {
-    const {output} = await matchUsersByPersonalityPrompt(input);
-    return output!;
+     try {
+      const {output} = await matchUsersByPersonalityPrompt(input);
+      return output!;
+    } catch (error) {
+      if (error instanceof Error && (error.message.includes('429') || error.message.includes('503'))) {
+        console.warn('AI model is overloaded or rate-limited, retrying in 2 seconds...');
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        try {
+          const {output} = await matchUsersByPersonalityPrompt(input);
+          return output!;
+        } catch (retryError) {
+          console.error('AI model retry failed:', retryError);
+          // Return an empty array instead of throwing an error to allow the frontend to handle it gracefully.
+          return [];
+        }
+      }
+      console.error('An unexpected error occurred in the matching flow:', error);
+      // For other unexpected errors, also return an empty array.
+      return [];
+    }
   }
 );

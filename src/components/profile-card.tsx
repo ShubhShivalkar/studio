@@ -1,6 +1,6 @@
+
 "use client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -9,61 +9,93 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
 import type { User } from "@/lib/types";
-import { Ban, Heart } from "lucide-react";
+import { Badge } from "./ui/badge";
+import { differenceInYears, parseISO, format } from 'date-fns';
+import { CheckCircle, XCircle, HelpCircle } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Button } from "./ui/button";
 
 interface ProfileCardProps {
   user: User;
   compatibilityScore?: number;
+  rsvpStatus?: 'accepted' | 'rejected' | 'pending';
 }
 
-export function ProfileCard({ user, compatibilityScore }: ProfileCardProps) {
-  const { toast } = useToast();
+const getAge = (dob: string) => differenceInYears(new Date(), parseISO(dob));
 
-  const handleConnect = () => {
-    toast({
-      title: "Connection Request Sent",
-      description: `Your request to connect with ${user.name} has been sent.`,
-    });
+export function ProfileCard({ user, compatibilityScore, rsvpStatus }: ProfileCardProps) {
+  const getRsvpBadge = () => {
+    if (user.id === 'user-0') {
+        return <Button variant="secondary" size="sm" className="w-full">This is you!</Button>;
+    }
+    
+    switch (rsvpStatus) {
+      case 'accepted':
+      case 'pending':
+        return (
+          <Button variant="secondary" size="sm" className="w-full">
+            <CheckCircle className="mr-1.5" />
+            Attending
+          </Button>
+        );
+      case 'rejected':
+        return (
+          <Button variant="destructive" size="sm" className="w-full">
+            <XCircle className="mr-1.5" />
+            Not Attending
+          </Button>
+        );
+      default:
+        return null;
+    }
   };
 
-  const handleBlock = () => {
-    toast({
-        variant: "destructive",
-        title: "User Blocked",
-        description: `${user.name} has been blocked and will no longer appear in your discover feed.`,
-    });
-  }
 
   return (
-    <Card className="flex flex-col">
-      <CardHeader className="items-center text-center">
+    <Card className={cn("flex flex-col h-full hover:bg-muted/50 transition-colors", rsvpStatus === 'rejected' && "opacity-60")}>
+      <CardHeader className="items-center text-center pb-2">
         <Avatar className="w-24 h-24 mb-4 border-4 border-primary/20">
           <AvatarImage src={user.avatar} alt={user.name} data-ai-hint="person photo" />
           <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
         </Avatar>
         <CardTitle className="font-headline">{user.name}</CardTitle>
+        <CardDescription>
+            {user.gender}, {getAge(user.dob)}
+        </CardDescription>
         {compatibilityScore && (
-            <CardDescription className="font-bold text-primary">
+            <Badge variant="outline" className="mt-2 text-primary border-primary/50 bg-primary/10">
                 {compatibilityScore}% Match
-            </CardDescription>
+            </Badge>
         )}
       </CardHeader>
-      <CardContent className="flex-1">
-        <p className="text-sm text-muted-foreground text-center italic">
-          "{user.persona || 'Persona not yet generated.'}"
-        </p>
+      <CardContent className="flex-1 text-center space-y-3 pt-2">
+         {user.hobbies && user.hobbies.length > 0 && (
+            <div>
+                <h4 className="font-semibold text-xs text-muted-foreground uppercase tracking-wider mb-1">Hobbies</h4>
+                <div className="flex flex-wrap gap-1 justify-center">
+                    {user.hobbies.slice(0, 3).map((hobby, index) => (
+                        <Badge key={index} variant="outline" className="text-xs">{hobby}</Badge>
+                    ))}
+                </div>
+            </div>
+        )}
+        {user.interests && user.interests.length > 0 && (
+            <div>
+                <h4 className="font-semibold text-xs text-muted-foreground uppercase tracking-wider mb-1">Interests</h4>
+                <div className="flex flex-wrap gap-1 justify-center">
+                    {user.interests.slice(0, 2).map((interest, index) => (
+                        <Badge key={index} variant="outline" className="text-xs">{interest}</Badge>
+                    ))}
+                </div>
+            </div>
+        )}
       </CardContent>
-      <CardFooter className="flex justify-center gap-2">
-        <Button variant="outline" size="icon" onClick={handleBlock}>
-          <Ban className="h-4 w-4" />
-          <span className="sr-only">Block</span>
-        </Button>
-        <Button onClick={handleConnect}>
-          <Heart className="mr-2 h-4 w-4" /> Connect
-        </Button>
+      <CardFooter className="flex justify-center gap-2 pt-4 px-4">
+        {getRsvpBadge()}
       </CardFooter>
     </Card>
   );
 }
+
+    

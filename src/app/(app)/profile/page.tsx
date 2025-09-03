@@ -19,9 +19,7 @@ import { Label } from "@/components/ui/label";
 import { differenceInDays, parseISO } from 'date-fns';
 
 export default function ProfilePage() {
-  const [persona, setPersona] = useState<GeneratePersonalityPersonaOutput | null>(
-    currentUser.persona ? { persona: currentUser.persona, hobbies: [], interests: [], personalityTraits: [] } : null
-  );
+  const [persona, setPersona] = useState<GeneratePersonalityPersonaOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isInterested, setIsInterested] = useState(currentUser.interestedInMeetups || false);
   const [canRegenerate, setCanRegenerate] = useState(true);
@@ -32,9 +30,13 @@ export default function ProfilePage() {
   const journalEntriesCount = currentUser.journalEntries?.length || 0;
   const progress = Math.min((journalEntriesCount / 15) * 100, 100);
   const canGenerate = journalEntriesCount >= 15;
-  const streakDays = 15; // As per mock data assumption
+  const streakDays = currentUser.journalEntries ? Math.min(currentUser.journalEntries.length, 15) : 0; // Simplified streak
 
   useEffect(() => {
+    if (currentUser.persona) {
+        setPersona({ persona: currentUser.persona, hobbies: [], interests: [], personalityTraits: [] });
+    }
+
     if (currentUser.personaLastGenerated) {
         const lastGeneratedDate = parseISO(currentUser.personaLastGenerated);
         const daysSinceLastGeneration = differenceInDays(new Date(), lastGeneratedDate);
@@ -46,7 +48,7 @@ export default function ProfilePage() {
 
 
   const handleGeneratePersona = async () => {
-    if (isLoading || (persona && !canRegenerate)) return;
+    if (isLoading || !canRegenerate) return;
 
     setIsLoading(true);
     setPersona(null);
@@ -64,6 +66,7 @@ export default function ProfilePage() {
       const entriesText = currentUser.journalEntries.join("\n\n");
       const result = await generatePersonalityPersona({ journalEntries: entriesText });
       setPersona(result);
+      
       // Also save to our mock currentUser
       currentUser.persona = result.persona;
       currentUser.personaLastGenerated = new Date().toISOString();
@@ -103,7 +106,7 @@ export default function ProfilePage() {
               <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
             </Avatar>
             <CardTitle className="font-headline">{currentUser.name}</CardTitle>
-            <CardDescription>{currentUser.gender}, Born {currentUser.dob}</CardDescription>
+            <CardDescription>{currentUser.gender}{currentUser.dob && `, Born ${currentUser.dob}`}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
             <Button className="w-full" variant="outline">Edit Profile</Button>
@@ -151,7 +154,7 @@ export default function ProfilePage() {
                         Based on your journal entries, this is how Anu understands your personality.
                     </CardDescription>
                 </div>
-                <Button onClick={handleGeneratePersona} disabled={isLoading || !canGenerate || (!!persona && !canRegenerate)}>
+                <Button onClick={handleGeneratePersona} disabled={isLoading || !canGenerate || !canRegenerate}>
                     {isLoading ? "Generating..." : persona ? "Regenerate Persona" : "Generate Persona"}
                 </Button>
             </div>
@@ -207,7 +210,7 @@ export default function ProfilePage() {
                 </div>
             ) : (
                 <div className="text-center text-muted-foreground py-8 flex flex-col items-center justify-center gap-4">
-                    { !canGenerate && (
+                    { !canGenerate ? (
                         <>
                             <p className="text-sm">You need at least 15 journal entries to generate a persona.</p>
                             <div className="w-full max-w-sm space-y-2">
@@ -215,13 +218,15 @@ export default function ProfilePage() {
                                 <p className="text-xs">{journalEntriesCount} of 15 entries completed.</p>
                             </div>
                         </>
+                    ) : (
+                        <p>Click "Generate Persona" to discover your personality insights.</p>
                     )}
                 </div>
             )}
           </CardContent>
         </Card>
 
-        {canGenerate && (
+        {journalEntriesCount > 0 && (
              <Card>
                 <CardHeader>
                     <CardTitle className="font-headline">Journal Stats</CardTitle>
