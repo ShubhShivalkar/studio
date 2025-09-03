@@ -2,14 +2,19 @@
 "use client";
 
 import { guideJournalingWithQuestions } from "@/ai/flows/guide-journaling-with-questions";
+import { summarizeJournalConversation } from "@/ai/flows/summarize-journal-conversation";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import type { Message } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { SendHorizonal } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { dailySummaries, currentUser } from "@/lib/mock-data";
+import { Bot, SendHorizonal, CheckCircle } from "lucide-react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { format } from 'date-fns';
+
+const MAX_AI_QUESTIONS = 10;
 
 const initialMessage: Message = {
     id: '0',
@@ -21,7 +26,14 @@ export function JournalChat() {
   const [messages, setMessages] = useState<Message[]>([initialMessage]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isSummarizing, setIsSummarizing] = useState(false);
+  const [isComplete, setIsComplete] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+
+  const aiQuestionCount = useMemo(() => {
+    // We subtract 1 to not count the initial greeting
+    return messages.filter(m => m.sender === 'ai').length - 1;
+  }, [messages]);
 
   const scrollToBottom = () => {
     if (scrollAreaRef.current) {
@@ -38,7 +50,7 @@ export function JournalChat() {
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || isLoading) return;
+    if (!input.trim() || isLoading || isComplete) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -46,12 +58,21 @@ export function JournalChat() {
       text: input,
     };
 
-    setMessages((prev) => [...prev, userMessage]);
+    const newMessages = [...messages, userMessage];
+    setMessages(newMessages);
     setInput("");
-    setIsLoading(true);
+    
+    if (aiQuestionCount >= MAX_AI_QUESTIONS -1) {
+        handleSummarize(newMessages);
+    } else {
+        getNewQuestion(input);
+    }
+  };
 
-    try {
-      const { question } = await guideJournalingWithQuestions({ topic: input });
+  const getNewQuestion = async (topic: string) => {
+     setIsLoading(true);
+     try {
+      const { question } = await guideJournalingWithQuestions({ topic });
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
         sender: "ai",
@@ -69,7 +90,67 @@ export function JournalChat() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }
+
+  const handleSummarize = async (finalMessages: Message[]) => {
+    setIsLoading(true);
+    setIsSummarizing(true);
+    
+    const conversationHistory = finalMessages
+        .map(m => `${m.sender === 'ai' ? 'Anu' : 'User'}: ${m.text}`)
+        .join('\n');
+
+    try {
+        const { summary, mood } = await summarizeJournalConversation({ conversationHistory });
+        
+        const summaryMessage: Message = {
+            id: (Date.now() + 1).toString(),
+            sender: 'ai',
+            text: `Here is a summary of your thoughts today:\n\n"${summary}"\n\nI've saved this as your journal entry.`
+        };
+        setMessages(prev => [...prev, summaryMessage]);
+
+        // Save to mock data
+        const today = new Date();
+        const todayStr = format(today, 'yyyy-MM-dd');
+        
+        // Update or create today's summary
+        const existingSummaryIndex = dailySummaries.findIndex(d => d.date === todayStr);
+        if (existingSummaryIndex > -1) {
+            dailySummaries[existingSummaryIndex] = {
+                ...dailySummaries[existingSummaryIndex],
+                summary,
+                mood
+            };
+        } else {
+            dailySummaries.push({
+                date: todayStr,
+                summary,
+                mood,
+                hobbies: [],
+                isAvailable: false,
+                hasMeetup: false
+            });
+        }
+        
+        // Add to user's journal entries
+        currentUser.journalEntries.push(summary);
+
+        setIsComplete(true);
+
+    } catch (error) {
+        console.error("Failed to summarize conversation:", error);
+        const errorMessage: Message = {
+            id: (Date.now() + 1).toString(),
+            sender: "ai",
+            text: "I'm sorry, I had trouble summarizing our conversation. Please try again later.",
+        };
+        setMessages((prev) => [...prev, errorMessage]);
+    } finally {
+        setIsLoading(false);
+        setIsSummarizing(false);
+    }
+  }
 
   return (
     <div className="flex flex-col h-full max-h-[calc(100vh-12rem)]">
@@ -87,13 +168,13 @@ export function JournalChat() {
                 <Avatar className="h-8 w-8">
                   <AvatarImage src="https://picsum.photos/seed/anu-ai/200/200" alt="Anu" data-ai-hint="person photo" />
                   <AvatarFallback className="bg-primary text-primary-foreground">
-                    Anu
+                    <Bot />
                   </AvatarFallback>
                 </Avatar>
               )}
               <div
                 className={cn(
-                  "max-w-xs md:max-w-md lg:max-w-2xl rounded-lg p-3 text-sm",
+                  "max-w-xs md:max-w-md lg:max-w-2xl rounded-lg p-3 text-sm whitespace-pre-wrap",
                   message.sender === "user"
                     ? "bg-primary text-primary-foreground"
                     : "bg-card border"
@@ -108,12 +189,12 @@ export function JournalChat() {
                <Avatar className="h-8 w-8">
                   <AvatarImage src="https://picsum.photos/seed/anu-ai/200/200" alt="Anu" data-ai-hint="person photo" />
                   <AvatarFallback className="bg-primary text-primary-foreground">
-                    Anu
+                    <Bot />
                   </AvatarFallback>
                 </Avatar>
               <div className="bg-card border rounded-lg p-3">
                 <div className="flex items-center space-x-2">
-                  <span className="text-sm">Thinking...</span>
+                  <span className="text-sm">{isSummarizing ? 'Creating summary...' : 'Thinking...'}</span>
                    <div className="h-2 w-2 bg-muted-foreground rounded-full animate-pulse [animation-delay:-0.3s]"></div>
                     <div className="h-2 w-2 bg-muted-foreground rounded-full animate-pulse [animation-delay:-0.15s]"></div>
                     <div className="h-2 w-2 bg-muted-foreground rounded-full animate-pulse"></div>
@@ -124,27 +205,34 @@ export function JournalChat() {
         </div>
       </ScrollArea>
       <div className="p-4 bg-background border-t">
-        <form onSubmit={handleSendMessage} className="relative">
-          <Textarea
-            placeholder="Type your thoughts here..."
-            className="pr-20 min-h-[50px] resize-none"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    handleSendMessage(e);
-                }
-            }}
-          />
-          <Button
-            type="submit"
-            size="icon"
-            className="absolute top-1/2 right-3 -translate-y-1/2"
-            disabled={isLoading || !input.trim()}
-          >
-            <SendHorizonal className="h-5 w-5" />
-          </Button>
-        </form>
+        {isComplete ? (
+            <div className="flex items-center justify-center text-center p-4 bg-secondary rounded-lg">
+                <CheckCircle className="h-5 w-5 mr-2 text-green-500" />
+                <p className="text-sm text-muted-foreground">Journal entry for today is complete.</p>
+            </div>
+        ) : (
+            <form onSubmit={handleSendMessage} className="relative">
+            <Textarea
+                placeholder="Type your thoughts here..."
+                className="pr-20 min-h-[50px] resize-none"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        handleSendMessage(e);
+                    }
+                }}
+            />
+            <Button
+                type="submit"
+                size="icon"
+                className="absolute top-1/2 right-3 -translate-y-1/2"
+                disabled={isLoading || !input.trim()}
+            >
+                <SendHorizonal className="h-5 w-5" />
+            </Button>
+            </form>
+        )}
       </div>
     </div>
   );
