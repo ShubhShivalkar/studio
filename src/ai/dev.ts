@@ -1,1 +1,6 @@
-// Flows will be imported for their side effects in this file.
+import { config } from 'dotenv';
+config();
+
+import '@/ai/flows/generate-personality-persona.ts';
+import '@/ai/flows/guide-journaling-with-questions.ts';
+import '@/ai/flows/match-users-by-personality.ts';
