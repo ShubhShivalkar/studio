@@ -84,14 +84,20 @@ const guideJournalingWithQuestionsFlow = ai.defineFlow(
       const {output} = await prompt(input);
       return output!;
     } catch (error) {
-      // Check if the error is a 503 and retry once.
       if (error instanceof Error && error.message.includes('503')) {
         console.warn('AI model is overloaded, retrying in 2 seconds...');
         await new Promise(resolve => setTimeout(resolve, 2000));
-        const {output} = await prompt(input);
-        return output!;
+        try {
+          const {output} = await prompt(input);
+          return output!;
+        } catch (retryError) {
+           console.error('AI model retry failed:', retryError);
+           // After a failed retry, return a user-friendly error message.
+           return { question: "I'm having a little trouble connecting right now. Let's pause for a moment and try again soon." };
+        }
       }
-      // If it's another type of error, re-throw it.
+      // For other types of errors, we can still throw them.
+      console.error('An unexpected error occurred in the journaling flow:', error);
       throw error;
     }
   }
