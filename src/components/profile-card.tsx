@@ -14,6 +14,7 @@ import { Badge } from "./ui/badge";
 import { differenceInYears, parseISO, format } from 'date-fns';
 import { CheckCircle, XCircle, HelpCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "./ui/button";
 
 interface ProfileCardProps {
   user: User;
@@ -26,24 +27,24 @@ const getAge = (dob: string) => differenceInYears(new Date(), parseISO(dob));
 export function ProfileCard({ user, compatibilityScore, rsvpStatus }: ProfileCardProps) {
   const getRsvpBadge = () => {
     if (user.id === 'user-0') {
-        return <Badge>This is you!</Badge>;
+        return <Button variant="secondary" size="sm" className="w-full">This is you!</Button>;
     }
     
     switch (rsvpStatus) {
       case 'accepted':
       case 'pending':
         return (
-          <Badge variant="secondary">
+          <Button variant="secondary" size="sm" className="w-full">
             <CheckCircle className="mr-1.5" />
             Attending
-          </Badge>
+          </Button>
         );
       case 'rejected':
         return (
-          <Badge variant="destructive">
+          <Button variant="destructive" size="sm" className="w-full">
             <XCircle className="mr-1.5" />
             Not Attending
-          </Badge>
+          </Button>
         );
       default:
         return null;
@@ -63,7 +64,7 @@ export function ProfileCard({ user, compatibilityScore, rsvpStatus }: ProfileCar
             {user.gender}, {getAge(user.dob)}
         </CardDescription>
         {compatibilityScore && (
-            <Badge variant="secondary" className="mt-2">
+            <Badge variant="outline" className="mt-2 text-primary border-primary/50 bg-primary/10">
                 {compatibilityScore}% Match
             </Badge>
         )}
@@ -90,9 +91,11 @@ export function ProfileCard({ user, compatibilityScore, rsvpStatus }: ProfileCar
             </div>
         )}
       </CardContent>
-      <CardFooter className="flex justify-center gap-2 pt-4">
+      <CardFooter className="flex justify-center gap-2 pt-4 px-4">
         {getRsvpBadge()}
       </CardFooter>
     </Card>
   );
 }
+
+    

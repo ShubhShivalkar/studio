@@ -260,12 +260,12 @@ export default function TribePage() {
                     </div>
                  ) : (
                     <>
-                        <Card className="mb-6 bg-secondary">
+                        <Card className="mb-6 bg-secondary text-secondary-foreground">
                             <CardHeader>
                                 <CardTitle className="font-headline text-center">
                                     {isTribeComplete ? "Your Tribe is Ready! 🎉" : "Partial Tribe Formed ⏳"}
                                 </CardTitle>
-                                <CardDescription className="text-center">
+                                <CardDescription className="text-center text-secondary-foreground/80">
                                     {isTribeComplete ? "You've been invited to a meetup." : `Waiting for at least one more member to join.`}
                                 </CardDescription>
                             </CardHeader>
@@ -275,14 +275,14 @@ export default function TribePage() {
                                         <p><strong>Meetup Date:</strong> {new Date(tribe.meetupDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
                                         <p><strong>Meetup Time:</strong> {tribe.meetupTime}</p>
                                         <p><strong>Location:</strong> {tribe.location}</p>
-                                        <div className="text-sm text-muted-foreground pt-2">
+                                        <div className="text-sm text-secondary-foreground/80 pt-2">
                                             Please free your schedule at this time for at least 2 hours.
                                             <br />
-                                            Show this Tribe ID at the cafe: <Badge variant="outline">{tribe.id}</Badge>
+                                            Show this Tribe ID at the cafe: <Badge variant="outline" className="bg-background/20 border-background/50">{tribe.id}</Badge>
                                         </div>
                                     </>
                                 ) : (
-                                    <p className="text-sm text-muted-foreground">A location and Tribe ID will be assigned once the tribe is complete.</p>
+                                    <p className="text-sm text-secondary-foreground/80">A location and Tribe ID will be assigned once the tribe is complete.</p>
                                 )}
                             </CardContent>
                             <CardFooter className="flex flex-col sm:flex-row items-center justify-center gap-2 pt-4">
@@ -292,7 +292,8 @@ export default function TribePage() {
                                      size="sm" 
                                      onClick={() => handleRsvp('accepted')} 
                                      disabled={isRsvpLocked}
-                                     variant={currentUserRsvp === 'accepted' || (currentUserRsvp === 'pending' && !isRsvpLocked) ? 'default' : 'outline'}
+                                     variant={currentUserRsvp === 'accepted' ? 'default' : 'outline'}
+                                     className="bg-white text-primary hover:bg-white/90 border-white"
                                     >
                                        <CheckCircle className="mr-2" /> Accept
                                    </Button>
@@ -301,6 +302,7 @@ export default function TribePage() {
                                            <Button 
                                                size="sm" 
                                                variant={currentUserRsvp === 'rejected' ? 'destructive' : 'outline'}
+                                               className="bg-transparent text-white hover:bg-white/10 border-white"
                                                onClick={() => handleRsvp('rejected')}
                                                disabled={isRsvpLocked}
                                            >
@@ -449,3 +451,5 @@ export default function TribePage() {
     </Card>
   );
 }
+
+    
