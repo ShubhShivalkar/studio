@@ -97,7 +97,7 @@ export default function Home() {
             <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
                <div className="flex justify-center">
                  <Avatar className="w-48 h-48 border-8 border-primary/10">
-                  <AvatarImage src="https://picsum.photos/seed/anu-ai/200/200" alt="Anu" data-ai-hint="person photo" />
+                  <AvatarImage src="https://picsum.photos/seed/anu-ai/200/200" alt="Anu" data-ai-hint="woman portrait" />
                   <AvatarFallback className="bg-primary text-primary-foreground text-6xl">
                     <Heart />
                   </AvatarFallback>
