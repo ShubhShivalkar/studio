@@ -8,9 +8,10 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from "@/components/ui/card";
 import { allUsers, currentUser } from "@/lib/mock-data";
-import { Bot, Users, ShieldAlert } from "lucide-react";
+import { Bot, Users, ShieldAlert, CheckCircle, XCircle, MessageSquare, CalendarCheck, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -26,14 +27,19 @@ import {
   DialogDescription,
   DialogTrigger,
   DialogFooter,
+  DialogClose
 } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { Textarea } from "@/components/ui/textarea";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 type MatchedUser = MatchUsersByPersonalityOutput[0] & {
   user: User;
   matchReason: string;
+  rsvpStatus: 'accepted' | 'rejected';
+  rejectionReason?: string;
 };
 
 type Tribe = {
@@ -55,28 +61,33 @@ const staticTribe: Tribe = {
             compatibilityScore: 100,
             persona: currentUser.persona || "This is you!",
             user: currentUser,
-            matchReason: "This is you!"
+            matchReason: "This is you!",
+            rsvpStatus: 'accepted',
         },
         {
             userId: allUsers[0].id,
             compatibilityScore: 92,
             persona: allUsers[0].persona!,
             user: allUsers[0],
-            matchReason: "High compatibility based on shared interests in creative pursuits and introspective activities."
+            matchReason: "High compatibility based on shared interests in creative pursuits and introspective activities.",
+            rsvpStatus: 'accepted',
         },
         {
             userId: allUsers[1].id,
             compatibilityScore: 88,
             persona: allUsers[1].persona!,
             user: allUsers[1],
-            matchReason: "Strong alignment in valuing quiet moments, nature, and deep conversations."
+            matchReason: "Strong alignment in valuing quiet moments, nature, and deep conversations.",
+            rsvpStatus: 'rejected',
+            rejectionReason: "Sorry, I have a family event that weekend I can't miss. Hope to catch the next one!",
         },
         {
             userId: allUsers[2].id,
             compatibilityScore: 85,
             persona: allUsers[2].persona!,
             user: allUsers[2],
-            matchReason: "You both share a love for learning new things and expressing creativity, suggesting great conversations."
+            matchReason: "You both share a love for learning new things and expressing creativity, suggesting great conversations.",
+            rsvpStatus: 'accepted',
         },
     ]
 };
@@ -86,6 +97,8 @@ export default function TribePage() {
   const [tribeState, setTribeState] = useState<"loading" | "no-persona" | "not-interested" | "finding" | "found">("loading");
   const [tribe, setTribe] = useState<Tribe | null>(null);
   const { toast } = useToast();
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [isDeclineDialogOpen, setIsDeclineDialogOpen] = useState(false);
 
   useEffect(() => {
     // Check for persona and interest first
@@ -102,6 +115,36 @@ export default function TribePage() {
     setTribe(staticTribe);
     setTribeState("found");
   }, []);
+  
+  const handleRsvp = (status: 'accepted' | 'rejected') => {
+    if (!tribe) return;
+
+    if (status === 'rejected') {
+        setIsDeclineDialogOpen(true);
+        return;
+    }
+    
+    // Handle 'accepted'
+    const updatedMembers = tribe.members.map(member => 
+        member.userId === currentUser.id ? { ...member, rsvpStatus: 'accepted', rejectionReason: undefined } : member
+    );
+    setTribe({ ...tribe, members: updatedMembers });
+    toast({ title: "RSVP Confirmed!", description: "You've accepted the invitation. See you there!" });
+  }
+
+  const handleDeclineSubmit = () => {
+    if (!tribe || !rejectionReason.trim()) {
+      toast({ variant: "destructive", title: "Reason Required", description: "Please provide a reason for declining." });
+      return;
+    }
+    const updatedMembers = tribe.members.map(member => 
+        member.userId === currentUser.id ? { ...member, rsvpStatus: 'rejected', rejectionReason: rejectionReason } : member
+    );
+    setTribe({ ...tribe, members: updatedMembers });
+    toast({ title: "RSVP Updated", description: "You have declined the invitation." });
+    setRejectionReason("");
+    setIsDeclineDialogOpen(false);
+  }
 
   const handleReport = (userName: string) => {
     toast({
@@ -110,6 +153,8 @@ export default function TribePage() {
         description: `Thank you for your feedback. We have received your report for ${userName} and will review it.`
     })
   }
+  
+  const currentUserRsvp = tribe?.members.find(m => m.userId === currentUser.id)?.rsvpStatus;
 
   return (
     <Card>
@@ -167,19 +212,63 @@ export default function TribePage() {
                  <Card className="mb-6 bg-secondary">
                     <CardHeader>
                         <CardTitle className="font-headline text-center">Your Tribe is Ready!</CardTitle>
+                        <CardDescription className="text-center">You've been invited to a meetup.</CardDescription>
                     </CardHeader>
                     <CardContent className="text-center space-y-2">
                         <p><strong>Meetup Date:</strong> {new Date(tribe.meetupDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
                         <p><strong>Location:</strong> {tribe.location}</p>
-                        <p className="text-xs text-muted-foreground">Tribe ID: {tribe.id}</p>
+                        <p className="text-sm text-muted-foreground">Show this Tribe ID at the cafe: <Badge variant="outline">{tribe.id}</Badge></p>
                     </CardContent>
+                    <CardFooter className="flex flex-col sm:flex-row items-center justify-center gap-2 pt-4">
+                       <p className="text-sm font-medium">Your RSVP:</p>
+                        <div className="flex gap-2">
+                           <Button 
+                             size="sm" 
+                             onClick={() => handleRsvp('accepted')} 
+                             disabled={currentUserRsvp === 'accepted'}
+                             variant={currentUserRsvp === 'accepted' ? 'default' : 'outline'}
+                            >
+                               <CheckCircle className="mr-2" /> Accept
+                           </Button>
+                           <Dialog open={isDeclineDialogOpen} onOpenChange={setIsDeclineDialogOpen}>
+                               <DialogTrigger asChild>
+                                   <Button 
+                                       size="sm" 
+                                       variant={currentUserRsvp === 'rejected' ? 'destructive' : 'outline'}
+                                       onClick={() => handleRsvp('rejected')}
+                                   >
+                                       <XCircle className="mr-2"/> Decline
+                                   </Button>
+                               </DialogTrigger>
+                               <DialogContent>
+                                   <DialogHeader>
+                                       <DialogTitle>Decline Invitation</DialogTitle>
+                                       <DialogDescription>Please provide a reason for declining. This will be shared with the rest of your tribe.</DialogDescription>
+                                   </DialogHeader>
+                                   <Textarea 
+                                     placeholder="E.g., Sorry, I have a prior commitment."
+                                     value={rejectionReason}
+                                     onChange={(e) => setRejectionReason(e.target.value)}
+                                   />
+                                   <DialogFooter>
+                                       <Button variant="outline" onClick={() => setIsDeclineDialogOpen(false)}>Cancel</Button>
+                                       <Button variant="destructive" onClick={handleDeclineSubmit}>Submit</Button>
+                                   </DialogFooter>
+                               </DialogContent>
+                           </Dialog>
+                        </div>
+                    </CardFooter>
                 </Card>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                     {tribe.members.map(member => (
                         <Dialog key={member.userId}>
                             <DialogTrigger asChild>
                                 <div className="cursor-pointer">
-                                    <ProfileCard user={member.user} compatibilityScore={member.compatibilityScore} />
+                                    <ProfileCard 
+                                        user={member.user} 
+                                        compatibilityScore={member.compatibilityScore}
+                                        rsvpStatus={member.rsvpStatus}
+                                    />
                                 </div>
                             </DialogTrigger>
                             <DialogContent>
@@ -190,8 +279,19 @@ export default function TribePage() {
                                     </Avatar>
                                     <DialogTitle className="font-headline">{member.user.name}</DialogTitle>
                                     <DialogDescription>{member.user.gender}, Born {format(parseISO(member.user.dob), 'MMMM d, yyyy')} ({getAge(member.user.dob)} years old)</DialogDescription>
+                                     <Badge variant={member.rsvpStatus === 'accepted' ? 'secondary' : 'destructive'}>
+                                        {member.rsvpStatus === 'accepted' ? <CheckCircle className="mr-1.5" /> : <XCircle className="mr-1.5" />}
+                                        {member.rsvpStatus === 'accepted' ? 'Attending' : 'Not Attending'}
+                                    </Badge>
                                 </DialogHeader>
                                 <div className="space-y-4">
+                                     {member.rsvpStatus === 'rejected' && member.rejectionReason && (
+                                        <div className="p-3 bg-destructive/10 rounded-md text-sm">
+                                            <p className="font-semibold text-destructive flex items-center gap-2"><MessageSquare /> Reason for declining:</p>
+                                            <p className="text-destructive/80 italic">"{member.rejectionReason}"</p>
+                                        </div>
+                                    )}
+
                                     <div>
                                         <h3 className="font-semibold">Persona Summary</h3>
                                         <p className="text-sm text-muted-foreground italic">"{member.persona}"</p>
@@ -236,6 +336,13 @@ export default function TribePage() {
                         </Dialog>
                     ))}
                 </div>
+                 <Alert className="mt-6">
+                    <Info className="h-4 w-4"/>
+                    <AlertTitle>Tribe Lock-in</AlertTitle>
+                    <AlertDescription>
+                        Once your RSVP is set, you are part of this tribe for the week. New tribes are formed every other Monday, so you won't be able to join another one until then.
+                    </AlertDescription>
+                </Alert>
             </div>
         )}
       </CardContent>
