@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import type { Message } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { dailySummaries, currentUser, reminders, checklists } from "@/lib/mock-data";
-import { Bot, SendHorizonal, CheckCircle, RotateCcw } from "lucide-react";
+import { Bot, SendHorizonal, CheckCircle, RotateCcw, Heart, BookOpen, BrainCircuit, Smile } from "lucide-react";
 import { useEffect, useRef, useState, useMemo } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { format } from 'date-fns';
@@ -46,6 +46,8 @@ export function JournalChat() {
     // We subtract 1 to not count the initial greeting
     return messages.filter(m => m.sender === 'ai').length - 1;
   }, [messages]);
+  
+  const hasStartedConversation = useMemo(() => messages.length > 1, [messages]);
 
   const scrollToBottom = () => {
     if (scrollAreaRef.current) {
@@ -91,6 +93,20 @@ export function JournalChat() {
         scrollToBottom();
     }
   }, [messages, isInitialized, STORAGE_KEY_DATE, STORAGE_KEY_MESSAGES]);
+
+  const handleInitialPrompt = (topic: string) => {
+    if (isLoading || isComplete) return;
+
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      sender: "user",
+      text: topic,
+    };
+
+    const newMessages = [...messages, userMessage];
+    setMessages(newMessages);
+    getNewQuestion(topic);
+  };
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -286,6 +302,21 @@ export function JournalChat() {
                     <RotateCcw className="h-4 w-4 mr-2" />
                     New Chat
                  </Button>
+            </div>
+        ) : !hasStartedConversation ? (
+            <div className="flex flex-wrap items-center justify-center gap-2">
+                <Button variant="outline" onClick={() => handleInitialPrompt("my hobby")}>
+                    <Heart className="mr-2 h-4 w-4" /> Hobby
+                </Button>
+                <Button variant="outline" onClick={() => handleInitialPrompt("my mood")}>
+                    <Smile className="mr-2 h-4 w-4" /> Mood
+                </Button>
+                <Button variant="outline" onClick={() => handleInitialPrompt("something I learned")}>
+                    <BrainCircuit className="mr-2 h-4 w-4" /> Learning
+                </Button>
+                 <Button variant="outline" onClick={() => handleInitialPrompt("my day in general")}>
+                    <BookOpen className="mr-2 h-4 w-4" /> Share your day
+                </Button>
             </div>
         ) : (
             <div className="relative">
