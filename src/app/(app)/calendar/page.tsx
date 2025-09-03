@@ -1,13 +1,13 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { format, isSameDay, parseISO, isWeekend } from 'date-fns';
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
-import { dailySummaries, reminders as mockReminders, checklists as mockChecklists } from "@/lib/mock-data";
+import { dailySummaries as mockDailySummaries, reminders as mockReminders, checklists as mockChecklists } from "@/lib/mock-data";
 import type { DailySummary, Reminder, Checklist } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Pencil, Trash2, Bell, ListTodo, CheckCircle, MapPin, Clock, Users } from 'lucide-react';
@@ -18,40 +18,11 @@ import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 
-function CustomDayContent(props: DayContentProps) {
-    const dayData = dailySummaries.find(d => isSameDay(parseISO(d.date), props.date));
-    const dayReminders = mockReminders.filter(r => isSameDay(parseISO(r.date), props.date));
-    const dayChecklists = mockChecklists.filter(c => isSameDay(parseISO(c.date), props.date));
-
-    if (props.displayMonth.getMonth() !== props.date.getMonth()) {
-      return <DayContent {...props} />;
-    }
-  
-    return (
-      <div className="relative w-full h-full flex flex-col items-center justify-start p-1">
-        <DayContent {...props} />
-        <div className="flex text-xs md:text-sm gap-1 mt-1 absolute bottom-2 items-center">
-            {dayData && (
-              <>
-                {dayData.mood && <span>{dayData.mood}</span>}
-                {dayData.hobbies && dayData.hobbies.map((hobby, index) => (
-                  <hobby.icon key={index} className="w-3 h-3 md:w-4 md:h-4 text-muted-foreground" />
-                ))}
-                {dayData.hasMeetup && <span>☕️</span>}
-                {dayData.isAvailable && !dayData.hasMeetup && <CheckCircle className="w-3 h-3 md:w-4 md:h-4 text-green-500" />}
-              </>
-            )}
-            {dayReminders.length > 0 && <Bell className="w-3 h-3 md:w-4 md:h-4 text-primary" />}
-            {dayChecklists.length > 0 && <ListTodo className="w-3 h-3 md:w-4 md:h-4 text-primary" />}
-        </div>
-      </div>
-    );
-}
-
 export default function CalendarPage() {
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [reminders, setReminders] = useState(mockReminders);
   const [checklists, setChecklists] = useState(mockChecklists);
+  const [dailySummaries, setDailySummaries] = useState(mockDailySummaries);
   const [selectedSummary, setSelectedSummary] = useState<Partial<DailySummary> | null>(null);
   const [selectedReminders, setSelectedReminders] = useState<Reminder[]>([]);
   const [selectedChecklists, setSelectedChecklists] = useState<Checklist[]>([]);
@@ -65,6 +36,36 @@ export default function CalendarPage() {
     // Set initial date only on the client
     setDate(new Date());
   }, []);
+
+  const CustomDayContent = useCallback((props: DayContentProps) => {
+      const dayData = dailySummaries.find(d => isSameDay(parseISO(d.date), props.date));
+      const dayReminders = mockReminders.filter(r => isSameDay(parseISO(r.date), props.date));
+      const dayChecklists = mockChecklists.filter(c => isSameDay(parseISO(c.date), props.date));
+  
+      if (props.displayMonth.getMonth() !== props.date.getMonth()) {
+        return <DayContent {...props} />;
+      }
+    
+      return (
+        <div className="relative w-full h-full flex flex-col items-center justify-start p-1">
+          <DayContent {...props} />
+          <div className="flex text-xs md:text-sm gap-1 mt-1 absolute bottom-2 items-center">
+              {dayData && (
+                <>
+                  {dayData.mood && <span>{dayData.mood}</span>}
+                  {dayData.hobbies && dayData.hobbies.map((hobby, index) => (
+                    <hobby.icon key={index} className="w-3 h-3 md:w-4 md:h-4 text-muted-foreground" />
+                  ))}
+                  {dayData.hasMeetup && <span>☕️</span>}
+                  {dayData.isAvailable && !dayData.hasMeetup && <CheckCircle className="w-3 h-3 md:w-4 md:h-4 text-green-500" />}
+                </>
+              )}
+              {dayReminders.length > 0 && <Bell className="w-3 h-3 md:w-4 md:h-4 text-primary" />}
+              {dayChecklists.length > 0 && <ListTodo className="w-3 h-3 md:w-4 md:h-4 text-primary" />}
+          </div>
+        </div>
+      );
+  }, [dailySummaries]);
 
   const handleDateSelect = (selectedDate: Date | undefined) => {
     setDate(selectedDate);
@@ -147,23 +148,21 @@ export default function CalendarPage() {
     if (date) {
         const dateStr = format(date, 'yyyy-MM-dd');
         const summaryIndex = dailySummaries.findIndex(d => d.date === dateStr);
+        let newSummaries;
         if (summaryIndex > -1) {
-            dailySummaries[summaryIndex].isAvailable = checked;
+            newSummaries = dailySummaries.map((summary, index) => 
+              index === summaryIndex ? { ...summary, isAvailable: checked } : summary
+            );
         } else {
-            // Create a new minimal summary for this day if it doesn't exist
-            dailySummaries.push({
-                date: dateStr,
-                isAvailable: checked,
-            });
+            newSummaries = [...dailySummaries, { date: dateStr, isAvailable: checked }];
         }
+        setDailySummaries(newSummaries);
+        mockDailySummaries.splice(0, mockDailySummaries.length, ...newSummaries);
         
         toast({
             title: "Availability Updated",
             description: `You are now marked as ${checked ? 'available' : 'unavailable'} for tribe meetups on this day.`
         });
-        
-        // Force a re-render by creating a new date object, which will trigger the calendar's day renderer
-        setDate(new Date(date));
     }
   }
 
@@ -179,10 +178,10 @@ export default function CalendarPage() {
   const handleDelete = () => {
     if (!selectedSummary || !selectedSummary.date) return;
     const dateStr = selectedSummary.date;
-    const summaryIndex = dailySummaries.findIndex(d => d.date === dateStr);
-    if (summaryIndex > -1) {
-        dailySummaries.splice(summaryIndex, 1);
-    }
+    const newSummaries = dailySummaries.filter(d => d.date !== dateStr);
+    
+    setDailySummaries(newSummaries);
+    mockDailySummaries.splice(0, mockDailySummaries.length, ...newSummaries);
     
     toast({
         variant: "destructive",
@@ -192,7 +191,6 @@ export default function CalendarPage() {
     
     setIsSheetOpen(false);
     setSelectedSummary(null);
-    setDate(date ? new Date(date) : undefined); // Force re-render
   }
 
   const isSelectedDateWeekend = date ? isWeekend(date) : false;
