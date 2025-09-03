@@ -76,10 +76,6 @@ export function Header() {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem>
-            <PenLine className="mr-2 h-4 w-4" />
-            <span>New Journal Entry</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem>
             <AlarmClock className="mr-2 h-4 w-4" />
             <span>Set Reminder</span>
           </DropdownMenuItem>
