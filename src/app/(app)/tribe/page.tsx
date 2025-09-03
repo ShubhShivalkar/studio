@@ -62,7 +62,7 @@ const staticTribe: Tribe = {
             persona: currentUser.persona || "This is you!",
             user: currentUser,
             matchReason: "This is you!",
-            rsvpStatus: 'accepted',
+            rsvpStatus: 'pending', // Start as pending
         },
         {
             userId: allUsers[0].id,
@@ -154,9 +154,11 @@ export default function TribePage() {
     })
   }
   
-  const currentUserRsvp = tribe?.members.find(m => m.userId === currentUser.id)?.rsvpStatus;
-  
-  const attendingMembers = tribe?.members.filter(m => m.rsvpStatus === 'accepted' || m.rsvpStatus === 'pending');
+  const currentUserData = tribe?.members.find(m => m.userId === currentUser.id);
+  const currentUserRsvp = currentUserData?.rsvpStatus;
+  const isRsvpLocked = currentUserRsvp === 'accepted' || currentUserRsvp === 'rejected';
+
+  const attendingMembers = tribe?.members.filter(m => m.rsvpStatus === 'accepted' || (m.rsvpStatus === 'pending' && m.user.id !== currentUser.id) || (m.user.id === currentUser.id && currentUserRsvp !== 'rejected') );
   const rejectedMembers = tribe?.members.filter(m => m.rsvpStatus === 'rejected');
   const isTribeComplete = attendingMembers && attendingMembers.length >= 4;
 
@@ -239,8 +241,8 @@ export default function TribePage() {
                            <Button 
                              size="sm" 
                              onClick={() => handleRsvp('accepted')} 
-                             disabled={currentUserRsvp === 'accepted'}
-                             variant={currentUserRsvp === 'accepted' ? 'default' : 'outline'}
+                             disabled={isRsvpLocked}
+                             variant={currentUserRsvp === 'accepted' || (currentUserRsvp === 'pending' && !isRsvpLocked) ? 'default' : 'outline'}
                             >
                                <CheckCircle className="mr-2" /> Accept
                            </Button>
@@ -250,6 +252,7 @@ export default function TribePage() {
                                        size="sm" 
                                        variant={currentUserRsvp === 'rejected' ? 'destructive' : 'outline'}
                                        onClick={() => handleRsvp('rejected')}
+                                       disabled={isRsvpLocked}
                                    >
                                        <XCircle className="mr-2"/> Decline
                                    </Button>
@@ -286,7 +289,7 @@ export default function TribePage() {
                                         <ProfileCard 
                                             user={member.user} 
                                             compatibilityScore={member.compatibilityScore}
-                                            rsvpStatus={member.rsvpStatus}
+                                            rsvpStatus={member.user.id === currentUser.id ? (currentUserRsvp === 'rejected' ? 'rejected' : 'accepted') : member.rsvpStatus}
                                         />
                                     </div>
                                 </DialogTrigger>
@@ -299,8 +302,8 @@ export default function TribePage() {
                                         <DialogTitle className="font-headline">{member.user.name}</DialogTitle>
                                         <DialogDescription>{member.user.gender}, Born {format(parseISO(member.user.dob), 'MMMM d, yyyy')} ({getAge(member.user.dob)} years old)</DialogDescription>
                                         <Badge variant={member.rsvpStatus === 'accepted' ? 'secondary' : member.rsvpStatus === 'pending' ? 'outline' : 'destructive'}>
-                                            {member.rsvpStatus === 'accepted' ? <CheckCircle className="mr-1.5" /> : member.rsvpStatus === 'pending' ? <CheckCircle className="mr-1.5" /> : <XCircle className="mr-1.5" />}
-                                            {member.rsvpStatus === 'accepted' ? 'Attending' : member.rsvpStatus === 'pending' ? 'Attending' : 'Not Attending'}
+                                            <CheckCircle className="mr-1.5" />
+                                            Attending
                                         </Badge>
                                     </DialogHeader>
                                     <div className="space-y-4">
