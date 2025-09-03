@@ -24,7 +24,7 @@ export default function Home() {
                     Soulful Sync
                   </h1>
                 </div>
-                <p className="mx-auto max-w-[700px] md:text-xl">
+                <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl">
                   Discover deeper connections with yourself and others through the power of guided journaling and AI-driven personality insights.
                 </p>
               </div>

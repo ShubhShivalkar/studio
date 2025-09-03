@@ -26,62 +26,57 @@ import { ArrowLeft, CheckCircle, XCircle } from "lucide-react";
 export default function TribeHistoryPage() {
   const router = useRouter();
 
-  if (!pastTribes || pastTribes.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center text-center h-full">
-         <Button variant="ghost" onClick={() => router.back()} className="absolute top-6 left-6">
-            <ArrowLeft className="mr-2" /> Back
-         </Button>
-        <p className="text-lg text-muted-foreground">You have no past tribe events.</p>
-      </div>
-    );
-  }
-
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
                 <CardTitle className="font-headline">Meet-up History</CardTitle>
                 <CardDescription>
                 A record of all your past tribe meetups.
                 </CardDescription>
             </div>
-            <Button variant="outline" onClick={() => router.back()}>
+            <Button variant="outline" onClick={() => router.back()} className="w-full sm:w-auto">
                 <ArrowLeft className="mr-2" /> Back to Tribe
             </Button>
         </div>
       </CardHeader>
       <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Date</TableHead>
-              <TableHead>Tribe ID</TableHead>
-              <TableHead>Location</TableHead>
-              <TableHead>Status</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {pastTribes.map((tribe) => (
-              <TableRow key={tribe.id}>
-                <TableCell className="font-medium">
-                  {format(parseISO(tribe.meetupDate), 'MMMM d, yyyy')}
-                </TableCell>
-                <TableCell>
-                  <Badge variant="secondary">{tribe.id}</Badge>
-                </TableCell>
-                <TableCell>{tribe.location}</TableCell>
-                <TableCell>
-                  <Badge variant={tribe.attendance === 'attended' ? 'default' : 'destructive'}>
-                     {tribe.attendance === 'attended' ? <CheckCircle className="mr-2" /> : <XCircle className="mr-2" />}
-                    {tribe.attendance.charAt(0).toUpperCase() + tribe.attendance.slice(1)}
-                  </Badge>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+        {(!pastTribes || pastTribes.length === 0) ? (
+            <div className="flex flex-col items-center justify-center text-center h-64 text-muted-foreground border-2 border-dashed rounded-lg">
+                <p className="text-lg">You have no past tribe events.</p>
+            </div>
+        ) : (
+            <Table>
+            <TableHeader>
+                <TableRow>
+                <TableHead>Date</TableHead>
+                <TableHead className="hidden sm:table-cell">Tribe ID</TableHead>
+                <TableHead>Location</TableHead>
+                <TableHead>Status</TableHead>
+                </TableRow>
+            </TableHeader>
+            <TableBody>
+                {pastTribes.map((tribe) => (
+                <TableRow key={tribe.id}>
+                    <TableCell className="font-medium">
+                    {format(parseISO(tribe.meetupDate), 'MMM d, yyyy')}
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell">
+                    <Badge variant="secondary">{tribe.id}</Badge>
+                    </TableCell>
+                    <TableCell>{tribe.location}</TableCell>
+                    <TableCell>
+                    <Badge variant={tribe.attendance === 'attended' ? 'default' : 'destructive'}>
+                        {tribe.attendance === 'attended' ? <CheckCircle className="mr-2" /> : <XCircle className="mr-2" />}
+                        {tribe.attendance.charAt(0).toUpperCase() + tribe.attendance.slice(1)}
+                    </Badge>
+                    </TableCell>
+                </TableRow>
+                ))}
+            </TableBody>
+            </Table>
+        )}
       </CardContent>
     </Card>
   );

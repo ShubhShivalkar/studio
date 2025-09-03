@@ -105,7 +105,6 @@ export default function ProfilePage() {
       const result = await generatePersonalityPersona({ journalEntries: entriesText });
       setPersona(result);
       
-      // Also save to our mock currentUser
       const updatedUserData = {
         ...userData,
         persona: result.persona,
@@ -144,8 +143,8 @@ export default function ProfilePage() {
 
   return (
     <>
-      <div className="grid gap-6 md:grid-cols-3">
-        <div className="md:col-span-1 space-y-6">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="lg:col-span-1 space-y-6">
           <Card>
             <CardHeader className="items-center">
               <Avatar className="w-24 h-24 mb-4 border-4 border-primary/20">
@@ -214,11 +213,11 @@ export default function ProfilePage() {
               </Card>
           )}
         </div>
-        <div className="md:col-span-2 space-y-6">
+        <div className="md:col-span-1 lg:col-span-2 space-y-6">
           <Card>
             <CardHeader>
-              <div className="flex justify-between items-start">
-                  <div>
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <div className="flex-grow">
                       <CardTitle className="font-headline flex items-center gap-2">
                           <Bot className="text-primary"/> Your Persona by Anu
                       </CardTitle>
@@ -226,7 +225,7 @@ export default function ProfilePage() {
                           Based on your journal entries, this is how Anu understands your personality.
                       </CardDescription>
                   </div>
-                  <Button onClick={handleGeneratePersona} disabled={isLoading || !canGenerate || !canRegenerate}>
+                  <Button onClick={handleGeneratePersona} disabled={isLoading || !canGenerate || !canRegenerate} className="w-full sm:w-auto">
                       {isLoading ? "Generating..." : persona ? "Regenerate Persona" : "Generate Persona"}
                   </Button>
               </div>
@@ -303,7 +302,7 @@ export default function ProfilePage() {
                   <CardHeader>
                       <CardTitle className="font-headline">Journal Stats</CardTitle>
                   </CardHeader>
-                  <CardContent className="flex items-center gap-8">
+                  <CardContent className="flex flex-wrap items-center gap-8">
                       <div className="flex items-center gap-2">
                           <BookOpen className="h-5 w-5 text-primary"/>
                           <div>

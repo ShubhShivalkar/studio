@@ -10,7 +10,7 @@ import {
   CardTitle,
   CardFooter,
 } from "@/components/ui/card";
-import { allUsers, currentUser } from "@/lib/mock-data";
+import { currentUser } from "@/lib/mock-data";
 import { Bot, Users, ShieldAlert, CheckCircle, XCircle, MessageSquare, Info, UserX, UserCheck, Heart, History, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -65,7 +65,11 @@ export default function TribePage() {
   const [isDeclineDialogOpen, setIsDeclineDialogOpen] = useState(false);
 
   useEffect(() => {
-    // Check for persona and interest first
+    if (!currentUser || !currentUser.id) {
+        setTribeState("loading");
+        return;
+    }
+
     if (!currentUser.persona) {
         setTribeState("no-persona");
         return;
@@ -75,8 +79,6 @@ export default function TribePage() {
         return;
     }
 
-    // In a real app, you'd fetch this. For now, we simulate the "finding" state
-    // as there is no static tribe for a new user.
     setTribe(null);
     setTribeState("finding");
   }, []);
@@ -135,7 +137,7 @@ export default function TribePage() {
   return (
     <Card>
       <CardHeader>
-        <div className="flex justify-between items-start">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
                 <div className="flex items-center gap-2">
                     <CardTitle className="font-headline">Meet Your Tribe</CardTitle>
@@ -151,10 +153,10 @@ export default function TribePage() {
                     </TooltipProvider>
                 </div>
                 <CardDescription>
-                  We'll connect you with people who understand your VIbe
+                  We'll connect you with people who understand your Vibe
                 </CardDescription>
             </div>
-             <Button asChild variant="outline" size="sm">
+             <Button asChild variant="outline" size="sm" className="w-full sm:w-auto">
                 <Link href="/tribe/history">
                     <History className="mr-2" />
                     Meet-up History
