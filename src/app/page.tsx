@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { PenLine } from "lucide-react";
+import { PenLine, Bot, Users, Edit } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function Home() {
   return (
@@ -44,25 +45,46 @@ export default function Home() {
                 </p>
               </div>
             </div>
-            <div className="mx-auto grid max-w-5xl items-center gap-6 py-12 lg:grid-cols-3 lg:gap-12">
-              <div className="grid gap-1 text-center">
-                <h3 className="text-xl font-bold font-headline">AI-Guided Journaling</h3>
-                <p className="text-foreground/80">
-                  Engage with our conversational AI that asks thought-provoking questions to guide your reflections.
-                </p>
-              </div>
-              <div className="grid gap-1 text-center">
-                <h3 className="text-xl font-bold font-headline">Persona Creation</h3>
-                <p className="text-foreground/80">
-                  Let our AI analyze your entries to create a unique personality persona that reflects your inner self.
-                </p>
-              </div>
-              <div className="grid gap-1 text-center">
-                <h3 className="text-xl font-bold font-headline">Meaningful Matching</h3>
-                <p className="text-foreground/80">
-                  Connect with others based on genuine personality compatibility, not just superficial interests.
-                </p>
-              </div>
+            <div className="mx-auto grid max-w-5xl gap-8 py-12 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+               <Card className="text-center">
+                <CardHeader>
+                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+                    <Edit className="h-6 w-6 text-primary" />
+                  </div>
+                  <CardTitle className="font-headline mt-4">AI-Guided Journaling</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-foreground/80">
+                    Engage with our conversational AI that asks thought-provoking questions to guide your reflections.
+                  </p>
+                </CardContent>
+              </Card>
+              <Card className="text-center">
+                <CardHeader>
+                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+                    <Bot className="h-6 w-6 text-primary" />
+                  </div>
+                  <CardTitle className="font-headline mt-4">Persona Creation</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-foreground/80">
+                    Let our AI analyze your entries to create a unique personality persona that reflects your inner self.
+                  </p>
+                </CardContent>
+              </Card>
+              <Card className="text-center">
+                <CardHeader>
+                   <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+                    <Users className="h-6 w-6 text-primary" />
+                  </div>
+                  <CardTitle className="font-headline mt-4">Meaningful Matching</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-foreground/80">
+                    Connect with others based on genuine personality compatibility, not just superficial interests.
+                  </p>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </section>
