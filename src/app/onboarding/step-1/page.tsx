@@ -1,0 +1,38 @@
+'use client';
+
+import { useRouter } from 'next/navigation';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+
+export default function Step1Page() {
+  const router = useRouter();
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    router.push('/onboarding/step-2');
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="font-headline">Welcome! Let's get started.</CardTitle>
+        <CardDescription>First, what's your name?</CardDescription>
+        <Progress value={25} className="mt-2" />
+      </CardHeader>
+      <form onSubmit={handleSubmit}>
+        <CardContent>
+          <div className="space-y-2">
+            <Label htmlFor="name">Full Name</Label>
+            <Input id="name" placeholder="Enter your full name" required />
+          </div>
+        </CardContent>
+        <CardFooter>
+          <Button type="submit" className="w-full">Continue</Button>
+        </CardFooter>
+      </form>
+    </Card>
+  );
+}

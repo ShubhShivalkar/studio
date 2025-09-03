@@ -26,7 +26,7 @@ export default function Home() {
               </div>
               <div className="space-x-4">
                 <Button asChild size="lg">
-                  <Link href="/journal">
+                  <Link href="/onboarding/step-1">
                     Begin Your Journey
                   </Link>
                 </Button>
