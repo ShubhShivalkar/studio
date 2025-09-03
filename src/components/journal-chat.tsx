@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import type { Message } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { dailySummaries, currentUser } from "@/lib/mock-data";
-import { Bot, SendHorizonal, CheckCircle } from "lucide-react";
+import { Bot, SendHorizonal, CheckCircle, RotateCcw } from "lucide-react";
 import { useEffect, useRef, useState, useMemo } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { format } from 'date-fns';
@@ -115,7 +115,8 @@ export function JournalChat() {
   const getNewQuestion = async (topic: string) => {
      setIsLoading(true);
      try {
-      const { question } = await guideJournalingWithQuestions({ topic, userName });
+      const journalHistory = currentUser.journalEntries?.join("\n\n") || "";
+      const { question } = await guideJournalingWithQuestions({ topic, userName, journalHistory });
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
         sender: "ai",
@@ -195,6 +196,14 @@ export function JournalChat() {
     }
   }
 
+  const handleNewChat = () => {
+    localStorage.removeItem(STORAGE_KEY_MESSAGES);
+    localStorage.removeItem(STORAGE_KEY_DATE);
+    setMessages([initialMessage]);
+    setIsComplete(false);
+    setInput("");
+  }
+
   if (!isInitialized) {
     return null; // or a loading spinner
   }
@@ -256,29 +265,37 @@ export function JournalChat() {
             <div className="flex items-center justify-center text-center p-4 bg-secondary rounded-lg">
                 <CheckCircle className="h-5 w-5 mr-2 text-green-500" />
                 <p className="text-sm text-muted-foreground">Journal entry for today is complete.</p>
+                 <Button variant="ghost" size="sm" onClick={handleNewChat} className="ml-4">
+                    <RotateCcw className="h-4 w-4 mr-2" />
+                    New Chat
+                 </Button>
             </div>
         ) : (
-            <form onSubmit={handleSendMessage} className="relative">
-            <Textarea
-                placeholder="Type your thoughts here..."
-                className="pr-20 min-h-[50px] resize-none"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                        handleSendMessage(e);
-                    }
-                }}
-            />
-            <Button
-                type="submit"
-                size="icon"
-                className="absolute top-1/2 right-3 -translate-y-1/2"
-                disabled={isLoading || !input.trim()}
-            >
-                <SendHorizonal className="h-5 w-5" />
-            </Button>
-            </form>
+            <div className="relative">
+                <form onSubmit={handleSendMessage} className="flex items-center gap-2">
+                <Textarea
+                    placeholder="Type your thoughts here..."
+                    className="pr-20 min-h-[50px] resize-none flex-1"
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                            handleSendMessage(e);
+                        }
+                    }}
+                />
+                <Button
+                    type="submit"
+                    size="icon"
+                    disabled={isLoading || !input.trim()}
+                >
+                    <SendHorizonal className="h-5 w-5" />
+                </Button>
+                 <Button type="button" variant="outline" size="icon" onClick={handleNewChat} title="Start New Chat">
+                    <RotateCcw className="h-5 w-5" />
+                 </Button>
+                </form>
+            </div>
         )}
       </div>
     </div>

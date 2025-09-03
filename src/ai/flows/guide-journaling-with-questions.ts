@@ -15,6 +15,7 @@ const GuideJournalingWithQuestionsInputSchema = z.object({
   topic: z
     .string()
     .describe('The topic or theme for the journaling session, based on the user\'s previous response.'),
+  journalHistory: z.string().optional().describe("A summary of the user's past journal entries."),
 });
 export type GuideJournalingWithQuestionsInput = z.infer<
   typeof GuideJournalingWithQuestionsInputSchema
@@ -43,7 +44,13 @@ Address the user by their first name, which is {{{userName}}}.
 
 Ask a gentle, encouraging question related to their previous response about "{{{topic}}}". 
 Focus on their activities, hobbies pursued, things they learned, or feelings they experienced today. 
-Avoid deep philosophical questions. Keep the conversation light, positive, and reflective, helping them scratch the surface of their day.`,
+Avoid deep philosophical questions. Keep the conversation light, positive, and reflective, helping them scratch the surface of their day.
+
+{{#if journalHistory}}
+To provide better context, you can draw upon the user's past journal entries.
+Past Entries:
+{{{journalHistory}}}
+{{/if}}`,
 });
 
 const guideJournalingWithQuestionsFlow = ai.defineFlow(
