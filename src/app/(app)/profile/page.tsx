@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { currentUser } from "@/lib/mock-data";
@@ -18,12 +19,16 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
+  const journalEntriesCount = currentUser.journalEntries?.length || 0;
+  const progress = Math.min((journalEntriesCount / 15) * 100, 100);
+  const canGenerate = journalEntriesCount >= 15;
+
+
   const handleGeneratePersona = async () => {
     setIsLoading(true);
     setPersona(null);
     try {
-      const journalEntries = currentUser.journalEntries || [];
-      if (journalEntries.length < 15) {
+      if (!canGenerate) {
           toast({
               variant: 'destructive',
               title: 'Not enough data',
@@ -32,7 +37,7 @@ export default function ProfilePage() {
           setIsLoading(false);
           return;
       }
-      const entriesText = journalEntries.join("\n\n");
+      const entriesText = currentUser.journalEntries.join("\n\n");
       const result = await generatePersonalityPersona({ journalEntries: entriesText });
       setPersona(result);
     } catch (error) {
@@ -76,7 +81,7 @@ export default function ProfilePage() {
                         Based on your journal entries, this is how our AI understands your personality.
                     </CardDescription>
                 </div>
-                <Button onClick={handleGeneratePersona} disabled={isLoading}>
+                <Button onClick={handleGeneratePersona} disabled={isLoading || !canGenerate}>
                     {isLoading ? "Generating..." : "Generate Persona"}
                 </Button>
             </div>
@@ -125,8 +130,12 @@ export default function ProfilePage() {
                     </div>
                 </div>
             ) : (
-                <div className="text-center text-muted-foreground py-8">
-                    <p>Your persona will appear here once generated.</p>
+                <div className="text-center text-muted-foreground py-8 flex flex-col items-center justify-center gap-4">
+                    <p className="text-sm">You need at least 15 journal entries to generate a persona.</p>
+                    <div className="w-full max-w-sm space-y-2">
+                        <Progress value={progress} />
+                        <p className="text-xs">{journalEntriesCount} of 15 entries completed.</p>
+                    </div>
                 </div>
             )}
           </CardContent>
