@@ -19,18 +19,18 @@ function DayCellContent({ date }: { date: Date }) {
     if (!dayData) {
       return (
         <div className="relative w-full h-full flex items-center justify-center">
-          {format(date, 'd')}
+          <span className="text-lg">{format(date, 'd')}</span>
         </div>
       );
     }
   
     return (
       <div className="relative w-full h-full flex flex-col items-center justify-center p-1">
-        <span>{format(date, 'd')}</span>
-        <div className="flex text-xs gap-1 mt-1 absolute bottom-1">
+        <span className="text-lg">{format(date, 'd')}</span>
+        <div className="flex text-sm gap-1 mt-1 absolute bottom-2 items-center">
           <span>{dayData.mood}</span>
           {dayData.hobbies.map((hobby, index) => (
-            <hobby.icon key={index} className="w-3 h-3 text-muted-foreground" />
+            <hobby.icon key={index} className="w-4 h-4 text-muted-foreground" />
           ))}
           {dayData.hasMeetup && <span>☕️</span>}
           {dayData.isAvailable && !dayData.hasMeetup && <span>❤️</span>}
@@ -90,7 +90,7 @@ export default function CalendarPage() {
                 month: "space-y-4 flex-1 flex flex-col",
                 table: "w-full border-collapse space-y-1 flex-1",
                 head_row: "flex",
-                row: "flex w-full mt-2 min-h-[6rem] flex-1",
+                row: "flex w-full mt-2 min-h-[7rem] flex-1",
                 cell: "text-center text-sm p-0 relative flex-1",
                 day: cn(
                     "w-full h-full rounded-md",
