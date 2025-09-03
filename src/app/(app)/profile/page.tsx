@@ -122,12 +122,12 @@ export default function ProfilePage() {
         </Card>
 
         {persona && (
-           <Card>
+           <Card className="bg-accent text-accent-foreground">
                 <CardHeader>
                     <CardTitle className="font-headline flex items-center gap-2">
-                        <Users className="text-primary"/> Tribe Meetups
+                        <Users /> Tribe Meetups
                     </CardTitle>
-                    <CardDescription>
+                    <CardDescription className="text-accent-foreground/80">
                        Manage your visibility for tribe meetups.
                     </CardDescription>
                 </CardHeader>
