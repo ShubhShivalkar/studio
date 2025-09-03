@@ -16,14 +16,14 @@ import { DayContent, DayContentProps } from 'react-day-picker';
 
 function CustomDayContent(props: DayContentProps) {
     const dayData = dailySummaries.find(d => isSameDay(parseISO(d.date), props.date));
-  
-    if (props.displayMonth !== new Date(props.date).getMonth()) {
+
+    if (props.displayMonth.getMonth() !== props.date.getMonth()) {
       return <div className="w-full h-full" />;
     }
   
     return (
       <div className="relative w-full h-full flex flex-col items-center justify-start p-1">
-        <DayContent {...props} />
+        <p>{format(props.date, 'd')}</p>
         {dayData && (
           <div className="flex text-xs md:text-sm gap-1 mt-1 absolute bottom-2 items-center">
             <span>{dayData.mood}</span>
