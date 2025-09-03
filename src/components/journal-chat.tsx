@@ -9,13 +9,41 @@ import { Textarea } from "@/components/ui/textarea";
 import type { Message } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { dailySummaries, currentUser, reminders, checklists } from "@/lib/mock-data";
-import { Bot, SendHorizonal, CheckCircle, RotateCcw, Heart, BookOpen, BrainCircuit, Smile } from "lucide-react";
+import { Bot, SendHorizonal, CheckCircle, RotateCcw } from "lucide-react";
 import { useEffect, useRef, useState, useMemo } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { format } from 'date-fns';
-import Image from "next/image";
 
 const MAX_AI_QUESTIONS = 10;
+
+const PROMPT_SUGGESTIONS = [
+    "a recent accomplishment", "something I'm grateful for", "a challenge I'm facing", "a dream I had recently",
+    "my favorite hobby", "a book I'm reading", "a movie I just watched", "my favorite song right now",
+    "a memory from childhood", "a goal I have for this week", "what my ideal day looks like", "a person I admire",
+    "something that made me smile today", "a place I want to visit", "my current mood", "a skill I want to learn",
+    "what I'm looking forward to", "a lesson I've learned recently", "how I'm feeling physically",
+    "a fear I want to overcome", "my favorite season and why", "a simple pleasure I enjoy", "something I'm proud of",
+    "a personal project I'm working on", "how I like to relax", "a compliment I received", "something I'm curious about",
+    "a mistake I made and what I learned", "my relationship with my family", "my friendships", "my career goals",
+    "something new I tried recently", "a food I've been craving", "the best part of my day", "a worry on my mind",
+    "what creativity means to me", "my morning routine", "my evening routine", "a piece of advice I'd give my younger self",
+    "how I've changed in the past year", "a quality I like about myself", "a habit I want to change",
+    "the last time I felt truly happy", "a moment of kindness I witnessed", "what's on my shopping list",
+    "a conversation that stuck with me", "my favorite way to exercise", "something I'm procrastinating on",
+    "my definition of success", "a moment I felt brave", "how I handle stress", "a favorite quote",
+    "the most beautiful thing I saw today", "a podcast I'm listening to", "my thoughts on social media",
+    "a time I helped someone", "something I'm letting go of", "my plans for the weekend", "a new restaurant I want to try",
+    "what I think about my hometown", "a travel story", "my favorite app on my phone", "a moment of peace and quiet",
+    "something I'm excited to learn", "my feelings about the future", "a current event on my mind",
+    "how I stay organized", "a task I completed today", "my favorite thing about my home", "a piece of art that moved me",
+    "what I'm listening to right now", "a challenge at work", "a success at work", "my relationship with money",
+    "a time I felt inspired", "something I'm optimistic about", "a TV show I'm binging", "how I connect with nature",
+    "a goal for the month", "my thoughts on journaling", "a moment of self-care", "something that's been bugging me",
+    "a fashion trend I like", "my favorite type of weather", "a joke that made me laugh", "what my name means to me",
+    "a difficult decision I'm facing", "my sleep patterns", "something I'm celebrating", "a memory with a friend",
+    "my favorite holiday", "a scent that brings back memories", "a question I'm pondering", "a new recipe I tried"
+];
+
 
 const getInitialMessage = (name?: string) => {
     const userName = name ? `, ${name.split(' ')[0]}` : '';
@@ -34,6 +62,7 @@ export function JournalChat() {
   const [isComplete, setIsComplete] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
   
   const userName = useMemo(() => currentUser.name.split(' ')[0], []);
   const initialMessage = useMemo(() => getInitialMessage(currentUser.name), [currentUser.name]);
@@ -48,6 +77,16 @@ export function JournalChat() {
   }, [messages]);
   
   const hasStartedConversation = useMemo(() => messages.length > 1, [messages]);
+
+  useEffect(() => {
+    // Function to shuffle array and pick 4
+    const getShuffledPrompts = () => {
+        const shuffled = [...PROMPT_SUGGESTIONS].sort(() => 0.5 - Math.random());
+        setSuggestions(shuffled.slice(0, 4));
+    };
+    getShuffledPrompts();
+  }, []);
+
 
   const scrollToBottom = () => {
     if (scrollAreaRef.current) {
@@ -235,6 +274,9 @@ export function JournalChat() {
     setMessages([initialMessage]);
     setIsComplete(false);
     setInput("");
+    // Get new suggestions
+    const shuffled = [...PROMPT_SUGGESTIONS].sort(() => 0.5 - Math.random());
+    setSuggestions(shuffled.slice(0, 4));
   }
 
   if (!isInitialized) {
@@ -307,18 +349,11 @@ export function JournalChat() {
             <div className="space-y-4">
                 {!hasStartedConversation && (
                     <div className="flex flex-wrap items-center justify-center gap-2">
-                        <Button variant="outline" onClick={() => handleInitialPrompt("my hobby")}>
-                            <Heart className="mr-2 h-4 w-4" /> Hobby
-                        </Button>
-                        <Button variant="outline" onClick={() => handleInitialPrompt("my mood")}>
-                            <Smile className="mr-2 h-4 w-4" /> Mood
-                        </Button>
-                        <Button variant="outline" onClick={() => handleInitialPrompt("something I learned")}>
-                            <BrainCircuit className="mr-2 h-4 w-4" /> Learning
-                        </Button>
-                        <Button variant="outline" onClick={() => handleInitialPrompt("my day in general")}>
-                            <BookOpen className="mr-2 h-4 w-4" /> Share your day
-                        </Button>
+                        {suggestions.map((prompt, index) => (
+                             <Button key={index} variant="outline" size="sm" onClick={() => handleInitialPrompt(prompt)}>
+                                {prompt.charAt(0).toUpperCase() + prompt.slice(1)}
+                             </Button>
+                        ))}
                     </div>
                 )}
                 <div className="relative">
