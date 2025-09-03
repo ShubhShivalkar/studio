@@ -47,8 +47,8 @@ export function ProfileCard({ user, compatibilityScore, rsvpStatus }: ProfileCar
       case 'pending':
          return (
           <Badge variant="outline">
-            <HelpCircle className="mr-1.5" />
-            Pending RSVP
+            <CheckCircle className="mr-1.5" />
+            Attending
           </Badge>
         );
       default:

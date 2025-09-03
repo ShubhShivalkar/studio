@@ -299,8 +299,8 @@ export default function TribePage() {
                                         <DialogTitle className="font-headline">{member.user.name}</DialogTitle>
                                         <DialogDescription>{member.user.gender}, Born {format(parseISO(member.user.dob), 'MMMM d, yyyy')} ({getAge(member.user.dob)} years old)</DialogDescription>
                                         <Badge variant={member.rsvpStatus === 'accepted' ? 'secondary' : member.rsvpStatus === 'pending' ? 'outline' : 'destructive'}>
-                                            {member.rsvpStatus === 'accepted' ? <CheckCircle className="mr-1.5" /> : <XCircle className="mr-1.5" />}
-                                            {member.rsvpStatus === 'accepted' ? 'Attending' : member.rsvpStatus === 'pending' ? 'Pending RSVP' : 'Not Attending'}
+                                            {member.rsvpStatus === 'accepted' ? <CheckCircle className="mr-1.5" /> : member.rsvpStatus === 'pending' ? <CheckCircle className="mr-1.5" /> : <XCircle className="mr-1.5" />}
+                                            {member.rsvpStatus === 'accepted' ? 'Attending' : member.rsvpStatus === 'pending' ? 'Attending' : 'Not Attending'}
                                         </Badge>
                                     </DialogHeader>
                                     <div className="space-y-4">
