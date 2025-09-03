@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { format, isSameDay, parseISO } from 'date-fns';
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
+import { Calendar, type CalendarProps } from "@/components/ui/calendar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { dailySummaries } from "@/lib/mock-data";
@@ -12,21 +12,18 @@ import type { DailySummary } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Pencil, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { DayContent, DayContentProps } from 'react-day-picker';
 
-function DayCellContent({ date }: { date: Date }) {
-    const dayData = dailySummaries.find(d => isSameDay(parseISO(d.date), date));
+function CustomDayContent(props: DayContentProps) {
+    const dayData = dailySummaries.find(d => isSameDay(parseISO(d.date), props.date));
   
     if (!dayData) {
-      return (
-        <div className="relative w-full h-full flex items-center justify-center">
-          <span className="text-lg">{format(date, 'd')}</span>
-        </div>
-      );
+      return <DayContent {...props} />;
     }
   
     return (
       <div className="relative w-full h-full flex flex-col items-center justify-center p-1">
-        <span className="text-lg">{format(date, 'd')}</span>
+        <DayContent {...props} />
         <div className="flex text-sm gap-1 mt-1 absolute bottom-2 items-center">
           <span>{dayData.mood}</span>
           {dayData.hobbies.map((hobby, index) => (
@@ -93,12 +90,13 @@ export default function CalendarPage() {
                 row: "flex w-full mt-2 min-h-[7rem] flex-1",
                 cell: "text-center text-sm p-0 relative flex-1",
                 day: cn(
-                    "w-full h-full rounded-md",
+                    "w-full h-full rounded-md text-lg",
                     "hover:bg-accent/50 transition-colors"
                 ),
+                day_outside: "text-muted-foreground/50",
             }}
             components={{
-              DayContent: DayCellContent,
+              DayContent: CustomDayContent,
             }}
           />
         </CardContent>
