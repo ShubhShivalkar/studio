@@ -32,8 +32,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 type MatchedUser = MatchUsersByPersonalityOutput[0] & {
   user: User;
@@ -171,7 +171,19 @@ export default function TribePage() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="font-headline">Meet Your Tribe</CardTitle>
+        <div className="flex items-center gap-2">
+            <CardTitle className="font-headline">Meet Your Tribe</CardTitle>
+            <TooltipProvider>
+                <Tooltip>
+                    <TooltipTrigger>
+                        <Info className="h-4 w-4 text-muted-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>New tribes are formed and matched every Monday.</p>
+                    </TooltipContent>
+                </Tooltip>
+            </TooltipProvider>
+        </div>
         <CardDescription>
           We'll connect you with people who understand your VIbe
         </CardDescription>
@@ -404,14 +416,6 @@ export default function TribePage() {
                                  </div>
                             </div>
                          )}
-
-                         <Alert className="mt-6">
-                            <Info className="h-4 w-4"/>
-                            <AlertTitle>Tribe Matching Schedule</AlertTitle>
-                            <AlertDescription>
-                                Once your RSVP is set, you are part of this tribe for the week. New tribes will be formed and matched every Monday, so you won't be able to join another one until then.
-                            </AlertDescription>
-                        </Alert>
                     </>
                  )}
             </div>
