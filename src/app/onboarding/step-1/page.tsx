@@ -24,6 +24,10 @@ export default function Step1Page() {
     if (existingUser) {
       // User exists, "log them in" by setting them as the currentUser
       Object.assign(currentUser, existingUser);
+      // Ensure journalEntries is initialized
+      if (!currentUser.journalEntries) {
+          currentUser.journalEntries = [];
+      }
       
       toast({
         title: `Welcome back, ${existingUser.name}!`,

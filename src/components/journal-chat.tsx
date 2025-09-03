@@ -15,9 +15,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { format } from 'date-fns';
 
 const MAX_AI_QUESTIONS = 10;
-const STORAGE_KEY_MESSAGES = 'journalChatMessages';
-const STORAGE_KEY_DATE = 'journalChatDate';
-
 
 const getInitialMessage = (name?: string) => {
     const userName = name ? `, ${name.split(' ')[0]}` : '';
@@ -39,6 +36,9 @@ export function JournalChat() {
   
   const userName = useMemo(() => currentUser.name.split(' ')[0], []);
   const initialMessage = useMemo(() => getInitialMessage(currentUser.name), [currentUser.name]);
+
+  const STORAGE_KEY_MESSAGES = useMemo(() => `journalChatMessages_${currentUser.id}`, [currentUser.id]);
+  const STORAGE_KEY_DATE = useMemo(() => `journalChatDate_${currentUser.id}`, [currentUser.id]);
 
 
   const aiQuestionCount = useMemo(() => {
@@ -81,7 +81,7 @@ export function JournalChat() {
         setMessages([initialMessage]);
     }
     setIsInitialized(true);
-  }, [initialMessage]);
+  }, [initialMessage, STORAGE_KEY_DATE, STORAGE_KEY_MESSAGES]);
 
   useEffect(() => {
     if (isInitialized) {
@@ -89,7 +89,7 @@ export function JournalChat() {
         localStorage.setItem(STORAGE_KEY_DATE, format(new Date(), 'yyyy-MM-dd'));
         scrollToBottom();
     }
-  }, [messages, isInitialized]);
+  }, [messages, isInitialized, STORAGE_KEY_DATE, STORAGE_KEY_MESSAGES]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -191,6 +191,9 @@ export function JournalChat() {
         }
         
         // Add to user's journal entries
+        if (!currentUser.journalEntries) {
+            currentUser.journalEntries = [];
+        }
         currentUser.journalEntries.push(summary);
 
         setIsComplete(true);
