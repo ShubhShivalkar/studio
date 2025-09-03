@@ -9,7 +9,7 @@ import type { Message } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { SendHorizonal } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const initialMessage: Message = {
     id: '0',
@@ -85,6 +85,7 @@ export function JournalChat() {
             >
               {message.sender === "ai" && (
                 <Avatar className="h-8 w-8">
+                  <AvatarImage src="https://picsum.photos/seed/anu-ai/200/200" alt="Anu" data-ai-hint="person photo" />
                   <AvatarFallback className="bg-primary text-primary-foreground">
                     Anu
                   </AvatarFallback>
@@ -105,6 +106,7 @@ export function JournalChat() {
           {isLoading && (
             <div className="flex items-start gap-3 justify-start">
                <Avatar className="h-8 w-8">
+                  <AvatarImage src="https://picsum.photos/seed/anu-ai/200/200" alt="Anu" data-ai-hint="person photo" />
                   <AvatarFallback className="bg-primary text-primary-foreground">
                     Anu
                   </AvatarFallback>
