@@ -25,8 +25,6 @@ const navLinks = [
   { href: "/journal", label: "Journal" },
   { href: "/calendar", label: "Calendar" },
   { href: "/tribe", label: "Tribe" },
-  { href: "/reminders", label: "Reminders" },
-  { href: "/checklist", label: "Checklists" },
   { href: "/profile", label: "Profile" },
 ];
 
