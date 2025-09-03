@@ -26,7 +26,6 @@ export default function ProfilePage() {
 
   const { toast } = useToast();
   const router = useRouter();
-  const personaStorageKey = `userPersona_${currentUser.id}`;
 
   const journalEntriesCount = currentUser.journalEntries?.length || 0;
   const progress = Math.min((journalEntriesCount / 15) * 100, 100);
@@ -34,26 +33,8 @@ export default function ProfilePage() {
   const streakDays = currentUser.journalEntries ? Math.min(currentUser.journalEntries.length, 15) : 0; // Simplified streak
 
   useEffect(() => {
-    // Load persona from local storage on mount
-    const cachedPersona = localStorage.getItem(personaStorageKey);
-    if (cachedPersona) {
-        try {
-            const parsedPersona = JSON.parse(cachedPersona);
-            setPersona(parsedPersona);
-            // Sync with mock data for other components
-            if (currentUser) {
-                currentUser.persona = parsedPersona.persona;
-            }
-        } catch (error) {
-            console.error("Failed to parse cached persona:", error);
-            localStorage.removeItem(personaStorageKey);
-        }
-    } else if (currentUser.persona) {
-        // Fallback to mock data if no local storage
+    if (currentUser.persona) {
         setPersona({ persona: currentUser.persona, hobbies: [], interests: [], personalityTraits: [] });
-    } else {
-        // If there's no persona in mock data, ensure local storage is also cleared
-        localStorage.removeItem(personaStorageKey);
     }
 
     if (currentUser.personaLastGenerated) {
@@ -63,7 +44,7 @@ export default function ProfilePage() {
             setCanRegenerate(false);
         }
     }
-  }, [personaStorageKey]);
+  }, []);
 
 
   const handleGeneratePersona = async () => {
@@ -85,9 +66,6 @@ export default function ProfilePage() {
       const entriesText = currentUser.journalEntries.join("\n\n");
       const result = await generatePersonalityPersona({ journalEntries: entriesText });
       setPersona(result);
-      
-      // Save to local storage
-      localStorage.setItem(personaStorageKey, JSON.stringify(result));
       
       // Also save to our mock currentUser
       currentUser.persona = result.persona;
