@@ -1,5 +1,5 @@
 import { BookOpen, Brush, Mountain } from 'lucide-react';
-import type { User, Connection, DailySummary } from './types';
+import type { User, Connection, DailySummary, Reminder } from './types';
 
 export const currentUser: User = {
   id: 'user-0',
@@ -10,7 +10,8 @@ export const currentUser: User = {
   journalEntries: [
     "Today was a whirlwind of activity. I felt a deep sense of accomplishment after finishing a major project at work. It's moments like these that make the long hours feel worth it. In the evening, I took a long walk in the park to clear my head. The quiet rustle of leaves and the cool breeze were incredibly calming.",
     "Feeling a bit introspective today. I've been thinking a lot about my goals for the next five years. It's a bit daunting, but also exciting. I want to travel more and learn a new language. I spent some time reading a book on philosophy, which always helps put things in perspective.",
-    "Had a wonderful time with friends tonight. We went out for dinner and just talked for hours. It's so important to have that human connection. I feel energized and grateful for the people in my life. Laughter really is the best medicine."
+    "Had a wonderful time with friends tonight. We went out for dinner and just talked for hours. It's so important to have that human connection. I feel energized and grateful for the people in my life. Laughter really is the best medicine.",
+    "Journal entry 4", "Journal entry 5", "Journal entry 6", "Journal entry 7", "Journal entry 8", "Journal entry 9", "Journal entry 10", "Journal entry 11", "Journal entry 12", "Journal entry 13", "Journal entry 14", "Journal entry 15"
   ],
 };
 
@@ -92,6 +93,16 @@ export const matchedUsers = [
         persona: 'A creative and empathetic soul with a love for art and nature. They are a thoughtful observer of the world, finding beauty in the small details and expressing themselves through various creative outlets. Deeply value meaningful connections.',
     }
 ]
+
+export let reminders: Reminder[] = [
+    {
+        id: 'rem-1',
+        date: '2024-07-15',
+        time: '10:00',
+        title: 'Doctor Appointment',
+        details: 'Annual check-up with Dr. Smith.'
+    }
+];
 
 export const dailySummaries: DailySummary[] = [
     {

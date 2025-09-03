@@ -17,21 +17,33 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Plus } from "lucide-react";
+import { Bell, Plus } from "lucide-react";
+import { reminders } from "@/lib/mock-data";
+import { format } from "date-fns";
 
 export default function RemindersPage() {
   const { toast } = useToast();
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [remindersList, setRemindersList] = useState(reminders);
 
   const handleSetReminder = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    const title = formData.get("title") as string;
+    const newReminder = {
+        id: `rem-${Date.now()}`,
+        title: formData.get("title") as string,
+        date: formData.get("date") as string,
+        time: formData.get("time") as string,
+        details: formData.get("details") as string,
+    };
     
     // In a real app, you would save this to a backend.
+    reminders.push(newReminder);
+    setRemindersList([...reminders]);
+
     toast({
       title: "Reminder Set!",
-      description: `We'll remind you about "${title}". (Functionality not implemented)`,
+      description: `We'll remind you about "${newReminder.title}".`,
     });
   };
 
@@ -90,10 +102,27 @@ export default function RemindersPage() {
         </Dialog>
       </div>
 
-      <div className="text-center text-muted-foreground py-16 border-2 border-dashed rounded-lg">
-        <p>You have no upcoming reminders.</p>
-        <p className="text-sm">Click "Set Reminder" to add a new one.</p>
-      </div>
+      {remindersList.length > 0 ? (
+        <div className="space-y-4">
+            {remindersList.map((reminder) => (
+                <div key={reminder.id} className="p-4 border rounded-lg flex items-start gap-4">
+                    <Bell className="h-5 w-5 text-primary mt-1" />
+                    <div>
+                        <h3 className="font-semibold">{reminder.title}</h3>
+                        <p className="text-sm text-muted-foreground">
+                            {format(new Date(`${reminder.date}T${reminder.time}`), 'MMMM d, yyyy')} at {format(new Date(`${reminder.date}T${reminder.time}`), 'p')}
+                        </p>
+                        {reminder.details && <p className="text-sm mt-1">{reminder.details}</p>}
+                    </div>
+                </div>
+            ))}
+        </div>
+      ) : (
+        <div className="text-center text-muted-foreground py-16 border-2 border-dashed rounded-lg">
+            <p>You have no upcoming reminders.</p>
+            <p className="text-sm">Click "Set Reminder" to add a new one.</p>
+        </div>
+      )}
     </div>
   );
 }

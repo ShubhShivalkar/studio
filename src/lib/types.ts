@@ -22,6 +22,14 @@ export type Message = {
     text: string;
 }
 
+export type Reminder = {
+    id: string;
+    date: string; // YYYY-MM-DD
+    time: string;
+    title: string;
+    details?: string;
+}
+
 export type DailySummary = {
     date: string; // YYYY-MM-DD
     summary: string;
