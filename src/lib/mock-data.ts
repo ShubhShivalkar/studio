@@ -95,7 +95,7 @@ export const allUsers: User[] = Array.from({ length: 24 }, (_, i) => {
         phone: `${i+1}000000000`,
         persona: samplePersonas[i],
         interestedInMeetups: (i % 3 !== 0), // About 2/3 of users are interested
-        availableDates: [`2024-07-20`, `2024-07-21`, `2024-07-27`, `2024-07-28`], // Example weekend availability for all users
+        availableDates: [`2024-09-07`, `2024-09-08`, `2024-09-14`, `2024-09-15`, `2024-09-21`, `2024-09-22`, `2024-09-28`, `2024-09-29`], // Example weekend availability for all users
         personaLastGenerated: undefined,
     };
 });
@@ -106,16 +106,7 @@ export let reminders: Reminder[] = [];
 export let checklists: Checklist[] = [];
 
 // Pre-populate with available weekends for the current user for testing purposes
-export const dailySummaries: DailySummary[] = [
-    { date: '2024-07-06', isAvailable: true },
-    { date: '2024-07-07', isAvailable: true },
-    { date: '2024-07-13', isAvailable: true },
-    { date: '2024-07-14', isAvailable: true },
-    { date: '2024-07-20', isAvailable: true },
-    { date: '2024-07-21', isAvailable: true },
-    { date: '2024-07-27', isAvailable: true },
-    { date: '2024-07-28', isAvailable: true },
-];
+export const dailySummaries: DailySummary[] = [];
 
 // Dynamically add availability for the current month's weekends for the currentUser
 const today = new Date();
