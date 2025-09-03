@@ -77,9 +77,28 @@ const samplePersonas = [
   "A sophisticated and cultured art curator with a keen eye for detail. They enjoy visiting galleries, attending the opera, and hosting elegant dinner parties. They are eloquent, polished, and appreciate the finer things in life.",
 ];
 
+const generateWeekendDatesForCurrentMonth = () => {
+    const dates: string[] = [];
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = today.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    for (let day = 1; day <= daysInMonth; day++) {
+        const date = new Date(year, month, day);
+        if (date.getDay() === 0 || date.getDay() === 6) { // 0 is Sunday, 6 is Saturday
+            dates.push(`${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`);
+        }
+    }
+    return dates;
+};
+
+const weekendDates = generateWeekendDatesForCurrentMonth();
+
+
 // This represents our "database" of all users in the system.
 export const allUsers: User[] = Array.from({ length: 24 }, (_, i) => {
-    const gender = i % 2 === 0 ? 'Male' : 'Female';
+    const gender = (i % 2 === 0) ? 'Male' : 'Female';
     // Generates birth years for ages 24-26 in 2024 (1998, 1999, 2000)
     const year = 1998 + (i % 3); 
     const month = (i % 12) + 1;
@@ -95,7 +114,7 @@ export const allUsers: User[] = Array.from({ length: 24 }, (_, i) => {
         phone: `${i+1}000000000`,
         persona: samplePersonas[i],
         interestedInMeetups: (i % 3 !== 0), // About 2/3 of users are interested
-        availableDates: [`2024-09-07`, `2024-09-08`, `2024-09-14`, `2024-09-15`, `2024-09-21`, `2024-09-22`, `2024-09-28`, `2024-09-29`], // Example weekend availability for all users
+        availableDates: weekendDates,
         personaLastGenerated: undefined,
     };
 });
@@ -109,19 +128,8 @@ export let checklists: Checklist[] = [];
 export const dailySummaries: DailySummary[] = [];
 
 // Dynamically add availability for the current month's weekends for the currentUser
-const today = new Date();
-const year = today.getFullYear();
-const month = today.getMonth();
-const daysInMonth = new Date(year, month + 1, 0).getDate();
+weekendDates.forEach(dateStr => {
+    dailySummaries.push({ date: dateStr, isAvailable: true });
+});
 
-for (let day = 1; day <= daysInMonth; day++) {
-    const date = new Date(year, month, day);
-    const dayOfWeek = date.getDay(); // 0 = Sunday, 6 = Saturday
-    if (dayOfWeek === 0 || dayOfWeek === 6) {
-        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-        // Add only if it doesn't already exist to avoid duplicates
-        if (!dailySummaries.some(d => d.date === dateStr)) {
-            dailySummaries.push({ date: dateStr, isAvailable: true });
-        }
-    }
-}
+    

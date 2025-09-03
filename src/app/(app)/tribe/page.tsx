@@ -63,10 +63,11 @@ export default function TribePage() {
       setTribeState("finding");
 
       try {
-        // 1. Find common availability
+        // 1. Find common availability for the current month
+        const currentMonthPrefix = new Date().toISOString().substring(0, 7);
         const userAvailableDates = new Set(
           dailySummaries
-            .filter(d => d.isAvailable && d.date.startsWith(new Date().toISOString().substring(0, 7))) // Check current month
+            .filter(d => d.isAvailable && d.date.startsWith(currentMonthPrefix))
             .map(d => d.date)
         );
         
@@ -80,9 +81,15 @@ export default function TribePage() {
             .filter(u => u.id !== currentUser.id && u.interestedInMeetups)
             .map(u => ({
                 ...u,
-                availableDates: u.availableDates?.filter(d => userAvailableDates.has(d)) || []
+                availableDates: u.availableDates?.filter(d => d.startsWith(currentMonthPrefix) && userAvailableDates.has(d)) || []
             }))
             .filter(u => u.availableDates.length > 0);
+
+        if (otherUsersWithAvailability.length === 0) {
+            setTribe(null);
+            setTribeState("finding");
+            return;
+        }
 
         const bestMeetupDate = Array.from(userAvailableDates)[0]; // Simplistic: pick the first common date
 
@@ -125,13 +132,19 @@ export default function TribePage() {
         const finalTribeMembers: MatchedUser[] = [];
         const maxMembersPerGender = Math.min(maleMatches.length, femaleMatches.length, 5); // up to 10 members total
 
-        if (maxMembersPerGender > 1) { // Need at least 2 of each gender to form a group of 4+
-            if (currentUser.gender === 'Male') {
-                finalTribeMembers.push(...maleMatches.slice(0, maxMembersPerGender -1));
-                finalTribeMembers.push(...femaleMatches.slice(0, maxMembersPerGender));
-            } else {
-                finalTribeMembers.push(...maleMatches.slice(0, maxMembersPerGender));
-                finalTribeMembers.push(...femaleMatches.slice(0, maxMembersPerGender -1));
+        if (maxMembersPerGender > 0) {
+             if (currentUser.gender === 'Male') {
+                 // Need 1 less male to make room for current user
+                 if (maxMembersPerGender >= 1) {
+                    finalTribeMembers.push(...maleMatches.slice(0, maxMembersPerGender - 1));
+                    finalTribeMembers.push(...femaleMatches.slice(0, maxMembersPerGender));
+                 }
+            } else { // current user is female
+                // Need 1 less female to make room for current user
+                if (maxMembersPerGender >= 1) {
+                    finalTribeMembers.push(...maleMatches.slice(0, maxMembersPerGender));
+                    finalTribeMembers.push(...femaleMatches.slice(0, maxMembersPerGender - 1));
+                }
             }
 
             // Add current user to their own tribe object for display
