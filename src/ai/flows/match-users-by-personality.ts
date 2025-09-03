@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview Matches users based on the compatibility of their personality traits derived from journal entries.
@@ -71,7 +72,23 @@ const matchUsersByPersonalityFlow = ai.defineFlow(
     outputSchema: MatchUsersByPersonalityOutputSchema,
   },
   async input => {
-    const {output} = await matchUsersByPersonalityPrompt(input);
-    return output!;
+     try {
+      const {output} = await matchUsersByPersonalityPrompt(input);
+      return output!;
+    } catch (error) {
+      if (error instanceof Error && (error.message.includes('429') || error.message.includes('503'))) {
+        console.warn('AI model is overloaded or rate-limited, retrying in 2 seconds...');
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        try {
+          const {output} = await matchUsersByPersonalityPrompt(input);
+          return output!;
+        } catch (retryError) {
+          console.error('AI model retry failed:', retryError);
+          throw new Error("The AI model is currently busy. Please try again in a few moments.");
+        }
+      }
+      console.error('An unexpected error occurred in the matching flow:', error);
+      throw error;
+    }
   }
 );
