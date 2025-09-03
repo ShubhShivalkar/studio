@@ -5,7 +5,8 @@ import { useState } from 'react';
 import { format, isSameDay, parseISO } from 'date-fns';
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { dailySummaries } from "@/lib/mock-data";
 import type { DailySummary } from '@/lib/types';
 import { cn } from '@/lib/utils';
@@ -41,6 +42,7 @@ function DayCellContent({ date }: { date: Date }) {
 export default function CalendarPage() {
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [selectedSummary, setSelectedSummary] = useState<DailySummary | null>(null);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
   const { toast } = useToast();
 
   const handleDateSelect = (selectedDate: Date | undefined) => {
@@ -48,8 +50,10 @@ export default function CalendarPage() {
     if (selectedDate) {
       const summary = dailySummaries.find(d => isSameDay(parseISO(d.date), selectedDate)) || null;
       setSelectedSummary(summary);
+      setIsSheetOpen(true);
     } else {
       setSelectedSummary(null);
+      setIsSheetOpen(false);
     }
   };
 
@@ -63,27 +67,31 @@ export default function CalendarPage() {
   
   const handleDelete = () => {
     if (!selectedSummary) return;
-    // In a real app, you would call an API to delete the entry.
-    // For now, we just show a toast.
     toast({
         variant: "destructive",
         title: "Deleted Summary",
         description: `Entry for ${selectedSummary.date} has been deleted. (Frontend only)`
     })
+    setIsSheetOpen(false);
     setSelectedSummary(null); 
   }
 
   return (
-    <div className="grid gap-6 md:grid-cols-3 h-full">
-      <Card className="md:col-span-2">
-        <CardContent className="p-2 md:p-6 flex justify-center items-start">
+    <div className="h-full flex flex-col">
+      <Card className="flex-1 flex flex-col">
+        <CardContent className="flex-1 flex justify-center items-start p-2 md:p-6">
           <Calendar
             mode="single"
             selected={date}
             onSelect={handleDateSelect}
-            className="w-full"
+            className="w-full h-full"
             classNames={{
-                cell: "h-16 w-full text-center",
+                months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0 h-full",
+                month: "space-y-4 flex-1 flex flex-col",
+                table: "w-full border-collapse space-y-1 flex-1",
+                head_row: "flex",
+                row: "flex w-full mt-2 flex-1",
+                cell: "text-center text-sm p-0 relative flex-1",
                 day: cn(
                     "w-full h-full rounded-md",
                     "hover:bg-accent/50 transition-colors"
@@ -95,17 +103,18 @@ export default function CalendarPage() {
           />
         </CardContent>
       </Card>
-      <div className="md:col-span-1">
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-headline">
+      
+      <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+        <SheetContent side="bottom" className="rounded-t-lg">
+          <SheetHeader>
+            <SheetTitle className="font-headline text-2xl">
               {date ? format(date, 'MMMM d, yyyy') : 'Select a date'}
-            </CardTitle>
-            <CardDescription>
+            </SheetTitle>
+            <SheetDescription>
               Your summary and insights for the selected day.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="min-h-[12rem] space-y-4">
+            </SheetDescription>
+          </SheetHeader>
+          <div className="py-4">
             {selectedSummary ? (
               <div>
                 <div className="flex justify-between items-start">
@@ -157,9 +166,9 @@ export default function CalendarPage() {
                 <p>No summary for this day.</p>
               </div>
             )}
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
