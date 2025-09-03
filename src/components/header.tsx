@@ -7,6 +7,10 @@ import {
   PenLine,
   Plus,
   ListTodo,
+  BookText,
+  Calendar,
+  Users,
+  UserCircle
 } from "lucide-react";
 import Link from "next/link";
 
@@ -22,10 +26,12 @@ import { cn } from "@/lib/utils";
 import { usePathname } from "next/navigation";
 
 const navLinks = [
-  { href: "/journal", label: "Journal" },
-  { href: "/calendar", label: "Calendar" },
-  { href: "/tribe", label: "Tribe" },
-  { href: "/profile", label: "Profile" },
+  { href: "/journal", label: "Journal", icon: <BookText className="h-5 w-5" /> },
+  { href: "/calendar", label: "Calendar", icon: <Calendar className="h-5 w-5" /> },
+  { href: "/reminders", label: "Reminders", icon: <AlarmClock className="h-5 w-5" /> },
+  { href: "/checklist", label: "Checklists", icon: <ListTodo className="h-5 w-5" /> },
+  { href: "/tribe", label: "Tribe", icon: <Users className="h-5 w-5" /> },
+  { href: "/profile", label: "Profile", icon: <UserCircle className="h-5 w-5" /> },
 ];
 
 export function Header() {
@@ -59,6 +65,7 @@ export function Header() {
                   pathname === link.href && "bg-muted text-foreground"
                 )}
               >
+                {link.icon}
                 {link.label}
               </Link>
             ))}
@@ -70,7 +77,7 @@ export function Header() {
       </div>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="primary" size="sm" className="ml-auto gap-1">
+          <Button variant="default" size="sm" className="ml-auto gap-1">
             <Plus className="h-4 w-4" />
             <span>New</span>
           </Button>
