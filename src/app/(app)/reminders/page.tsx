@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Bell, Plus } from "lucide-react";
+import { Bell, Plus, Trash2 } from "lucide-react";
 import { reminders } from "@/lib/mock-data";
 import { format } from "date-fns";
 
@@ -46,6 +46,22 @@ export default function RemindersPage() {
       description: `We'll remind you about "${newReminder.title}".`,
     });
   };
+  
+  const handleDeleteReminder = (reminderId: string) => {
+    const reminderToDelete = remindersList.find(r => r.id === reminderId);
+    if (!reminderToDelete) return;
+
+    // In a real app, this would be an API call
+    const newReminders = remindersList.filter((reminder) => reminder.id !== reminderId);
+    reminders.splice(0, reminders.length, ...newReminders); // Update mock data source
+    setRemindersList(newReminders);
+
+    toast({
+        variant: "destructive",
+        title: "Reminder Deleted",
+        description: `"${reminderToDelete.title}" has been removed.`
+    });
+  }
 
   return (
     <div className="p-4 md:p-6">
@@ -106,14 +122,17 @@ export default function RemindersPage() {
         <div className="space-y-4">
             {remindersList.map((reminder) => (
                 <div key={reminder.id} className="p-4 border rounded-lg flex items-start gap-4">
-                    <Bell className="h-5 w-5 text-primary mt-1" />
-                    <div>
+                    <Bell className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
+                    <div className="flex-grow">
                         <h3 className="font-semibold">{reminder.title}</h3>
                         <p className="text-sm text-muted-foreground">
                             {format(new Date(`${reminder.date}T${reminder.time}`), 'MMMM d, yyyy')} at {format(new Date(`${reminder.date}T${reminder.time}`), 'p')}
                         </p>
                         {reminder.details && <p className="text-sm mt-1">{reminder.details}</p>}
                     </div>
+                    <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive flex-shrink-0" onClick={() => handleDeleteReminder(reminder.id)}>
+                        <Trash2 className="h-4 w-4"/>
+                    </Button>
                 </div>
             ))}
         </div>
@@ -126,3 +145,5 @@ export default function RemindersPage() {
     </div>
   );
 }
+
+    

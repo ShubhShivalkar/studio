@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
-import { dailySummaries, reminders } from "@/lib/mock-data";
+import { dailySummaries, reminders as mockReminders } from "@/lib/mock-data";
 import type { DailySummary, Reminder } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Pencil, Trash2, Bell } from 'lucide-react';
@@ -18,7 +18,7 @@ import { Switch } from '@/components/ui/switch';
 
 function CustomDayContent(props: DayContentProps) {
     const dayData = dailySummaries.find(d => isSameDay(parseISO(d.date), props.date));
-    const dayReminders = reminders.filter(r => isSameDay(parseISO(r.date), props.date));
+    const dayReminders = mockReminders.filter(r => isSameDay(parseISO(r.date), props.date));
 
     if (props.displayMonth.getMonth() !== props.date.getMonth()) {
       return <DayContent {...props} />;
@@ -46,6 +46,7 @@ function CustomDayContent(props: DayContentProps) {
 
 export default function CalendarPage() {
   const [date, setDate] = useState<Date | undefined>(new Date());
+  const [reminders, setReminders] = useState(mockReminders);
   const [selectedSummary, setSelectedSummary] = useState<DailySummary | null>(null);
   const [selectedReminders, setSelectedReminders] = useState<Reminder[]>([]);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -68,6 +69,35 @@ export default function CalendarPage() {
       setIsSheetOpen(false);
     }
   };
+  
+  const handleDeleteReminder = (reminderId: string) => {
+    // In a real app, you would call an API to delete the reminder.
+    // For now, we update the mock data directly.
+    const reminderToDelete = reminders.find(r => r.id === reminderId);
+    if (!reminderToDelete) return;
+
+    const newReminders = reminders.filter(r => r.id !== reminderId);
+    setReminders(newReminders);
+    // This is a bit of a hack for mock data to keep pages in sync
+    mockReminders.splice(0, mockReminders.length, ...newReminders);
+
+    // Update the selected reminders in the sheet
+    setSelectedReminders(prev => prev.filter(r => r.id !== reminderId));
+
+    toast({
+        variant: "destructive",
+        title: "Reminder Deleted",
+        description: `"${reminderToDelete.title}" has been removed.`
+    });
+
+    // If no reminders or summary left, consider closing the sheet or showing the empty state.
+    const summary = dailySummaries.find(d => isSameDay(parseISO(d.date), date!)) || null;
+    if (newReminders.filter(r => isSameDay(parseISO(r.date), date!)).length === 0 && !summary) {
+        // Optionally close sheet if nothing is left to show
+        // setIsSheetOpen(false); 
+    }
+  }
+
 
   const handleAvailabilityChange = (checked: boolean) => {
     setIsAvailableForTribe(checked);
@@ -157,14 +187,17 @@ export default function CalendarPage() {
                     <div className="space-y-2">
                         {selectedReminders.map(reminder => (
                             <div key={reminder.id} className="flex items-start gap-3 p-3 bg-secondary rounded-lg">
-                                <Bell className="h-5 w-5 text-primary mt-1" />
-                                <div>
+                                <Bell className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
+                                <div className="flex-grow">
                                     <h3 className="font-semibold">{reminder.title}</h3>
                                     <p className="text-sm text-muted-foreground">
                                         {format(new Date(`${reminder.date}T${reminder.time}`), 'p')}
                                         {reminder.details && ` - ${reminder.details}`}
                                     </p>
                                 </div>
+                                <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive flex-shrink-0" onClick={() => handleDeleteReminder(reminder.id)}>
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
                             </div>
                         ))}
                     </div>
@@ -264,3 +297,5 @@ export default function CalendarPage() {
     </div>
   );
 }
+
+    
