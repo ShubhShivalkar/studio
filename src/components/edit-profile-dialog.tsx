@@ -19,6 +19,7 @@ import { User as UserIcon } from 'lucide-react';
 import type { User } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { format, parseISO } from 'date-fns';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface EditProfileDialogProps {
   user: User;
@@ -26,6 +27,23 @@ interface EditProfileDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
+
+const religions = [
+  "Christianity",
+  "Islam",
+  "Hinduism",
+  "Buddhism",
+  "Sikhism",
+  "Judaism",
+  "Baháʼí Faith",
+  "Jainism",
+  "Shinto",
+  "Taoism",
+  "Zoroastrianism",
+  "Atheism/Agnosticism",
+  "Other",
+  "Prefer not to say",
+];
 
 export function EditProfileDialog({ user, onUpdate, open, onOpenChange }: EditProfileDialogProps) {
   const [avatarPreview, setAvatarPreview] = useState<string>(user.avatar);
@@ -109,13 +127,16 @@ export function EditProfileDialog({ user, onUpdate, open, onOpenChange }: EditPr
             <Label htmlFor="religion" className="text-right">
               Religion
             </Label>
-            <Input
-              id="religion"
-              value={religion}
-              onChange={(e) => setReligion(e.target.value)}
-              placeholder="Your religion"
-              className="col-span-3"
-            />
+            <Select value={religion} onValueChange={setReligion}>
+                <SelectTrigger className="col-span-3">
+                    <SelectValue placeholder="Select your religion" />
+                </SelectTrigger>
+                <SelectContent>
+                    {religions.map((r) => (
+                        <SelectItem key={r} value={r}>{r}</SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
           </div>
         </div>
         <DialogFooter>
