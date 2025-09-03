@@ -8,6 +8,7 @@ export type User = {
   dob: string;
   gender: 'Male' | 'Female' | 'Other' | 'Prefer not to say';
   journalEntries?: string[];
+  phone: string;
 };
 
 export type Connection = {

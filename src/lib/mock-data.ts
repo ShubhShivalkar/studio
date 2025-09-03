@@ -1,6 +1,8 @@
 import { BookOpen, Brush, Mountain } from 'lucide-react';
 import type { User, Connection, DailySummary, Reminder, Checklist } from './types';
 
+// The user who is currently logged in.
+// Initially, it's a new user. After "login", this object will be updated.
 export let currentUser: User = {
   id: 'user-0',
   name: 'New User',
@@ -8,9 +10,11 @@ export let currentUser: User = {
   dob: '',
   gender: 'Prefer not to say',
   journalEntries: [],
+  phone: '',
 };
 
-export const otherUsers: User[] = [
+// This represents our "database" of all users in the system.
+export const allUsers: User[] = [
   {
     id: 'user-1',
     name: 'Samira Khan',
@@ -18,6 +22,8 @@ export const otherUsers: User[] = [
     dob: '1992-04-22',
     gender: 'Female',
     persona: 'A creative and empathetic soul with a love for art and nature. They are a thoughtful observer of the world, finding beauty in the small details and expressing themselves through various creative outlets. Deeply value meaningful connections.',
+    phone: '111-222-3333',
+    journalEntries: ['Felt accomplished after finishing a major project. Took a calming walk in the evening.', 'Introspective day thinking about future goals. Reading philosophy was insightful.'],
   },
   {
     id: 'user-2',
@@ -26,6 +32,8 @@ export const otherUsers: User[] = [
     dob: '1988-11-30',
     gender: 'Male',
     persona: 'An adventurous and optimistic individual who thrives on new experiences. They are driven by curiosity and a desire to explore the world. Possesses a resilient spirit and a knack for finding the silver lining in any situation.',
+    phone: '222-333-4444',
+    journalEntries: ['Explored a new hiking trail and felt so refreshed. The view from the top was worth the climb!'],
   },
   {
     id: 'user-3',
@@ -34,6 +42,8 @@ export const otherUsers: User[] = [
     dob: '1998-07-12',
     gender: 'Female',
     persona: 'A logical and ambitious thinker with a passion for problem-solving. They are highly organized and driven to achieve their goals. Enjoys intellectual challenges and engaging in deep, analytical conversations.',
+    phone: '333-444-5555',
+    journalEntries: [],
   },
   {
     id: 'user-4',
@@ -42,6 +52,8 @@ export const otherUsers: User[] = [
     dob: '1994-02-05',
     gender: 'Male',
     persona: 'A calm and grounded presence, who values stability and harmony. They are a loyal friend and a good listener, often providing a sense of comfort to those around them. Finds joy in simple pleasures and a well-balanced life.',
+    phone: '444-555-6666',
+    journalEntries: [],
   },
   {
     id: 'user-5',
@@ -50,6 +62,8 @@ export const otherUsers: User[] = [
     dob: '2000-09-18',
     gender: 'Female',
     persona: 'A vibrant and energetic spirit with a contagious zest for life. They are sociable and outgoing, effortlessly making connections with others. Thrives in dynamic environments and is always open to new ideas and perspectives.',
+    phone: '555-666-7777',
+    journalEntries: [],
   },
   {
     id: 'user-6',
@@ -58,8 +72,13 @@ export const otherUsers: User[] = [
     dob: '1996-06-01',
     gender: 'Other',
     persona: 'An introspective and philosophical individual who is always seeking to understand the deeper meaning of things. They are highly intuitive and value authenticity above all else. Often lost in thought, they possess a rich inner world.',
+    phone: '666-777-8888',
+    journalEntries: [],
   },
 ];
+
+// Re-export otherUsers for compatibility with existing code that uses it.
+export const otherUsers = allUsers.filter(u => u.id !== currentUser.id);
 
 export const connections: Connection[] = [
     { id: 'conn-1', userId: 'user-1', status: 'accepted' },

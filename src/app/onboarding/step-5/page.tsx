@@ -6,20 +6,29 @@ import { Button } from '@/components/ui/button';
 import { CheckCircle } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import useOnboardingStore from '@/store/onboarding';
-import { currentUser } from '@/lib/mock-data';
+import { currentUser, allUsers } from '@/lib/mock-data';
+import type { User } from '@/lib/types';
 
 export default function Step5Page() {
   const router = useRouter();
   const onboardingData = useOnboardingStore((state) => state);
 
   const handleFinish = () => {
-    // Save the collected data to the mock current user object
-    currentUser.id = `user-${Date.now()}`;
-    currentUser.name = onboardingData.name;
-    currentUser.dob = onboardingData.dob;
-    currentUser.gender = onboardingData.gender as 'Male' | 'Female' | 'Other' | 'Prefer not to say';
-    currentUser.avatar = onboardingData.avatar;
-    currentUser.journalEntries = [];
+    // Create the new user object
+    const newUser: User = {
+        id: `user-${Date.now()}`,
+        name: onboardingData.name,
+        dob: onboardingData.dob,
+        gender: onboardingData.gender as 'Male' | 'Female' | 'Other' | 'Prefer not to say',
+        avatar: onboardingData.avatar,
+        phone: onboardingData.phone,
+        journalEntries: [],
+    };
+    
+    // Add the new user to our mock "database"
+    allUsers.push(newUser);
+    // Set the new user as the currently logged-in user
+    Object.assign(currentUser, newUser);
     
     // In a real app, you would save this to a backend.
     router.push('/journal');
