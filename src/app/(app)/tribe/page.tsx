@@ -11,7 +11,7 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { allUsers, currentUser } from "@/lib/mock-data";
-import { Bot, Users, ShieldAlert, CheckCircle, XCircle, MessageSquare, Info } from "lucide-react";
+import { Bot, Users, ShieldAlert, CheckCircle, XCircle, MessageSquare, Info, UserX, UserCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -33,11 +33,12 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Separator } from "@/components/ui/separator";
 
 type MatchedUser = MatchUsersByPersonalityOutput[0] & {
   user: User;
   matchReason: string;
-  rsvpStatus: 'accepted' | 'rejected';
+  rsvpStatus: 'accepted' | 'rejected' | 'pending';
   rejectionReason?: string;
 };
 
@@ -86,7 +87,7 @@ const staticTribe: Tribe = {
             persona: allUsers[2].persona!,
             user: allUsers[2],
             matchReason: "You both share a love for learning new things and expressing creativity, suggesting great conversations.",
-            rsvpStatus: 'accepted',
+            rsvpStatus: 'pending',
         },
     ]
 };
@@ -154,6 +155,10 @@ export default function TribePage() {
   }
   
   const currentUserRsvp = tribe?.members.find(m => m.userId === currentUser.id)?.rsvpStatus;
+  
+  const attendingMembers = tribe?.members.filter(m => m.rsvpStatus === 'accepted' || m.rsvpStatus === 'pending');
+  const rejectedMembers = tribe?.members.filter(m => m.rsvpStatus === 'rejected');
+  const isTribeComplete = attendingMembers && attendingMembers.length >= 4;
 
   return (
     <Card>
@@ -210,13 +215,23 @@ export default function TribePage() {
             <div className="w-full">
                  <Card className="mb-6 bg-secondary">
                     <CardHeader>
-                        <CardTitle className="font-headline text-center">Your Tribe is Ready!</CardTitle>
-                        <CardDescription className="text-center">You've been invited to a meetup.</CardDescription>
+                        <CardTitle className="font-headline text-center">
+                            {isTribeComplete ? "Your Tribe is Ready!" : "Partial Tribe Formed"}
+                        </CardTitle>
+                        <CardDescription className="text-center">
+                             {isTribeComplete ? "You've been invited to a meetup." : `Waiting for ${4 - attendingMembers!.length} more member(s) to join.`}
+                        </CardDescription>
                     </CardHeader>
                     <CardContent className="text-center space-y-2">
-                        <p><strong>Meetup Date:</strong> {new Date(tribe.meetupDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
-                        <p><strong>Location:</strong> {tribe.location}</p>
-                        <div className="text-sm text-muted-foreground">Show this Tribe ID at the cafe: <Badge variant="outline">{tribe.id}</Badge></div>
+                        {isTribeComplete ? (
+                            <>
+                                <p><strong>Meetup Date:</strong> {new Date(tribe.meetupDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                                <p><strong>Location:</strong> {tribe.location}</p>
+                                <div className="text-sm text-muted-foreground">Show this Tribe ID at the cafe: <Badge variant="outline">{tribe.id}</Badge></div>
+                            </>
+                        ) : (
+                            <p className="text-sm text-muted-foreground">A location and Tribe ID will be assigned once the tribe is complete.</p>
+                        )}
                     </CardContent>
                     <CardFooter className="flex flex-col sm:flex-row items-center justify-center gap-2 pt-4">
                        <p className="text-sm font-medium">Your RSVP:</p>
@@ -258,83 +273,122 @@ export default function TribePage() {
                         </div>
                     </CardFooter>
                 </Card>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                    {tribe.members.map(member => (
-                        <Dialog key={member.userId}>
-                            <DialogTrigger asChild>
-                                <div className="cursor-pointer">
-                                    <ProfileCard 
-                                        user={member.user} 
-                                        compatibilityScore={member.compatibilityScore}
-                                        rsvpStatus={member.rsvpStatus}
-                                    />
-                                </div>
-                            </DialogTrigger>
-                            <DialogContent>
-                                <DialogHeader className="items-center">
-                                    <Avatar className="w-24 h-24 mb-4 border-4 border-primary/20">
-                                        <AvatarImage src={member.user.avatar} alt={member.user.name} data-ai-hint="person photo"/>
-                                        <AvatarFallback>{member.user.name.charAt(0)}</AvatarFallback>
-                                    </Avatar>
-                                    <DialogTitle className="font-headline">{member.user.name}</DialogTitle>
-                                    <DialogDescription>{member.user.gender}, Born {format(parseISO(member.user.dob), 'MMMM d, yyyy')} ({getAge(member.user.dob)} years old)</DialogDescription>
-                                     <Badge variant={member.rsvpStatus === 'accepted' ? 'secondary' : 'destructive'}>
-                                        {member.rsvpStatus === 'accepted' ? <CheckCircle className="mr-1.5" /> : <XCircle className="mr-1.5" />}
-                                        {member.rsvpStatus === 'accepted' ? 'Attending' : 'Not Attending'}
-                                    </Badge>
-                                </DialogHeader>
-                                <div className="space-y-4">
-                                     {member.rsvpStatus === 'rejected' && member.rejectionReason && (
-                                        <div className="p-3 bg-destructive/10 rounded-md text-sm">
-                                            <p className="font-semibold text-destructive flex items-center gap-2"><MessageSquare /> Reason for declining:</p>
-                                            <p className="text-destructive/80 italic">"{member.rejectionReason}"</p>
-                                        </div>
-                                    )}
 
-                                    <div>
-                                        <h3 className="font-semibold">Persona Summary</h3>
-                                        <p className="text-sm text-muted-foreground italic">"{member.persona}"</p>
+                <div className="mb-6">
+                    <h3 className="text-lg font-headline mb-2 flex items-center gap-2">
+                        <UserCheck /> Attending Members ({attendingMembers?.length})
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                        {attendingMembers?.map(member => (
+                            <Dialog key={member.userId}>
+                                <DialogTrigger asChild>
+                                    <div className="cursor-pointer">
+                                        <ProfileCard 
+                                            user={member.user} 
+                                            compatibilityScore={member.compatibilityScore}
+                                            rsvpStatus={member.rsvpStatus}
+                                        />
                                     </div>
-                                    
-                                     {member.user.hobbies && member.user.hobbies.length > 0 && (
+                                </DialogTrigger>
+                                <DialogContent>
+                                    <DialogHeader className="items-center">
+                                        <Avatar className="w-24 h-24 mb-4 border-4 border-primary/20">
+                                            <AvatarImage src={member.user.avatar} alt={member.user.name} data-ai-hint="person photo"/>
+                                            <AvatarFallback>{member.user.name.charAt(0)}</AvatarFallback>
+                                        </Avatar>
+                                        <DialogTitle className="font-headline">{member.user.name}</DialogTitle>
+                                        <DialogDescription>{member.user.gender}, Born {format(parseISO(member.user.dob), 'MMMM d, yyyy')} ({getAge(member.user.dob)} years old)</DialogDescription>
+                                        <Badge variant={member.rsvpStatus === 'accepted' ? 'secondary' : member.rsvpStatus === 'pending' ? 'outline' : 'destructive'}>
+                                            {member.rsvpStatus === 'accepted' ? <CheckCircle className="mr-1.5" /> : <XCircle className="mr-1.5" />}
+                                            {member.rsvpStatus === 'accepted' ? 'Attending' : member.rsvpStatus === 'pending' ? 'Pending RSVP' : 'Not Attending'}
+                                        </Badge>
+                                    </DialogHeader>
+                                    <div className="space-y-4">
                                         <div>
-                                            <h3 className="font-semibold mb-2">Hobbies</h3>
-                                            <div className="flex flex-wrap gap-2">
-                                                {member.user.hobbies.map((hobby, index) => (
-                                                    <Badge key={index} variant="secondary">{hobby}</Badge>
-                                                ))}
-                                            </div>
+                                            <h3 className="font-semibold">Persona Summary</h3>
+                                            <p className="text-sm text-muted-foreground italic">"{member.persona}"</p>
                                         </div>
-                                    )}
+                                        
+                                        {member.user.hobbies && member.user.hobbies.length > 0 && (
+                                            <div>
+                                                <h3 className="font-semibold mb-2">Hobbies</h3>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {member.user.hobbies.map((hobby, index) => (
+                                                        <Badge key={index} variant="secondary">{hobby}</Badge>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
 
-                                    {member.user.interests && member.user.interests.length > 0 && (
+                                        {member.user.interests && member.user.interests.length > 0 && (
+                                            <div>
+                                                <h3 className="font-semibold mb-2">Interests</h3>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {member.user.interests.map((interest, index) => (
+                                                        <Badge key={index} variant="secondary">{interest}</Badge>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+
                                         <div>
-                                            <h3 className="font-semibold mb-2">Interests</h3>
-                                            <div className="flex flex-wrap gap-2">
-                                                {member.user.interests.map((interest, index) => (
-                                                    <Badge key={index} variant="secondary">{interest}</Badge>
-                                                ))}
-                                            </div>
+                                            <h3 className="font-semibold">Why you're a good match</h3>
+                                            <p className="text-sm text-muted-foreground">{member.matchReason}</p>
                                         </div>
-                                    )}
-
-                                     <div>
-                                        <h3 className="font-semibold">Why you're a good match</h3>
-                                        <p className="text-sm text-muted-foreground">{member.matchReason}</p>
                                     </div>
-                                </div>
-                                { member.user.id !== currentUser.id && (
-                                     <DialogFooter className="pt-4">
-                                        <Button variant="outline" size="sm" onClick={() => handleReport(member.user.name)}>
-                                            <ShieldAlert className="h-4 w-4 mr-2" />
-                                            Report User
-                                        </Button>
-                                     </DialogFooter>
-                                )}
-                            </DialogContent>
-                        </Dialog>
-                    ))}
+                                    { member.user.id !== currentUser.id && (
+                                        <DialogFooter className="pt-4">
+                                            <Button variant="outline" size="sm" onClick={() => handleReport(member.user.name)}>
+                                                <ShieldAlert className="h-4 w-4 mr-2" />
+                                                Report User
+                                            </Button>
+                                        </DialogFooter>
+                                    )}
+                                </DialogContent>
+                            </Dialog>
+                        ))}
+                    </div>
                 </div>
+                 
+                 {rejectedMembers && rejectedMembers.length > 0 && (
+                    <div>
+                         <Separator className="my-6" />
+                         <h3 className="text-lg font-headline mb-4 flex items-center gap-2 text-destructive">
+                             <UserX /> Declined ({rejectedMembers.length})
+                         </h3>
+                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                             {rejectedMembers.map(member => (
+                                <Dialog key={member.userId}>
+                                    <DialogTrigger asChild>
+                                       <div className="flex flex-col items-center gap-2 cursor-pointer group">
+                                           <div className="relative">
+                                               <Avatar className="w-16 h-16 md:w-20 md:h-20 border-2 border-destructive/50 group-hover:border-destructive transition-colors">
+                                                    <AvatarImage src={member.user.avatar} alt={member.user.name} />
+                                                    <AvatarFallback>{member.user.name.charAt(0)}</AvatarFallback>
+                                               </Avatar>
+                                               <div className="absolute -bottom-1 -right-1 bg-destructive text-destructive-foreground rounded-full p-0.5">
+                                                  <XCircle className="h-4 w-4" />
+                                               </div>
+                                           </div>
+                                            <p className="text-sm font-medium text-center truncate w-full">{member.user.name}</p>
+                                       </div>
+                                    </DialogTrigger>
+                                    <DialogContent>
+                                        <DialogHeader>
+                                            <DialogTitle>Reason for Declining</DialogTitle>
+                                            <DialogDescription>This is why {member.user.name} can't make it to the meetup.</DialogDescription>
+                                        </DialogHeader>
+                                        <div className="p-4 bg-secondary rounded-md text-sm">
+                                            <p className="font-semibold flex items-center gap-2"><MessageSquare /> {member.user.name} says:</p>
+                                            <p className="text-muted-foreground italic">"{member.rejectionReason}"</p>
+                                        </div>
+                                    </DialogContent>
+                                </Dialog>
+                             ))}
+                         </div>
+                    </div>
+                 )}
+
                  <Alert className="mt-6">
                     <Info className="h-4 w-4"/>
                     <AlertTitle>Tribe Lock-in</AlertTitle>

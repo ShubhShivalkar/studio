@@ -12,18 +12,51 @@ import {
 import type { User } from "@/lib/types";
 import { Badge } from "./ui/badge";
 import { differenceInYears, parseISO, format } from 'date-fns';
-import { CheckCircle, XCircle } from "lucide-react";
+import { CheckCircle, XCircle, HelpCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ProfileCardProps {
   user: User;
   compatibilityScore?: number;
-  rsvpStatus?: 'accepted' | 'rejected';
+  rsvpStatus?: 'accepted' | 'rejected' | 'pending';
 }
 
 const getAge = (dob: string) => differenceInYears(new Date(), parseISO(dob));
 
 export function ProfileCard({ user, compatibilityScore, rsvpStatus }: ProfileCardProps) {
+  const getRsvpBadge = () => {
+    if (user.id === 'user-0') {
+        return <Badge>This is you!</Badge>;
+    }
+    
+    switch (rsvpStatus) {
+      case 'accepted':
+        return (
+          <Badge variant="secondary">
+            <CheckCircle className="mr-1.5" />
+            Attending
+          </Badge>
+        );
+      case 'rejected':
+        return (
+          <Badge variant="destructive">
+            <XCircle className="mr-1.5" />
+            Not Attending
+          </Badge>
+        );
+      case 'pending':
+         return (
+          <Badge variant="outline">
+            <HelpCircle className="mr-1.5" />
+            Pending RSVP
+          </Badge>
+        );
+      default:
+        return null;
+    }
+  };
+
+
   return (
     <Card className={cn("flex flex-col h-full hover:bg-muted/50 transition-colors", rsvpStatus === 'rejected' && "opacity-60")}>
       <CardHeader className="items-center text-center pb-2">
@@ -64,14 +97,7 @@ export function ProfileCard({ user, compatibilityScore, rsvpStatus }: ProfileCar
         )}
       </CardContent>
       <CardFooter className="flex justify-center gap-2 pt-4">
-        {user.id === 'user-0' ? (
-            <Badge>This is you!</Badge>
-        ) : rsvpStatus && (
-            <Badge variant={rsvpStatus === 'accepted' ? 'secondary' : 'destructive'}>
-                {rsvpStatus === 'accepted' ? <CheckCircle className="mr-1.5" /> : <XCircle className="mr-1.5" />}
-                {rsvpStatus === 'accepted' ? 'Attending' : 'Not Attending'}
-            </Badge>
-        )}
+        {getRsvpBadge()}
       </CardFooter>
     </Card>
   );
