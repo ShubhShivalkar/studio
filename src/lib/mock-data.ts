@@ -1,4 +1,5 @@
-import type { User, Connection } from './types';
+import { BookOpen, Brush, Mountain } from 'lucide-react';
+import type { User, Connection, DailySummary } from './types';
 
 export const currentUser: User = {
   id: 'user-0',
@@ -91,3 +92,38 @@ export const matchedUsers = [
         persona: 'A creative and empathetic soul with a love for art and nature. They are a thoughtful observer of the world, finding beauty in the small details and expressing themselves through various creative outlets. Deeply value meaningful connections.',
     }
 ]
+
+export const dailySummaries: DailySummary[] = [
+    {
+        date: '2024-07-15',
+        summary: 'Felt accomplished after finishing a major project. Took a calming walk in the evening.',
+        mood: '😊',
+        hobbies: [{ icon: Mountain, name: 'Hiking' }],
+        isAvailable: true,
+        hasMeetup: false,
+    },
+    {
+        date: '2024-07-22',
+        summary: 'Introspective day thinking about future goals. Reading philosophy was insightful.',
+        mood: '😐',
+        hobbies: [{ icon: BookOpen, name: 'Reading' }],
+        isAvailable: false,
+        hasMeetup: false,
+    },
+    {
+        date: '2024-07-28',
+        summary: 'Had a wonderful time with friends over dinner. Laughter and connection felt great.',
+        mood: '😊',
+        hobbies: [],
+        isAvailable: false,
+        hasMeetup: true,
+    },
+     {
+        date: '2024-08-05',
+        summary: 'Started a new painting today. Felt very creative and in the flow.',
+        mood: '😊',
+        hobbies: [{ icon: Brush, name: 'Painting' }],
+        isAvailable: true,
+        hasMeetup: false,
+    },
+];

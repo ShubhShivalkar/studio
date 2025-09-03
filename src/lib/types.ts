@@ -1,3 +1,5 @@
+import type { LucideIcon } from "lucide-react";
+
 export type User = {
   id: string;
   name: string;
@@ -19,3 +21,12 @@ export type Message = {
     sender: 'user' | 'ai';
     text: string;
 }
+
+export type DailySummary = {
+    date: string; // YYYY-MM-DD
+    summary: string;
+    mood: '😊' | '😢' | '😠' | '😮' | '😐';
+    hobbies: { icon: LucideIcon, name: string }[];
+    isAvailable: boolean;
+    hasMeetup: boolean;
+};
