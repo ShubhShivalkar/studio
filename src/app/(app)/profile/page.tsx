@@ -16,7 +16,7 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { differenceInDays, parseISO } from 'date-fns';
+import { differenceInDays, parseISO, format } from 'date-fns';
 import { EditProfileDialog } from "@/components/edit-profile-dialog";
 import type { User } from "@/lib/types";
 
