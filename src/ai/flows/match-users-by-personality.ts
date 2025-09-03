@@ -19,7 +19,7 @@ const MatchUsersByPersonalityInputSchema = z.object({
   otherUserPersonas: z
     .array(z.string())
     .describe(
-      'An array of personality personas from other users in the system, derived from their journal entries.'
+      'An array of personality personas from other users in the system, in the format "userId::persona".'
     ),
 });
 export type MatchUsersByPersonalityInput = z.infer<
@@ -32,7 +32,7 @@ const MatchUsersByPersonalityOutputSchema = z.array(
     compatibilityScore: z
       .number()
       .describe(
-        'A score indicating the compatibility between the current user and the matched user (0-100).' // Clarified description here
+        'A score indicating the compatibility between the current user and the matched user (0-100).'
       ),
     persona: z
       .string()
@@ -53,12 +53,12 @@ const matchUsersByPersonalityPrompt = ai.definePrompt({
   name: 'matchUsersByPersonalityPrompt',
   input: {schema: MatchUsersByPersonalityInputSchema},
   output: {schema: MatchUsersByPersonalityOutputSchema},
-  prompt: `You are an AI matchmaker. Given the personality persona of a user, compare it against a list of other user personas and determine a compatibility score (0-100) for each.  Return a list of users, their compatibility scores, and their personas, sorted by compatibility score descending.
+  prompt: `You are an AI matchmaker. Given the personality persona of a user, compare it against a list of other user personas and determine a compatibility score (0-100) for each. Each persona in the list is prefixed with "userId::". Ensure you extract the userId correctly. Return a list of users, their compatibility scores, and their personas, sorted by compatibility score descending.
 
 User Persona:
 {{userPersona}}
 
-Other User Personas:
+Other User Personas (Format: "userId::persona"):
 {{#each otherUserPersonas}}
 - {{{this}}}
 {{/each}}`,
