@@ -11,20 +11,25 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { currentUser } from "@/lib/mock-data";
-import { Bot, LogOut } from "lucide-react";
+import { Bot, LogOut, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 export default function ProfilePage() {
-  const [persona, setPersona] = useState<GeneratePersonalityPersonaOutput | null>(null);
+  const [persona, setPersona] = useState<GeneratePersonalityPersonaOutput | null>(
+    currentUser.persona ? { persona: currentUser.persona, hobbies: [], interests: [], personalityTraits: [] } : null
+  );
   const [isLoading, setIsLoading] = useState(false);
+  const [isInterested, setIsInterested] = useState(currentUser.interestedInMeetups || false);
+
   const { toast } = useToast();
   const router = useRouter();
 
   const journalEntriesCount = currentUser.journalEntries?.length || 0;
   const progress = Math.min((journalEntriesCount / 15) * 100, 100);
   const canGenerate = journalEntriesCount >= 15;
-
 
   const handleGeneratePersona = async () => {
     setIsLoading(true);
@@ -42,6 +47,8 @@ export default function ProfilePage() {
       const entriesText = currentUser.journalEntries.join("\n\n");
       const result = await generatePersonalityPersona({ journalEntries: entriesText });
       setPersona(result);
+      // Also save to our mock currentUser
+      currentUser.persona = result.persona;
     } catch (error) {
       console.error("Failed to generate persona:", error);
       toast({
@@ -54,13 +61,22 @@ export default function ProfilePage() {
     }
   };
 
+  const handleInterestToggle = (checked: boolean) => {
+    setIsInterested(checked);
+    currentUser.interestedInMeetups = checked; // In real app, this would be an API call
+    toast({
+        title: "Meetup Preference Updated",
+        description: `You are now ${checked ? 'discoverable by' : 'hidden from'} potential tribes.`
+    });
+  }
+
   const handleSignOut = () => {
     router.push('/');
   };
 
   return (
     <div className="grid gap-6 md:grid-cols-3">
-      <div className="md:col-span-1">
+      <div className="md:col-span-1 space-y-6">
         <Card>
           <CardHeader className="items-center">
             <Avatar className="w-24 h-24 mb-4 border-4 border-primary/20">
@@ -78,6 +94,31 @@ export default function ProfilePage() {
             </Button>
           </CardContent>
         </Card>
+
+        {persona && (
+           <Card>
+                <CardHeader>
+                    <CardTitle className="font-headline flex items-center gap-2">
+                        <Users className="text-primary"/> Tribe Meetups
+                    </CardTitle>
+                    <CardDescription>
+                       Manage your visibility for tribe meetups.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="flex items-center justify-between">
+                         <Label htmlFor="meetup-interest" className="flex-grow pr-4">
+                            Interested in meeting new people
+                         </Label>
+                        <Switch
+                            id="meetup-interest"
+                            checked={isInterested}
+                            onCheckedChange={handleInterestToggle}
+                        />
+                    </div>
+                </CardContent>
+            </Card>
+        )}
       </div>
       <div className="md:col-span-2">
         <Card>
@@ -92,7 +133,7 @@ export default function ProfilePage() {
                     </CardDescription>
                 </div>
                 <Button onClick={handleGeneratePersona} disabled={isLoading || !canGenerate}>
-                    {isLoading ? "Generating..." : "Generate Persona"}
+                    {isLoading ? "Generating..." : persona ? "Regenerate Persona" : "Generate Persona"}
                 </Button>
             </div>
           </CardHeader>
@@ -112,32 +153,38 @@ export default function ProfilePage() {
                 <div className="space-y-4">
                     <p className="italic text-foreground/80">{persona.persona}</p>
                     
-                    <div>
-                        <h3 className="font-semibold mb-2">Personality Traits</h3>
-                        <div className="flex flex-wrap gap-2">
-                            {persona.personalityTraits.map((trait, index) => (
-                                <Badge key={index} variant="secondary">{trait}</Badge>
-                            ))}
+                    {persona.personalityTraits.length > 0 && (
+                        <div>
+                            <h3 className="font-semibold mb-2">Personality Traits</h3>
+                            <div className="flex flex-wrap gap-2">
+                                {persona.personalityTraits.map((trait, index) => (
+                                    <Badge key={index} variant="secondary">{trait}</Badge>
+                                ))}
+                            </div>
                         </div>
-                    </div>
+                    )}
                     
-                    <div>
-                        <h3 className="font-semibold mb-2">Hobbies</h3>
-                        <div className="flex flex-wrap gap-2">
-                            {persona.hobbies.map((hobby, index) => (
-                                <Badge key={index} variant="secondary">{hobby}</Badge>
-                            ))}
+                    {persona.hobbies.length > 0 && (
+                        <div>
+                            <h3 className="font-semibold mb-2">Hobbies</h3>
+                            <div className="flex flex-wrap gap-2">
+                                {persona.hobbies.map((hobby, index) => (
+                                    <Badge key={index} variant="secondary">{hobby}</Badge>
+                                ))}
+                            </div>
                         </div>
-                    </div>
+                    )}
 
-                    <div>
-                        <h3 className="font-semibold mb-2">Interests</h3>
-                        <div className="flex flex-wrap gap-2">
-                            {persona.interests.map((interest, index) => (
-                                <Badge key={index} variant="secondary">{interest}</Badge>
-                            ))}
+                    {persona.interests.length > 0 && (
+                        <div>
+                            <h3 className="font-semibold mb-2">Interests</h3>
+                            <div className="flex flex-wrap gap-2">
+                                {persona.interests.map((interest, index) => (
+                                    <Badge key={index} variant="secondary">{interest}</Badge>
+                                ))}
+                            </div>
                         </div>
-                    </div>
+                    )}
                 </div>
             ) : (
                 <div className="text-center text-muted-foreground py-8 flex flex-col items-center justify-center gap-4">

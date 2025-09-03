@@ -1,3 +1,4 @@
+
 import type { LucideIcon } from "lucide-react";
 
 export type User = {
@@ -9,6 +10,8 @@ export type User = {
   gender: 'Male' | 'Female' | 'Other' | 'Prefer not to say';
   journalEntries?: string[];
   phone: string;
+  interestedInMeetups?: boolean;
+  availableDates?: string[]; // YYYY-MM-DD
 };
 
 export type Connection = {

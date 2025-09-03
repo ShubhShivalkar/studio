@@ -9,72 +9,31 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { allUsers, currentUser } from "@/lib/mock-data";
-import { matchUsersByPersonality } from "@/ai/flows/match-users-by-personality";
-import type { User } from "@/lib/types";
-import { ProfileCard } from "@/components/profile-card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { currentUser } from "@/lib/mock-data";
+import { Bot, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { Users } from "lucide-react";
-
-type MatchedUser = User & {
-  compatibilityScore?: number;
-};
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function TribePage() {
-  const [matchedUsers, setMatchedUsers] = useState<MatchedUser[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [tribeState, setTribeState] = useState<"loading" | "no-persona" | "not-interested" | "finding" | "found">("loading");
 
   useEffect(() => {
-    const findMatches = async () => {
-      setIsLoading(true);
-      setError(null);
-
+    const checkUserStatus = () => {
       if (!currentUser.persona) {
-        setError("You need to generate your persona on the Profile page first.");
-        setIsLoading(false);
-        return;
-      }
-      
-      const otherUserPersonas = allUsers
-        .filter(u => u.id !== currentUser.id && u.persona)
-        .map(u => `${u.id}::${u.persona}`); // Pass ID with persona
-
-      if (otherUserPersonas.length === 0) {
-        setError("No other users with personas are available to match with at the moment.");
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        const matches = await matchUsersByPersonality({
-          userPersona: currentUser.persona,
-          otherUserPersonas: otherUserPersonas,
-        });
-
-        const enrichedMatches = matches
-            .map(match => {
-                const user = allUsers.find(u => u.id === match.userId);
-                if (user) {
-                    return { ...user, compatibilityScore: match.compatibilityScore };
-                }
-                return null;
-            })
-            .filter((user): user is MatchedUser => user !== null);
-
-        setMatchedUsers(enrichedMatches);
-
-      } catch (err) {
-        console.error("Failed to find matches:", err);
-        setError("Sorry, we couldn't find matches at this time. Please try again later.");
-      } finally {
-        setIsLoading(false);
+        setTribeState("no-persona");
+      } else if (!currentUser.interestedInMeetups) {
+        setTribeState("not-interested");
+      } else {
+        // Here we would run the matching logic. For now, we'll simulate it.
+        // This will be replaced with the complex matching logic next.
+        setTimeout(() => {
+            setTribeState("finding");
+        }, 1500);
       }
     };
 
-    findMatches();
+    checkUserStatus();
   }, []);
 
   return (
@@ -85,9 +44,9 @@ export default function TribePage() {
           Connect with like-minded people based on your personality.
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+      <CardContent className="min-h-[30rem] flex items-center justify-center">
+        {tribeState === "loading" && (
+           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 w-full">
             {Array.from({ length: 3 }).map((_, index) => (
               <div key={index} className="flex flex-col space-y-3">
                 <Skeleton className="h-24 w-24 rounded-full mx-auto" />
@@ -98,27 +57,34 @@ export default function TribePage() {
               </div>
             ))}
           </div>
-        ) : error ? (
-            <div className="text-center text-destructive-foreground bg-destructive/80 p-4 rounded-md">
-                <p>{error}</p>
-                {error.includes("generate your persona") && (
-                    <Button asChild variant="secondary" className="mt-4">
-                        <Link href="/profile">Go to Profile</Link>
-                    </Button>
-                )}
+        )}
+        
+        {tribeState === "no-persona" && (
+           <div className="text-center text-muted-foreground p-4 rounded-md flex flex-col items-center gap-4">
+                <Bot className="h-12 w-12" />
+                <p className="max-w-md">You need to generate your persona before you can find a tribe. Your persona helps us find the best matches for you.</p>
+                <Button asChild>
+                    <Link href="/profile">Generate Persona</Link>
+                </Button>
             </div>
-        ) : matchedUsers.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-            {matchedUsers.map((user) => (
-              <ProfileCard key={user.id} user={user} compatibilityScore={user.compatibilityScore} />
-            ))}
-          </div>
-        ) : (
-          <div className="text-center text-muted-foreground py-16 flex flex-col items-center">
-            <Users className="h-12 w-12 mb-4" />
-            <p>No potential matches found at this time.</p>
-            <p className="text-sm">Check back later as more users join!</p>
-          </div>
+        )}
+
+        {tribeState === "not-interested" && (
+           <div className="text-center text-muted-foreground p-4 rounded-md flex flex-col items-center gap-4">
+                <Users className="h-12 w-12" />
+                <p className="max-w-md">You've opted out of tribe meetups. To start finding tribes, enable the "Interested in meeting new people" option on your profile.</p>
+                <Button asChild variant="secondary">
+                    <Link href="/profile">Go to Profile</Link>
+                </Button>
+            </div>
+        )}
+
+        {tribeState === "finding" && (
+            <div className="text-center text-muted-foreground py-16 flex flex-col items-center">
+                <Users className="h-12 w-12 mb-4 animate-pulse" />
+                <p className="font-semibold text-lg">Finding the best tribe for you...</p>
+                <p className="text-sm max-w-sm">We're comparing personas, checking availability, and balancing groups to create a meaningful connection.</p>
+            </div>
         )}
       </CardContent>
     </Card>
