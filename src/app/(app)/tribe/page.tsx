@@ -46,6 +46,7 @@ type Tribe = {
     id: string;
     members: MatchedUser[];
     meetupDate: string;
+    meetupTime?: string;
     location: string;
 }
 
@@ -54,6 +55,7 @@ const getAge = (dob: string) => differenceInYears(new Date(), parseISO(dob));
 const staticTribe: Tribe = {
     id: 'tribe-static-123',
     meetupDate: '2025-09-06',
+    meetupTime: '4:30 PM',
     location: '70 Beans Cafe, Navi Mumbai',
     members: [
         {
@@ -87,7 +89,7 @@ const staticTribe: Tribe = {
             persona: allUsers[2].persona!,
             user: allUsers[2],
             matchReason: "You both share a love for learning new things and expressing creativity, suggesting great conversations.",
-            rsvpStatus: 'pending',
+            rsvpStatus: 'accepted',
         },
     ]
 };
@@ -263,8 +265,13 @@ export default function TribePage() {
                                 {isTribeComplete ? (
                                     <>
                                         <p><strong>Meetup Date:</strong> {new Date(tribe.meetupDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                                        <p><strong>Meetup Time:</strong> {tribe.meetupTime}</p>
                                         <p><strong>Location:</strong> {tribe.location}</p>
-                                        <div className="text-sm text-muted-foreground">Show this Tribe ID at the cafe: <Badge variant="outline">{tribe.id}</Badge></div>
+                                        <div className="text-sm text-muted-foreground pt-2">
+                                            Please free your schedule at this time for at least 2 hours.
+                                            <br />
+                                            Show this Tribe ID at the cafe: <Badge variant="outline">{tribe.id}</Badge>
+                                        </div>
                                     </>
                                 ) : (
                                     <p className="text-sm text-muted-foreground">A location and Tribe ID will be assigned once the tribe is complete.</p>
