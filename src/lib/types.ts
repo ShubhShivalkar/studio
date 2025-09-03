@@ -58,3 +58,10 @@ export type Checklist = {
   date: string; // YYYY-MM-DD
   items: ChecklistItem[];
 };
+
+export type PastTribe = {
+    id: string;
+    meetupDate: string; // YYYY-MM-DD
+    location: string;
+    attendance: 'attended' | 'not attended';
+};

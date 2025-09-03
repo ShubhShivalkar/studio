@@ -1,5 +1,5 @@
 
-import type { User, Connection, DailySummary, Reminder, Checklist } from './types';
+import type { User, Connection, DailySummary, Reminder, Checklist, PastTribe } from './types';
 import { differenceInYears } from 'date-fns';
 
 // Helper to calculate age
@@ -132,3 +132,24 @@ const currentMonthWeekendDates = generateWeekendDatesForMonth(new Date().getFull
 currentMonthWeekendDates.forEach(dateStr => {
     dailySummaries.push({ date: dateStr, isAvailable: true });
 });
+
+export const pastTribes: PastTribe[] = [
+    {
+        id: 'tribe-past-001',
+        meetupDate: '2025-08-23',
+        location: 'The Cozy Corner Cafe',
+        attendance: 'attended',
+    },
+    {
+        id: 'tribe-past-002',
+        meetupDate: '2025-08-09',
+        location: '70 Beans Cafe, Navi Mumbai',
+        attendance: 'not attended',
+    },
+    {
+        id: 'tribe-past-003',
+        meetupDate: '2025-07-26',
+        location: 'Brew & Banter',
+        attendance: 'attended',
+    }
+];

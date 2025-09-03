@@ -11,7 +11,7 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { allUsers, currentUser } from "@/lib/mock-data";
-import { Bot, Users, ShieldAlert, CheckCircle, XCircle, MessageSquare, Info, UserX, UserCheck, Heart } from "lucide-react";
+import { Bot, Users, ShieldAlert, CheckCircle, XCircle, MessageSquare, Info, UserX, UserCheck, Heart, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -171,22 +171,32 @@ export default function TribePage() {
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center gap-2">
-            <CardTitle className="font-headline">Meet Your Tribe</CardTitle>
-            <TooltipProvider>
-                <Tooltip>
-                    <TooltipTrigger>
-                        <Info className="h-4 w-4 text-muted-foreground" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                        <p>New tribes are formed and matched every Monday.</p>
-                    </TooltipContent>
-                </Tooltip>
-            </TooltipProvider>
+        <div className="flex justify-between items-start">
+            <div>
+                <div className="flex items-center gap-2">
+                    <CardTitle className="font-headline">Meet Your Tribe</CardTitle>
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger>
+                                <Info className="h-4 w-4 text-muted-foreground" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>New tribes are formed and matched every Monday.</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                </div>
+                <CardDescription>
+                  We'll connect you with people who understand your VIbe
+                </CardDescription>
+            </div>
+            <Button asChild variant="outline" size="sm">
+                <Link href="/tribe/history">
+                    <History className="mr-2" />
+                    Tribe History
+                </Link>
+            </Button>
         </div>
-        <CardDescription>
-          We'll connect you with people who understand your VIbe
-        </CardDescription>
       </CardHeader>
       <CardContent className="min-h-[30rem] flex items-center justify-center p-2 sm:p-6">
         {tribeState === "loading" && (
