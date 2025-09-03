@@ -44,6 +44,17 @@ type Tribe = {
 
 const getAge = (dob: string) => differenceInYears(new Date(), parseISO(dob));
 
+// Fisher-Yates shuffle algorithm
+function shuffleArray<T>(array: T[]): T[] {
+  const newArray = [...array];
+  for (let i = newArray.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+  }
+  return newArray;
+}
+
+
 export default function TribePage() {
   const [tribeState, setTribeState] = useState<"loading" | "no-persona" | "not-interested" | "finding" | "found">("loading");
   const [tribe, setTribe] = useState<Tribe | null>(null);
@@ -105,15 +116,19 @@ export default function TribePage() {
             setTribeState("finding");
             return;
         }
+        
+        // 3. Select a random subset of users to check for compatibility
+        const shuffledUsers = shuffleArray(ageFilteredUsers);
+        const randomSubset = shuffledUsers.slice(0, 15); // Check up to 15 random users
 
-        // 3. Call AI for Persona Matching
-        const personasToMatch = ageFilteredUsers.map(u => `${u.id}::${u.persona}`);
+        // 4. Call AI for Persona Matching on the random subset
+        const personasToMatch = randomSubset.map(u => `${u.id}::${u.persona}`);
         const matches = await matchUsersByPersonality({
             userPersona: currentUser.persona,
             otherUserPersonas: personasToMatch
         });
         
-        // 4. Filter by score and add user object back
+        // 5. Filter by score and add user object back
         const highScoringMatches = matches
             .filter(m => m.compatibilityScore > 75)
             .map(match => {
@@ -125,7 +140,7 @@ export default function TribePage() {
                 };
             });
 
-        // 5. Assemble Tribe with 1:1 Gender Ratio
+        // 6. Assemble Tribe with 1:1 Gender Ratio
         let maleMatches = highScoringMatches.filter(m => m.user.gender === 'Male');
         let femaleMatches = highScoringMatches.filter(m => m.user.gender === 'Female');
         
