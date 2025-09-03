@@ -143,10 +143,29 @@ export default function CalendarPage() {
   const handleAvailabilityChange = (checked: boolean) => {
     setIsAvailableForTribe(checked);
     if (date) {
+        const dateStr = format(date, 'yyyy-MM-dd');
+        const summaryIndex = dailySummaries.findIndex(d => d.date === dateStr);
+        if (summaryIndex > -1) {
+            dailySummaries[summaryIndex].isAvailable = checked;
+        } else {
+            // Create a new summary for this day if it doesn't exist
+            dailySummaries.push({
+                date: dateStr,
+                summary: "No journal entry for this day.",
+                mood: '😐',
+                hobbies: [],
+                isAvailable: checked,
+                hasMeetup: false,
+            });
+        }
+        
         toast({
             title: "Availability Updated",
             description: `You are now marked as ${checked ? 'available' : 'unavailable'} for tribe meetups on this day.`
         });
+        
+        // Force a re-render by creating a new date object, which will trigger the calendar's day renderer
+        setDate(new Date(date));
     }
   }
 
