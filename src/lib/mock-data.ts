@@ -12,7 +12,7 @@ export let currentUser: User = {
   id: 'user-0',
   name: 'New User',
   avatar: 'https://picsum.photos/seed/anewuser/200',
-  dob: '1996-10-15', // Example DOB
+  dob: '1999-07-15', // Set to be 25 years old in 2024
   gender: 'Female',
   journalEntries: [
     "Felt a bit tired today, but pushed through my workout. Listened to a fascinating podcast about space exploration on my way home. It's amazing to think about what's out there.",
@@ -81,7 +81,8 @@ const samplePersonas = [
 // This represents our "database" of all users in the system.
 export const allUsers: User[] = Array.from({ length: 25 }, (_, i) => {
     const gender = i % 2 === 0 ? 'Male' : 'Female';
-    const year = 1994 + (i % 7); // Ages will be around the current user's age
+    // Generates birth years for ages 24-26 in 2024 (1998, 1999, 2000)
+    const year = 1998 + (i % 3); 
     const month = (i % 12) + 1;
     const day = (i % 28) + 1;
     const dob = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
