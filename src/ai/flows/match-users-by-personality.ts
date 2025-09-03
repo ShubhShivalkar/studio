@@ -4,7 +4,7 @@
  * @fileOverview Matches users based on the compatibility of their personality traits derived from journal entries.
  *
  * - matchUsersByPersonality - A function that matches users based on personality traits.
- * - MatchUsersByPersonalityInput - The input type for the matchUsersByPersonality function.
+ * - MatchUsersByPersonalityInput - The input type for the matchUsersBypersonality function.
  * - MatchUsersByPersonalityOutput - The return type for the matchUsersByPersonality function.
  */
 
@@ -84,11 +84,13 @@ const matchUsersByPersonalityFlow = ai.defineFlow(
           return output!;
         } catch (retryError) {
           console.error('AI model retry failed:', retryError);
-          throw new Error("The AI model is currently busy. Please try again in a few moments.");
+          // Return an empty array instead of throwing an error to allow the frontend to handle it gracefully.
+          return [];
         }
       }
       console.error('An unexpected error occurred in the matching flow:', error);
-      throw error;
+      // For other unexpected errors, also return an empty array.
+      return [];
     }
   }
 );
