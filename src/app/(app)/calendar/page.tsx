@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { format, isSameDay, parseISO } from 'date-fns';
 import { Button } from "@/components/ui/button";
-import { Calendar, type CalendarProps } from "@/components/ui/calendar";
+import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { dailySummaries } from "@/lib/mock-data";
@@ -17,21 +17,23 @@ import { DayContent, DayContentProps } from 'react-day-picker';
 function CustomDayContent(props: DayContentProps) {
     const dayData = dailySummaries.find(d => isSameDay(parseISO(d.date), props.date));
   
-    if (!dayData) {
-      return <DayContent {...props} />;
+    if (props.displayMonth !== new Date(props.date).getMonth()) {
+      return <div className="w-full h-full" />;
     }
   
     return (
-      <div className="relative w-full h-full flex flex-col items-center justify-center p-1">
+      <div className="relative w-full h-full flex flex-col items-center justify-start p-1">
         <DayContent {...props} />
-        <div className="flex text-sm gap-1 mt-1 absolute bottom-2 items-center">
-          <span>{dayData.mood}</span>
-          {dayData.hobbies.map((hobby, index) => (
-            <hobby.icon key={index} className="w-4 h-4 text-muted-foreground" />
-          ))}
-          {dayData.hasMeetup && <span>☕️</span>}
-          {dayData.isAvailable && !dayData.hasMeetup && <span>❤️</span>}
-        </div>
+        {dayData && (
+          <div className="flex text-xs md:text-sm gap-1 mt-1 absolute bottom-2 items-center">
+            <span>{dayData.mood}</span>
+            {dayData.hobbies.map((hobby, index) => (
+              <hobby.icon key={index} className="w-3 h-3 md:w-4 md:h-4 text-muted-foreground" />
+            ))}
+            {dayData.hasMeetup && <span>☕️</span>}
+            {dayData.isAvailable && !dayData.hasMeetup && <span>❤️</span>}
+          </div>
+        )}
       </div>
     );
 }
@@ -76,24 +78,32 @@ export default function CalendarPage() {
   return (
     <div className="h-full flex flex-col">
       <Card className="flex-1 flex flex-col">
-        <CardContent className="flex-1 flex justify-center items-start p-2 md:p-6">
+        <CardContent className="flex-1 flex flex-col p-2 md:p-6">
           <Calendar
             mode="single"
             selected={date}
             onSelect={handleDateSelect}
-            className="w-full h-full"
+            className="w-full h-full flex flex-col"
             classNames={{
-                months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0 h-full",
+                months: "flex-1 flex flex-col",
                 month: "space-y-4 flex-1 flex flex-col",
-                table: "w-full border-collapse space-y-1 flex-1",
-                head_row: "flex",
-                row: "flex w-full mt-2 min-h-[7rem] flex-1",
-                cell: "text-center text-sm p-0 relative flex-1",
+                table: "w-full border-collapse flex-1 flex flex-col",
+                head_row: "grid grid-cols-7",
+                head_cell: "text-center text-muted-foreground text-sm font-normal",
+                tbody: "flex-1 grid grid-cols-7 grid-rows-6",
+                row: "contents",
+                cell: cn(
+                  "relative p-0 text-center text-sm",
+                  "border-t border-l first:border-l-0",
+                  "[&:nth-child(7n)]:border-r-0", // Last cell in each row
+                  "has-[[aria-selected]]:bg-accent"
+                ),
                 day: cn(
-                    "w-full h-full rounded-md text-lg",
+                    "w-full h-full rounded-none text-lg p-2",
                     "hover:bg-accent/50 transition-colors"
                 ),
                 day_outside: "text-muted-foreground/50",
+                day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground",
             }}
             components={{
               DayContent: CustomDayContent,
