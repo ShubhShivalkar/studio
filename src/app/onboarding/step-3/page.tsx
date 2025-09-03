@@ -8,19 +8,52 @@ import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Progress } from '@/components/ui/progress';
 import useOnboardingStore from '@/store/onboarding';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon } from 'lucide-react';
-import { Calendar } from '@/components/ui/calendar';
-import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useEffect, useState } from 'react';
+
+const months = [
+  { value: '01', label: 'January' },
+  { value: '02', label: 'February' },
+  { value: '03', label: 'March' },
+  { value: '04', label: 'April' },
+  { value: '05', label: 'May' },
+  { value: '06', label: 'June' },
+  { value: '07', label: 'July' },
+  { value: '08', label: 'August' },
+  { value: '09', label: 'September' },
+  { value: '10', label: 'October' },
+  { value: '11', label: 'November' },
+  { value: '12', label: 'December' },
+];
+
+const currentYear = new Date().getFullYear();
+const years = Array.from({ length: 100 }, (_, i) => currentYear - i);
+const days = Array.from({ length: 31 }, (_, i) => i + 1);
+
 
 export default function Step3Page() {
   const router = useRouter();
   const { dob, gender, setData } = useOnboardingStore();
+  
+  const [day, setDay] = useState('');
+  const [month, setMonth] = useState('');
+  const [year, setYear] = useState('');
+
+  useEffect(() => {
+    if (dob) {
+      const [y, m, d] = dob.split('-');
+      setYear(y);
+      setMonth(m);
+      setDay(d);
+    }
+  }, [dob]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    router.push('/onboarding/step-4');
+    if (day && month && year) {
+        setData({ dob: `${year}-${month}-${day}`});
+        router.push('/onboarding/step-4');
+    }
   };
 
   return (
@@ -33,32 +66,33 @@ export default function Step3Page() {
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="dob">Date of Birth</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant={"outline"}
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !dob && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {dob ? format(new Date(dob), "PPP") : <span>Pick a date</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={dob ? new Date(dob) : undefined}
-                  onSelect={(date) => setData({ dob: date ? format(date, 'yyyy-MM-dd') : '' })}
-                  captionLayout="dropdown-buttons"
-                  fromYear={1920}
-                  toYear={new Date().getFullYear()}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
+            <Label>Date of Birth</Label>
+            <div className="flex gap-2">
+                <Select value={month} onValueChange={setMonth}>
+                    <SelectTrigger aria-label="Month">
+                        <SelectValue placeholder="Month" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {months.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
+                    </SelectContent>
+                </Select>
+                 <Select value={day} onValueChange={setDay}>
+                    <SelectTrigger aria-label="Day">
+                        <SelectValue placeholder="Day" />
+                    </SelectTrigger>
+                    <SelectContent>
+                         {days.map(d => <SelectItem key={d} value={String(d).padStart(2, '0')}>{d}</SelectItem>)}
+                    </SelectContent>
+                </Select>
+                 <Select value={year} onValueChange={setYear}>
+                    <SelectTrigger aria-label="Year">
+                        <SelectValue placeholder="Year" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {years.map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
+                    </SelectContent>
+                </Select>
+            </div>
           </div>
           <div className="space-y-2">
             <Label>Gender</Label>
@@ -88,7 +122,7 @@ export default function Step3Page() {
         </CardContent>
         <CardFooter className="gap-2">
            <Button variant="outline" className="w-full" onClick={() => router.back()}>Back</Button>
-          <Button type="submit" className="w-full">Continue</Button>
+          <Button type="submit" className="w-full" disabled={!day || !month || !year}>Continue</Button>
         </CardFooter>
       </form>
     </Card>
