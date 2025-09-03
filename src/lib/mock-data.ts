@@ -28,7 +28,7 @@ export let currentUser: User = {
     "Today was a simple day, but a good one. Sometimes those are the best kind. Just enjoying the quiet moments."
   ],
   phone: '',
-  persona: undefined,
+  persona: 'A thoughtful and introspective individual who finds joy in simple pleasures like reading in the park and trying new recipes. They are a creative person who enjoys sketching and listening to music to relax. While they value their quiet time, they also cherish deep connections with friends and family. They are goal-oriented and reflective, always looking for ways to learn and grow, such as taking up a new hobby like pottery.',
   interestedInMeetups: false,
   personaLastGenerated: undefined,
   hobbies: [],
