@@ -19,15 +19,14 @@ import { Label } from "@/components/ui/label";
 import { differenceInDays, parseISO } from 'date-fns';
 
 export default function ProfilePage() {
-  const [persona, setPersona] = useState<GeneratePersonalityPersonaOutput | null>(
-    currentUser.persona ? { persona: currentUser.persona, hobbies: [], interests: [], personalityTraits: [] } : null
-  );
+  const [persona, setPersona] = useState<GeneratePersonalityPersonaOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isInterested, setIsInterested] = useState(currentUser.interestedInMeetups || false);
   const [canRegenerate, setCanRegenerate] = useState(true);
 
   const { toast } = useToast();
   const router = useRouter();
+  const personaStorageKey = `userPersona_${currentUser.id}`;
 
   const journalEntriesCount = currentUser.journalEntries?.length || 0;
   const progress = Math.min((journalEntriesCount / 15) * 100, 100);
@@ -35,6 +34,25 @@ export default function ProfilePage() {
   const streakDays = 15; // As per mock data assumption
 
   useEffect(() => {
+    // Load persona from local storage on mount
+    const cachedPersona = localStorage.getItem(personaStorageKey);
+    if (cachedPersona) {
+        try {
+            const parsedPersona = JSON.parse(cachedPersona);
+            setPersona(parsedPersona);
+            // Sync with mock data for other components
+            if (currentUser) {
+                currentUser.persona = parsedPersona.persona;
+            }
+        } catch (error) {
+            console.error("Failed to parse cached persona:", error);
+            localStorage.removeItem(personaStorageKey);
+        }
+    } else if (currentUser.persona) {
+        // Fallback to mock data if no local storage
+        setPersona({ persona: currentUser.persona, hobbies: [], interests: [], personalityTraits: [] });
+    }
+
     if (currentUser.personaLastGenerated) {
         const lastGeneratedDate = parseISO(currentUser.personaLastGenerated);
         const daysSinceLastGeneration = differenceInDays(new Date(), lastGeneratedDate);
@@ -42,11 +60,11 @@ export default function ProfilePage() {
             setCanRegenerate(false);
         }
     }
-  }, []);
+  }, [personaStorageKey]);
 
 
   const handleGeneratePersona = async () => {
-    if (isLoading || (persona && !canRegenerate)) return;
+    if (isLoading || !canRegenerate) return;
 
     setIsLoading(true);
     setPersona(null);
@@ -64,6 +82,10 @@ export default function ProfilePage() {
       const entriesText = currentUser.journalEntries.join("\n\n");
       const result = await generatePersonalityPersona({ journalEntries: entriesText });
       setPersona(result);
+      
+      // Save to local storage
+      localStorage.setItem(personaStorageKey, JSON.stringify(result));
+      
       // Also save to our mock currentUser
       currentUser.persona = result.persona;
       currentUser.personaLastGenerated = new Date().toISOString();
@@ -151,7 +173,7 @@ export default function ProfilePage() {
                         Based on your journal entries, this is how Anu understands your personality.
                     </CardDescription>
                 </div>
-                <Button onClick={handleGeneratePersona} disabled={isLoading || !canGenerate || (!!persona && !canRegenerate)}>
+                <Button onClick={handleGeneratePersona} disabled={isLoading || !canGenerate || !canRegenerate}>
                     {isLoading ? "Generating..." : persona ? "Regenerate Persona" : "Generate Persona"}
                 </Button>
             </div>
