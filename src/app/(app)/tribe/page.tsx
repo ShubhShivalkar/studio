@@ -166,7 +166,6 @@ export default function TribePage() {
   
   const currentUserData = tribe?.members.find(m => m.userId === currentUser.id);
   const currentUserRsvp = currentUserData?.rsvpStatus;
-  const isRsvpLocked = currentUserRsvp === 'accepted' || currentUserRsvp === 'rejected';
 
   const attendingMembers = tribe?.members.filter(m => {
     if (m.userId === currentUser.id) {
@@ -291,7 +290,6 @@ export default function TribePage() {
                                    <Button 
                                      size="sm" 
                                      onClick={() => handleRsvp('accepted')} 
-                                     disabled={isRsvpLocked}
                                      variant={currentUserRsvp === 'accepted' ? 'default' : 'outline'}
                                      className="bg-white text-primary hover:bg-white/90 border-white"
                                     >
@@ -304,7 +302,6 @@ export default function TribePage() {
                                                variant={currentUserRsvp === 'rejected' ? 'destructive' : 'outline'}
                                                className="bg-transparent text-white hover:bg-white/10 border-white"
                                                onClick={() => handleRsvp('rejected')}
-                                               disabled={isRsvpLocked}
                                            >
                                                <XCircle className="mr-2"/> Decline
                                            </Button>
@@ -451,5 +448,3 @@ export default function TribePage() {
     </Card>
   );
 }
-
-    
