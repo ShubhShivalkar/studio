@@ -20,7 +20,7 @@ function CustomDayContent(props: DayContentProps) {
     const dayData = dailySummaries.find(d => isSameDay(parseISO(d.date), props.date));
 
     if (props.displayMonth.getMonth() !== props.date.getMonth()) {
-      return <div className="w-full h-full" />;
+      return <DayContent {...props} />;
     }
   
     return (
@@ -233,3 +233,5 @@ export default function CalendarPage() {
     </div>
   );
 }
+
+    
