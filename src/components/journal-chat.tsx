@@ -303,46 +303,49 @@ export function JournalChat() {
                     New Chat
                  </Button>
             </div>
-        ) : !hasStartedConversation ? (
-            <div className="flex flex-wrap items-center justify-center gap-2">
-                <Button variant="outline" onClick={() => handleInitialPrompt("my hobby")}>
-                    <Heart className="mr-2 h-4 w-4" /> Hobby
-                </Button>
-                <Button variant="outline" onClick={() => handleInitialPrompt("my mood")}>
-                    <Smile className="mr-2 h-4 w-4" /> Mood
-                </Button>
-                <Button variant="outline" onClick={() => handleInitialPrompt("something I learned")}>
-                    <BrainCircuit className="mr-2 h-4 w-4" /> Learning
-                </Button>
-                 <Button variant="outline" onClick={() => handleInitialPrompt("my day in general")}>
-                    <BookOpen className="mr-2 h-4 w-4" /> Share your day
-                </Button>
-            </div>
         ) : (
-            <div className="relative">
-                <form onSubmit={handleSendMessage} className="flex items-center gap-2">
-                <Textarea
-                    placeholder="Type your thoughts here..."
-                    className="pr-20 min-h-[50px] resize-none flex-1"
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                            handleSendMessage(e);
-                        }
-                    }}
-                />
-                <Button
-                    type="submit"
-                    size="icon"
-                    disabled={isLoading || !input.trim()}
-                >
-                    <SendHorizonal className="h-5 w-5" />
-                </Button>
-                 <Button type="button" variant="outline" size="icon" onClick={handleNewChat} title="Start New Chat">
-                    <RotateCcw className="h-5 w-5" />
-                 </Button>
-                </form>
+            <div className="space-y-4">
+                {!hasStartedConversation && (
+                    <div className="flex flex-wrap items-center justify-center gap-2">
+                        <Button variant="outline" onClick={() => handleInitialPrompt("my hobby")}>
+                            <Heart className="mr-2 h-4 w-4" /> Hobby
+                        </Button>
+                        <Button variant="outline" onClick={() => handleInitialPrompt("my mood")}>
+                            <Smile className="mr-2 h-4 w-4" /> Mood
+                        </Button>
+                        <Button variant="outline" onClick={() => handleInitialPrompt("something I learned")}>
+                            <BrainCircuit className="mr-2 h-4 w-4" /> Learning
+                        </Button>
+                        <Button variant="outline" onClick={() => handleInitialPrompt("my day in general")}>
+                            <BookOpen className="mr-2 h-4 w-4" /> Share your day
+                        </Button>
+                    </div>
+                )}
+                <div className="relative">
+                    <form onSubmit={handleSendMessage} className="flex items-center gap-2">
+                    <Textarea
+                        placeholder="Type your thoughts here..."
+                        className="pr-20 min-h-[50px] resize-none flex-1"
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                                handleSendMessage(e);
+                            }
+                        }}
+                    />
+                    <Button
+                        type="submit"
+                        size="icon"
+                        disabled={isLoading || !input.trim()}
+                    >
+                        <SendHorizonal className="h-5 w-5" />
+                    </Button>
+                    <Button type="button" variant="outline" size="icon" onClick={handleNewChat} title="Start New Chat">
+                        <RotateCcw className="h-5 w-5" />
+                    </Button>
+                    </form>
+                </div>
             </div>
         )}
       </div>
