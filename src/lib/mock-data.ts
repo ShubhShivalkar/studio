@@ -1,5 +1,6 @@
 
-import type { User, Connection, DailySummary, Reminder, Checklist, PastTribe } from './types';
+import type { User, DailySummary, Reminder, Checklist, PastTribe } from './types';
+import { subYears, format } from 'date-fns';
 
 // The user who is currently logged in.
 // Initially, it's a new user. After "login" or onboarding, this object will be updated.
@@ -16,6 +17,9 @@ export let currentUser: User = {
   personaLastGenerated: undefined,
   hobbies: [],
   interests: [],
+  profession: undefined,
+  religion: undefined,
+  location: undefined,
 };
 
 // This represents our "database" of all users in the system.

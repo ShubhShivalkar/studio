@@ -11,10 +11,13 @@ export type User = {
   journalEntries?: string[];
   phone: string;
   interestedInMeetups?: boolean;
-  availableDates?: string[]; // YYYY-MM-DD
+  availableDates?: string[]; // YYY-MM-DD
   personaLastGenerated?: string; // ISO date string
   hobbies?: string[];
   interests?: string[];
+  profession?: string;
+  religion?: string;
+  location?: string;
 };
 
 export type Connection = {
@@ -44,6 +47,11 @@ export type DailySummary = {
     hobbies?: { icon: LucideIcon, name: string }[];
     isAvailable?: boolean;
     hasMeetup?: boolean;
+    meetupDetails?: {
+      location: string;
+      time: string;
+      tribeId: string;
+    }
 };
 
 export type ChecklistItem = {

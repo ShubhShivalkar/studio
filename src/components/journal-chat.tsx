@@ -72,14 +72,12 @@ export function JournalChat() {
 
 
   const aiQuestionCount = useMemo(() => {
-    // We subtract 1 to not count the initial greeting
     return messages.filter(m => m.sender === 'ai').length - 1;
   }, [messages]);
   
   const hasStartedConversation = useMemo(() => messages.length > 1, [messages]);
 
   useEffect(() => {
-    // Function to shuffle array and pick 4
     const getShuffledPrompts = () => {
         const shuffled = [...PROMPT_SUGGESTIONS].sort(() => 0.5 - Math.random());
         setSuggestions(shuffled.slice(0, 4));
@@ -223,11 +221,9 @@ export function JournalChat() {
         };
         setMessages(prev => [...prev, summaryMessage]);
 
-        // Save to mock data
         const today = new Date();
         const todayStr = format(today, 'yyyy-MM-dd');
         
-        // Update or create today's summary
         const existingSummaryIndex = dailySummaries.findIndex(d => d.date === todayStr);
         if (existingSummaryIndex > -1) {
             dailySummaries[existingSummaryIndex] = {
@@ -246,7 +242,6 @@ export function JournalChat() {
             });
         }
         
-        // Add to user's journal entries
         if (!currentUser.journalEntries) {
             currentUser.journalEntries = [];
         }
@@ -274,13 +269,12 @@ export function JournalChat() {
     setMessages([initialMessage]);
     setIsComplete(false);
     setInput("");
-    // Get new suggestions
     const shuffled = [...PROMPT_SUGGESTIONS].sort(() => 0.5 - Math.random());
     setSuggestions(shuffled.slice(0, 4));
   }
 
   if (!isInitialized) {
-    return null; // or a loading spinner
+    return null;
   }
 
   return (
@@ -337,10 +331,10 @@ export function JournalChat() {
       </ScrollArea>
       <div className="p-4 bg-background border-t">
         {isComplete ? (
-            <div className="flex items-center justify-center text-center p-4 bg-secondary rounded-lg">
-                <CheckCircle className="h-5 w-5 mr-2 text-green-500" />
+            <div className="flex flex-col sm:flex-row items-center justify-center text-center gap-2 p-4 bg-secondary rounded-lg">
+                <CheckCircle className="h-5 w-5 text-green-500" />
                 <p className="text-sm text-muted-foreground">Journal entry for today is complete.</p>
-                 <Button variant="ghost" size="sm" onClick={handleNewChat} className="ml-4">
+                 <Button variant="ghost" size="sm" onClick={handleNewChat} className="ml-0 sm:ml-4">
                     <RotateCcw className="h-4 w-4 mr-2" />
                     New Chat
                  </Button>
@@ -360,7 +354,7 @@ export function JournalChat() {
                     <form onSubmit={handleSendMessage} className="flex items-center gap-2">
                     <Textarea
                         placeholder="Type your thoughts here..."
-                        className="pr-20 min-h-[50px] resize-none flex-1"
+                        className="pr-24 min-h-[50px] resize-none flex-1"
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         onKeyDown={(e) => {
@@ -369,16 +363,18 @@ export function JournalChat() {
                             }
                         }}
                     />
-                    <Button
-                        type="submit"
-                        size="icon"
-                        disabled={isLoading || !input.trim()}
-                    >
-                        <SendHorizonal className="h-5 w-5" />
-                    </Button>
-                    <Button type="button" variant="outline" size="icon" onClick={handleNewChat} title="Start New Chat">
-                        <RotateCcw className="h-5 w-5" />
-                    </Button>
+                    <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex gap-1">
+                        <Button
+                            type="submit"
+                            size="icon"
+                            disabled={isLoading || !input.trim()}
+                        >
+                            <SendHorizonal className="h-5 w-5" />
+                        </Button>
+                        <Button type="button" variant="outline" size="icon" onClick={handleNewChat} title="Start New Chat">
+                            <RotateCcw className="h-5 w-5" />
+                        </Button>
+                    </div>
                     </form>
                 </div>
             </div>

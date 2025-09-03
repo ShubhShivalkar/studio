@@ -10,13 +10,13 @@ import {
   CardTitle,
   CardFooter,
 } from "@/components/ui/card";
-import { allUsers, currentUser } from "@/lib/mock-data";
+import { currentUser, dailySummaries, allUsers } from "@/lib/mock-data";
 import { Bot, Users, ShieldAlert, CheckCircle, XCircle, MessageSquare, Info, UserX, UserCheck, Heart, History, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { User } from "@/lib/types";
-import { differenceInYears, parseISO, format } from "date-fns";
+import { differenceInYears, parseISO, format, addDays } from "date-fns";
 import type { MatchUsersByPersonalityOutput } from "@/ai/flows/match-users-by-personality";
 import { ProfileCard } from "@/components/profile-card";
 import {
@@ -65,21 +65,60 @@ export default function TribePage() {
   const [isDeclineDialogOpen, setIsDeclineDialogOpen] = useState(false);
 
   useEffect(() => {
-    // Check for persona and interest first
+    if (!currentUser || !currentUser.id) {
+        setTribeState("loading");
+        return;
+    }
+
     if (!currentUser.persona) {
         setTribeState("no-persona");
         return;
     }
-    if (!currentUser.interestedInMeetups) {
+    
+    const activeMeetup = dailySummaries.some(d => d.hasMeetup && new Date(d.date) >= new Date());
+
+    if (!currentUser.interestedInMeetups && !activeMeetup) {
         setTribeState("not-interested");
         return;
     }
 
-    // In a real app, you'd fetch this. For now, we simulate the "finding" state
-    // as there is no static tribe for a new user.
-    setTribe(null);
+    // TODO: Implement actual tribe finding logic here.
+    // For now, it will just stay in the "finding" state.
     setTribeState("finding");
+    
   }, []);
+
+  const updateCalendarEvent = (tribe: Tribe, accepted: boolean) => {
+    const summaryIndex = dailySummaries.findIndex(d => d.date === tribe.meetupDate);
+
+    if (accepted) {
+      const meetupDetails = {
+        location: tribe.location,
+        time: tribe.meetupTime || 'TBD',
+        tribeId: tribe.id,
+      };
+
+      if (summaryIndex > -1) {
+        dailySummaries[summaryIndex].hasMeetup = true;
+        dailySummaries[summaryIndex].meetupDetails = meetupDetails;
+      } else {
+        dailySummaries.push({
+          date: tribe.meetupDate,
+          hasMeetup: true,
+          meetupDetails: meetupDetails,
+          isAvailable: false, // If they have a meetup, they are not "available" for others
+        });
+      }
+    } else {
+      // If declining, remove the meetup details
+      if (summaryIndex > -1) {
+        dailySummaries[summaryIndex].hasMeetup = false;
+        delete dailySummaries[summaryIndex].meetupDetails;
+        // Optionally, reset isAvailable if you want them to be available again
+        dailySummaries[summaryIndex].isAvailable = true;
+      }
+    }
+  };
   
   const handleRsvp = (status: 'accepted' | 'rejected') => {
     if (!tribe) return;
@@ -94,6 +133,7 @@ export default function TribePage() {
         member.userId === currentUser.id ? { ...member, rsvpStatus: 'accepted', rejectionReason: undefined } : member
     );
     setTribe({ ...tribe, members: updatedMembers });
+    updateCalendarEvent(tribe, true);
     toast({ title: "RSVP Confirmed!", description: "You've accepted the invitation. See you there!" });
   }
 
@@ -106,6 +146,7 @@ export default function TribePage() {
         member.userId === currentUser.id ? { ...member, rsvpStatus: 'rejected', rejectionReason: rejectionReason } : member
     );
     setTribe({ ...tribe, members: updatedMembers });
+    updateCalendarEvent(tribe, false);
     toast({ title: "RSVP Updated", description: "You have declined the invitation." });
     setRejectionReason("");
     setIsDeclineDialogOpen(false);
@@ -135,7 +176,7 @@ export default function TribePage() {
   return (
     <Card>
       <CardHeader>
-        <div className="flex justify-between items-start">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
                 <div className="flex items-center gap-2">
                     <CardTitle className="font-headline">Meet Your Tribe</CardTitle>
@@ -151,10 +192,10 @@ export default function TribePage() {
                     </TooltipProvider>
                 </div>
                 <CardDescription>
-                  We'll connect you with people who understand your VIbe
+                  We'll connect you with people who understand your Vibe
                 </CardDescription>
             </div>
-             <Button asChild variant="outline" size="sm">
+             <Button asChild variant="outline" size="sm" className="w-full sm:w-auto">
                 <Link href="/tribe/history">
                     <History className="mr-2" />
                     Meet-up History
@@ -312,7 +353,10 @@ export default function TribePage() {
                                                     <AvatarFallback>{member.user.name.charAt(0)}</AvatarFallback>
                                                 </Avatar>
                                                 <DialogTitle className="font-headline">{member.user.name}</DialogTitle>
-                                                <DialogDescription>{member.user.gender}, Born {format(parseISO(member.user.dob), 'MMMM d, yyyy')} ({getAge(member.user.dob)} years old)</DialogDescription>
+                                                <DialogDescription>
+                                                    {member.user.gender}
+                                                    {member.user.dob && `, Born ${format(parseISO(member.user.dob), 'MMMM d, yyyy')} (${getAge(member.user.dob)} years old)`}
+                                                </DialogDescription>
                                                 <Badge variant={member.rsvpStatus === 'accepted' ? 'secondary' : member.rsvpStatus === 'pending' ? 'outline' : 'destructive'}>
                                                     <CheckCircle className="mr-1.5" />
                                                     Attending
