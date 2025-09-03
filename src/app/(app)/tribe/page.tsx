@@ -74,13 +74,6 @@ export default function TribePage() {
         setTribeState("no-persona");
         return;
     }
-    if (!currentUser.interestedInMeetups) {
-        setTribeState("not-interested");
-        return;
-    }
-
-    setTribe(null);
-    setTribeState("finding");
 
     // Simulate finding a tribe
     const timer = setTimeout(() => {
@@ -138,10 +131,24 @@ export default function TribePage() {
             location: 'The Cozy Corner Cafe',
         };
 
+        const activeMeetup = dailySummaries.some(d => d.hasMeetup && new Date(d.date) >= new Date());
+
+        if (!currentUser.interestedInMeetups && !activeMeetup) {
+            setTribeState("not-interested");
+            return;
+        }
+
         setTribe(mockTribe);
         setTribeState("found");
 
     }, 2000); // 2-second delay to simulate searching
+
+    if (!currentUser.interestedInMeetups && !dailySummaries.some(d => d.hasMeetup && new Date(d.date) >= new Date())) {
+        setTribeState("not-interested");
+        return;
+    } else {
+        setTribeState("finding");
+    }
 
     return () => clearTimeout(timer);
   }, []);
