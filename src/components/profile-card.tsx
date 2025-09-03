@@ -31,6 +31,7 @@ export function ProfileCard({ user, compatibilityScore, rsvpStatus }: ProfileCar
     
     switch (rsvpStatus) {
       case 'accepted':
+      case 'pending':
         return (
           <Badge variant="secondary">
             <CheckCircle className="mr-1.5" />
@@ -42,13 +43,6 @@ export function ProfileCard({ user, compatibilityScore, rsvpStatus }: ProfileCar
           <Badge variant="destructive">
             <XCircle className="mr-1.5" />
             Not Attending
-          </Badge>
-        );
-      case 'pending':
-         return (
-          <Badge variant="outline">
-            <CheckCircle className="mr-1.5" />
-            Attending
           </Badge>
         );
       default:
