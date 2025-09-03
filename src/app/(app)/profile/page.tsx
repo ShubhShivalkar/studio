@@ -31,7 +31,7 @@ export default function ProfilePage() {
   const journalEntriesCount = currentUser.journalEntries?.length || 0;
   const progress = Math.min((journalEntriesCount / 15) * 100, 100);
   const canGenerate = journalEntriesCount >= 15;
-  const streakDays = 15; // As per mock data assumption
+  const streakDays = currentUser.journalEntries ? Math.min(currentUser.journalEntries.length, 15) : 0; // Simplified streak
 
   useEffect(() => {
     // Load persona from local storage on mount
@@ -51,6 +51,9 @@ export default function ProfilePage() {
     } else if (currentUser.persona) {
         // Fallback to mock data if no local storage
         setPersona({ persona: currentUser.persona, hobbies: [], interests: [], personalityTraits: [] });
+    } else {
+        // If there's no persona in mock data, ensure local storage is also cleared
+        localStorage.removeItem(personaStorageKey);
     }
 
     if (currentUser.personaLastGenerated) {
@@ -125,7 +128,7 @@ export default function ProfilePage() {
               <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
             </Avatar>
             <CardTitle className="font-headline">{currentUser.name}</CardTitle>
-            <CardDescription>{currentUser.gender}, Born {currentUser.dob}</CardDescription>
+            <CardDescription>{currentUser.gender}{currentUser.dob && `, Born ${currentUser.dob}`}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
             <Button className="w-full" variant="outline">Edit Profile</Button>
@@ -229,7 +232,7 @@ export default function ProfilePage() {
                 </div>
             ) : (
                 <div className="text-center text-muted-foreground py-8 flex flex-col items-center justify-center gap-4">
-                    { !canGenerate && (
+                    { !canGenerate ? (
                         <>
                             <p className="text-sm">You need at least 15 journal entries to generate a persona.</p>
                             <div className="w-full max-w-sm space-y-2">
@@ -237,13 +240,15 @@ export default function ProfilePage() {
                                 <p className="text-xs">{journalEntriesCount} of 15 entries completed.</p>
                             </div>
                         </>
+                    ) : (
+                        <p>Click "Generate Persona" to discover your personality insights.</p>
                     )}
                 </div>
             )}
           </CardContent>
         </Card>
 
-        {canGenerate && (
+        {journalEntriesCount > 0 && (
              <Card>
                 <CardHeader>
                     <CardTitle className="font-headline">Journal Stats</CardTitle>
