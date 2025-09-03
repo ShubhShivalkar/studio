@@ -93,7 +93,7 @@ export default function TribePage() {
             return Math.abs(currentUserAge - userAge) <= 2;
         });
 
-        if(ageFilteredUsers.length < 5){
+        if(ageFilteredUsers.length < 3){ // Need at least 3 others for a tribe of 4
             setTribe(null);
             setTribeState("finding");
             return;
@@ -147,7 +147,7 @@ export default function TribePage() {
             finalTribeMembers.sort((a, b) => b.compatibilityScore - a.compatibilityScore);
         }
 
-        if (finalTribeMembers.length >= 6 && finalTribeMembers.length <= 10) {
+        if (finalTribeMembers.length >= 4 && finalTribeMembers.length <= 10) {
              setTribe({
                 id: `tribe-${Date.now()}`,
                 members: finalTribeMembers,
