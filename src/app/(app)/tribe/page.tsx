@@ -246,7 +246,7 @@ export default function TribePage() {
                  {currentUserRsvp === 'rejected' ? (
                      <div className="text-center text-muted-foreground p-4 rounded-md flex flex-col items-center gap-4">
                         <Heart className="h-12 w-12 text-primary" />
-                        <p className="max-w-md text-lg">Hey! Don't worry, a new meet up will be arranged at your next availability.</p>
+                        <p className="max-w-md text-lg">Hey! Don't worry, we'll arrange a new meet up for you at your next availability.</p>
                     </div>
                  ) : (
                     <>
