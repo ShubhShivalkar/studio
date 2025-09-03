@@ -12,13 +12,14 @@ import { format, parseISO } from "date-fns";
 import type { Checklist, ChecklistItem } from "@/lib/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { cn } from "@/lib/utils";
 
 export default function ChecklistPage() {
   const { toast } = useToast();
   const [checklistData, setChecklistData] = useState(checklists);
   const [newChecklistTitle, setNewChecklistTitle] = useState("");
   const [newChecklistDate, setNewChecklistDate] = useState(new Date().toISOString().split('T')[0]);
-  const [newChecklistItems, setNewChecklistItems] = useState<Pick<ChecklistItem, 'text' | 'completed'>[]>([{ text: "", completed: false }]);
+  const [newChecklistItems, setNewChecklistItems] = useState<Pick<ChecklistItem, 'text' | 'completed'>>([{ text: "", completed: false }]);
 
   const handleAddItem = () => {
     setNewChecklistItems([...newChecklistItems, { text: "", completed: false }]);
