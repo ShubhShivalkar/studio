@@ -1,5 +1,5 @@
 import { BookOpen, Brush, Mountain } from 'lucide-react';
-import type { User, Connection, DailySummary, Reminder } from './types';
+import type { User, Connection, DailySummary, Reminder, Checklist } from './types';
 
 export const currentUser: User = {
   id: 'user-0',
@@ -101,6 +101,19 @@ export let reminders: Reminder[] = [
         time: '10:00',
         title: 'Doctor Appointment',
         details: 'Annual check-up with Dr. Smith.'
+    }
+];
+
+export let checklists: Checklist[] = [
+    {
+        id: 'cl-1',
+        date: '2024-07-22',
+        title: 'Project Phoenix Tasks',
+        items: [
+            { id: 'item-1-1', text: 'Finalize design mockups', completed: true },
+            { id: 'item-1-2', text: 'Develop login page', completed: true },
+            { id: 'item-1-3', text: 'Integrate API endpoints', completed: false },
+        ]
     }
 ];
 

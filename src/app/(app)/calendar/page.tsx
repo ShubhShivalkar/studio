@@ -7,18 +7,20 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
-import { dailySummaries, reminders as mockReminders } from "@/lib/mock-data";
-import type { DailySummary, Reminder } from '@/lib/types';
+import { dailySummaries, reminders as mockReminders, checklists as mockChecklists } from "@/lib/mock-data";
+import type { DailySummary, Reminder, Checklist } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { Pencil, Trash2, Bell } from 'lucide-react';
+import { Pencil, Trash2, Bell, ListTodo } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { DayContent, DayContentProps } from 'react-day-picker';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 
 function CustomDayContent(props: DayContentProps) {
     const dayData = dailySummaries.find(d => isSameDay(parseISO(d.date), props.date));
     const dayReminders = mockReminders.filter(r => isSameDay(parseISO(r.date), props.date));
+    const dayChecklists = mockChecklists.filter(c => isSameDay(parseISO(c.date), props.date));
 
     if (props.displayMonth.getMonth() !== props.date.getMonth()) {
       return <DayContent {...props} />;
@@ -39,6 +41,7 @@ function CustomDayContent(props: DayContentProps) {
               </>
             )}
             {dayReminders.length > 0 && <Bell className="w-3 h-3 md:w-4 md:h-4 text-primary" />}
+            {dayChecklists.length > 0 && <ListTodo className="w-3 h-3 md:w-4 md:h-4 text-primary" />}
         </div>
       </div>
     );
@@ -47,8 +50,10 @@ function CustomDayContent(props: DayContentProps) {
 export default function CalendarPage() {
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [reminders, setReminders] = useState(mockReminders);
+  const [checklists, setChecklists] = useState(mockChecklists);
   const [selectedSummary, setSelectedSummary] = useState<DailySummary | null>(null);
   const [selectedReminders, setSelectedReminders] = useState<Reminder[]>([]);
+  const [selectedChecklists, setSelectedChecklists] = useState<Checklist[]>([]);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isAvailableForTribe, setIsAvailableForTribe] = useState(false);
   const { toast } = useToast();
@@ -58,30 +63,29 @@ export default function CalendarPage() {
     if (selectedDate) {
       const summary = dailySummaries.find(d => isSameDay(parseISO(d.date), selectedDate)) || null;
       const dayReminders = reminders.filter(r => isSameDay(parseISO(r.date), selectedDate));
+      const dayChecklists = checklists.filter(c => isSameDay(parseISO(c.date), selectedDate));
       
       setSelectedSummary(summary);
       setSelectedReminders(dayReminders);
+      setSelectedChecklists(dayChecklists);
       setIsAvailableForTribe(summary?.isAvailable || false);
       setIsSheetOpen(true);
     } else {
       setSelectedSummary(null);
       setSelectedReminders([]);
+      setSelectedChecklists([]);
       setIsSheetOpen(false);
     }
   };
   
   const handleDeleteReminder = (reminderId: string) => {
-    // In a real app, you would call an API to delete the reminder.
-    // For now, we update the mock data directly.
     const reminderToDelete = reminders.find(r => r.id === reminderId);
     if (!reminderToDelete) return;
 
     const newReminders = reminders.filter(r => r.id !== reminderId);
     setReminders(newReminders);
-    // This is a bit of a hack for mock data to keep pages in sync
     mockReminders.splice(0, mockReminders.length, ...newReminders);
 
-    // Update the selected reminders in the sheet
     setSelectedReminders(prev => prev.filter(r => r.id !== reminderId));
 
     toast({
@@ -89,21 +93,50 @@ export default function CalendarPage() {
         title: "Reminder Deleted",
         description: `"${reminderToDelete.title}" has been removed.`
     });
-
-    // If no reminders or summary left, consider closing the sheet or showing the empty state.
-    const summary = dailySummaries.find(d => isSameDay(parseISO(d.date), date!)) || null;
-    if (newReminders.filter(r => isSameDay(parseISO(r.date), date!)).length === 0 && !summary) {
-        // Optionally close sheet if nothing is left to show
-        // setIsSheetOpen(false); 
-    }
   }
 
+  const handleDeleteChecklist = (checklistId: string) => {
+    const checklistToDelete = checklists.find(c => c.id === checklistId);
+    if (!checklistToDelete) return;
+
+    const newChecklists = checklists.filter(c => c.id !== checklistId);
+    setChecklists(newChecklists);
+    mockChecklists.splice(0, mockChecklists.length, ...newChecklists);
+
+    setSelectedChecklists(prev => prev.filter(c => c.id !== checklistId));
+
+    toast({
+        variant: "destructive",
+        title: "Checklist Deleted",
+        description: `"${checklistToDelete.title}" has been removed.`
+    });
+  }
+
+  const toggleChecklistItem = (checklistId: string, itemId: string) => {
+     const newChecklists = checklists.map(checklist => {
+        if (checklist.id === checklistId) {
+            const updatedItems = checklist.items.map(item =>
+                item.id === itemId ? { ...item, completed: !item.completed } : item
+            );
+            return { ...checklist, items: updatedItems };
+        }
+        return checklist;
+    });
+    setChecklists(newChecklists);
+    mockChecklists.splice(0, mockChecklists.length, ...newChecklists);
+    
+    // Update the selected checklists in the sheet
+    setSelectedChecklists(prev => prev.map(c => {
+        if(c.id === checklistId){
+            return newChecklists.find(nc => nc.id === checklistId)!;
+        }
+        return c;
+    }));
+  }
 
   const handleAvailabilityChange = (checked: boolean) => {
     setIsAvailableForTribe(checked);
-    if (date) { // Check if a date is selected
-        // In a real app, you'd update this in your backend.
-        // For now, we just show a toast.
+    if (date) {
         toast({
             title: "Availability Updated",
             description: `You are now marked as ${checked ? 'available' : 'unavailable'} for tribe meetups on this day.`
@@ -152,7 +185,7 @@ export default function CalendarPage() {
                 cell: cn(
                   "relative p-0 text-center text-sm",
                   "border-t border-l first:border-l-0",
-                  "[&:nth-child(7n)]:border-r-0", // Last cell in each row
+                  "[&:nth-child(7n)]:border-r-0",
                   "has-[[aria-selected]]:bg-accent"
                 ),
                 day: cn(
@@ -180,9 +213,39 @@ export default function CalendarPage() {
             </SheetDescription>
           </SheetHeader>
           <div className="py-4">
-            {selectedSummary || selectedReminders.length > 0 ? (
+            {selectedSummary || selectedReminders.length > 0 || selectedChecklists.length > 0 ? (
               <div className="space-y-4">
                 
+                {selectedChecklists.length > 0 && (
+                  <div className="space-y-2">
+                    {selectedChecklists.map(checklist => (
+                      <div key={checklist.id} className="p-3 bg-secondary rounded-lg">
+                        <div className="flex justify-between items-start mb-2">
+                           <div className="flex items-center gap-3">
+                            <ListTodo className="h-5 w-5 text-primary flex-shrink-0" />
+                            <h3 className="font-semibold">{checklist.title}</h3>
+                           </div>
+                            <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive flex-shrink-0" onClick={() => handleDeleteChecklist(checklist.id)}>
+                                <Trash2 className="h-4 w-4" />
+                            </Button>
+                        </div>
+                        <div className="space-y-1 pl-8">
+                           {checklist.items.map(item => (
+                               <div key={item.id} className="flex items-center gap-2">
+                                   <Checkbox 
+                                       id={`${checklist.id}-${item.id}`} 
+                                       checked={item.completed}
+                                       onCheckedChange={() => toggleChecklistItem(checklist.id, item.id)}
+                                   />
+                                   <Label htmlFor={`${checklist.id}-${item.id}`} className={cn("text-sm", item.completed && "line-through text-muted-foreground")}>{item.text}</Label>
+                               </div>
+                           ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 {selectedReminders.length > 0 && (
                     <div className="space-y-2">
                         {selectedReminders.map(reminder => (
@@ -297,5 +360,3 @@ export default function CalendarPage() {
     </div>
   );
 }
-
-    

@@ -6,7 +6,7 @@ import {
   Menu,
   PenLine,
   Plus,
-  StickyNote,
+  ListTodo,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -26,6 +26,7 @@ const navLinks = [
   { href: "/calendar", label: "Calendar" },
   { href: "/tribe", label: "Tribe" },
   { href: "/reminders", label: "Reminders" },
+  { href: "/checklist", label: "Checklists" },
   { href: "/profile", label: "Profile" },
 ];
 
@@ -83,9 +84,11 @@ export function Header() {
               <span>Set Reminder</span>
             </Link>
           </DropdownMenuItem>
-          <DropdownMenuItem>
-            <StickyNote className="mr-2 h-4 w-4" />
-            <span>Add Note</span>
+          <DropdownMenuItem asChild>
+            <Link href="/checklist">
+              <ListTodo className="mr-2 h-4 w-4" />
+              <span>Add Checklist</span>
+            </Link>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

@@ -38,3 +38,16 @@ export type DailySummary = {
     isAvailable: boolean;
     hasMeetup: boolean;
 };
+
+export type ChecklistItem = {
+  id: string;
+  text: string;
+  completed: boolean;
+};
+
+export type Checklist = {
+  id:string;
+  title: string;
+  date: string; // YYYY-MM-DD
+  items: ChecklistItem[];
+};
