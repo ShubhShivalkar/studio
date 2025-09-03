@@ -46,6 +46,17 @@ export default function ProfilePage() {
 
 
   const handleGeneratePersona = async () => {
+    if (isLoading) return;
+    
+    if (!canRegenerate && currentUser.persona) {
+        toast({
+            variant: 'destructive',
+            title: 'Regeneration Limit',
+            description: 'You can only regenerate your persona once a week.'
+        });
+        return;
+    }
+
     setIsLoading(true);
     setPersona(null);
     try {
@@ -58,16 +69,7 @@ export default function ProfilePage() {
           setIsLoading(false);
           return;
       }
-       if (!canRegenerate && currentUser.persona) {
-            toast({
-                variant: 'destructive',
-                title: 'Regeneration Limit',
-                description: 'You can only regenerate your persona once a week.'
-            });
-            setIsLoading(false);
-            setPersona({ persona: currentUser.persona, hobbies: [], interests: [], personalityTraits: [] }); // Restore persona view
-            return;
-        }
+      
       const entriesText = currentUser.journalEntries.join("\n\n");
       const result = await generatePersonalityPersona({ journalEntries: entriesText });
       setPersona(result);
@@ -158,7 +160,7 @@ export default function ProfilePage() {
                         Based on your journal entries, this is how Anu understands your personality.
                     </CardDescription>
                 </div>
-                <Button onClick={handleGeneratePersona} disabled={isLoading || !canGenerate || (!!currentUser.persona && !canRegenerate)}>
+                <Button onClick={handleGeneratePersona} disabled={isLoading || !canGenerate}>
                     {isLoading ? "Generating..." : persona ? "Regenerate Persona" : "Generate Persona"}
                 </Button>
             </div>
