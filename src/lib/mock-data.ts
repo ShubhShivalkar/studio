@@ -95,7 +95,7 @@ export const allUsers: User[] = Array.from({ length: 25 }, (_, i) => {
         phone: `${i+1}000000000`,
         persona: samplePersonas[i],
         interestedInMeetups: (i % 3 !== 0), // About 2/3 of users are interested
-        availableDates: [`2024-07-${20 + (i%5)}`, `2024-07-${27 + (i%2)}`], // Example weekend availability
+        availableDates: [`2024-07-20`, `2024-07-21`, `2024-07-27`, `2024-07-28`], // Example weekend availability for all users
         personaLastGenerated: undefined,
     };
 });
@@ -105,4 +105,14 @@ export let reminders: Reminder[] = [];
 
 export let checklists: Checklist[] = [];
 
-export const dailySummaries: DailySummary[] = [];
+// Pre-populate with available weekends for the current user for testing purposes
+export const dailySummaries: DailySummary[] = [
+    { date: '2024-07-06', isAvailable: true },
+    { date: '2024-07-07', isAvailable: true },
+    { date: '2024-07-13', isAvailable: true },
+    { date: '2024-07-14', isAvailable: true },
+    { date: '2024-07-20', isAvailable: true },
+    { date: '2024-07-21', isAvailable: true },
+    { date: '2024-07-27', isAvailable: true },
+    { date: '2024-07-28', isAvailable: true },
+];
