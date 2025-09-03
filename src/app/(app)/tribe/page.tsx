@@ -152,7 +152,7 @@ export default function TribePage() {
                 id: `tribe-${Date.now()}`,
                 members: finalTribeMembers,
                 meetupDate: bestMeetupDate,
-                location: "The Cozy Corner Cafe"
+                location: "70 Beans Cafe, Navi Mumbai"
             });
             setTribeState("found");
         } else {
