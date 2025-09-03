@@ -231,10 +231,10 @@ export default function TribePage() {
                         <Card className="mb-6 bg-secondary">
                             <CardHeader>
                                 <CardTitle className="font-headline text-center">
-                                    {isTribeComplete ? "Your Tribe is Ready!" : "Partial Tribe Formed"}
+                                    {isTribeComplete ? "Your Tribe is Ready! 🎉" : "Partial Tribe Formed ⏳"}
                                 </CardTitle>
                                 <CardDescription className="text-center">
-                                    {isTribeComplete ? "You've been invited to a meetup." : `Waiting for ${4 - (attendingMembers?.length || 0)} more member(s) to join.`}
+                                    {isTribeComplete ? "You've been invited to a meetup." : `Waiting for at least one more member to join.`}
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="text-center space-y-2">
