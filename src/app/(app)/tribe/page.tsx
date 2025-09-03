@@ -78,8 +78,8 @@ const staticTribe: Tribe = {
             persona: allUsers[1].persona!,
             user: allUsers[1],
             matchReason: "Strong alignment in valuing quiet moments, nature, and deep conversations.",
-            rsvpStatus: 'rejected',
-            rejectionReason: "Sorry, I have a family event that weekend I can't miss. Hope to catch the next one!",
+            rsvpStatus: 'accepted',
+            rejectionReason: undefined,
         },
         {
             userId: allUsers[2].id,
@@ -400,7 +400,7 @@ export default function TribePage() {
                                             <DialogTrigger asChild>
                                                <div className="flex flex-col items-center gap-2 cursor-pointer group">
                                                    <div className="relative">
-                                                       <Avatar className="w-16 h-16 md:w-20 md:h-20 border-2 border-destructive/50 group-hover:border-destructive transition-colors">
+                                                       <Avatar className="w-16 h-16 md:w-20 md-h-20 border-2 border-destructive/50 group-hover:border-destructive transition-colors">
                                                             <AvatarImage src={member.user.avatar} alt={member.user.name} />
                                                             <AvatarFallback>{member.user.name.charAt(0)}</AvatarFallback>
                                                        </Avatar>
