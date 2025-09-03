@@ -13,6 +13,7 @@ import { Bot, SendHorizonal, CheckCircle, RotateCcw } from "lucide-react";
 import { useEffect, useRef, useState, useMemo } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { format } from 'date-fns';
+import Image from "next/image";
 
 const MAX_AI_QUESTIONS = 10;
 
@@ -238,7 +239,7 @@ export function JournalChat() {
             >
               {message.sender === "ai" && (
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src="https://picsum.photos/seed/anu-ai/200/200" alt="Anu" data-ai-hint="woman portrait" />
+                  <AvatarImage src="https://picsum.photos/seed/woman-portrait/200/200" alt="Anu" data-ai-hint="woman portrait" />
                   <AvatarFallback className="bg-primary text-primary-foreground">
                     <Bot />
                   </AvatarFallback>
@@ -259,7 +260,7 @@ export function JournalChat() {
           {isLoading && (
             <div className="flex items-start gap-3 justify-start">
                <Avatar className="h-8 w-8">
-                  <AvatarImage src="https://picsum.photos/seed/anu-ai/200/200" alt="Anu" data-ai-hint="woman portrait" />
+                  <AvatarImage src="https://picsum.photos/seed/woman-portrait/200/200" alt="Anu" data-ai-hint="woman portrait" />
                   <AvatarFallback className="bg-primary text-primary-foreground">
                     <Bot />
                   </AvatarFallback>
