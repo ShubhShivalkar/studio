@@ -11,7 +11,7 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { allUsers, currentUser } from "@/lib/mock-data";
-import { Bot, Users, ShieldAlert, CheckCircle, XCircle, MessageSquare, CalendarCheck, Info } from "lucide-react";
+import { Bot, Users, ShieldAlert, CheckCircle, XCircle, MessageSquare, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -27,7 +27,6 @@ import {
   DialogDescription,
   DialogTrigger,
   DialogFooter,
-  DialogClose
 } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -217,7 +216,7 @@ export default function TribePage() {
                     <CardContent className="text-center space-y-2">
                         <p><strong>Meetup Date:</strong> {new Date(tribe.meetupDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
                         <p><strong>Location:</strong> {tribe.location}</p>
-                        <p className="text-sm text-muted-foreground">Show this Tribe ID at the cafe: <Badge variant="outline">{tribe.id}</Badge></p>
+                        <div className="text-sm text-muted-foreground">Show this Tribe ID at the cafe: <Badge variant="outline">{tribe.id}</Badge></div>
                     </CardContent>
                     <CardFooter className="flex flex-col sm:flex-row items-center justify-center gap-2 pt-4">
                        <p className="text-sm font-medium">Your RSVP:</p>
