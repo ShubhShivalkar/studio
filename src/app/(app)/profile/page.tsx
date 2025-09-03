@@ -11,7 +11,7 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { currentUser } from "@/lib/mock-data";
-import { Bot, LogOut, Users, BookOpen, Flame, Briefcase, HandHeart } from "lucide-react";
+import { Bot, LogOut, Users, BookOpen, Flame, Briefcase, HandHeart, MapPin } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { Switch } from "@/components/ui/switch";
@@ -35,6 +35,35 @@ export default function ProfilePage() {
   const progress = Math.min((journalEntriesCount / 15) * 100, 100);
   const canGenerate = journalEntriesCount >= 15;
   const streakDays = userData.journalEntries ? Math.min(userData.journalEntries.length, 15) : 0;
+  
+  useEffect(() => {
+    // Fetch location
+    if (!userData.location && "geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(async (position) => {
+        try {
+          const { latitude, longitude } = position.coords;
+          // Using a free reverse geocoding API
+          const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
+          const data = await response.json();
+          const city = data.address.city || data.address.town || data.address.village;
+          if (city) {
+            handleUpdateUser({ location: city });
+          }
+        } catch (error) {
+          console.error("Error fetching location:", error);
+        }
+      }, (error) => {
+          console.error("Geolocation error:", error);
+          if (error.code === error.PERMISSION_DENIED) {
+              toast({
+                  variant: "destructive",
+                  title: "Location Access Denied",
+                  description: "You have denied access to your location. We won't be able to display your city.",
+              });
+          }
+      });
+    }
+  }, []);
 
   useEffect(() => {
     if (userData.persona) {
@@ -124,7 +153,14 @@ export default function ProfilePage() {
                 <AvatarFallback>{userData.name.charAt(0)}</AvatarFallback>
               </Avatar>
               <CardTitle className="font-headline">{userData.name}</CardTitle>
-              <CardDescription>{userData.gender}{userData.dob && `, Born ${userData.dob}`}</CardDescription>
+              <CardDescription>
+                  {userData.gender}{userData.dob && `, Born ${userData.dob}`}
+                  {userData.location && (
+                    <span className="flex items-center justify-center gap-1 mt-1">
+                        <MapPin className="h-4 w-4" /> {userData.location}
+                    </span>
+                  )}
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
                 {(userData.profession || userData.religion) && (

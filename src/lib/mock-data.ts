@@ -18,6 +18,7 @@ export let currentUser: User = {
   interests: [],
   profession: undefined,
   religion: undefined,
+  location: undefined,
 };
 
 // This represents our "database" of all users in the system.

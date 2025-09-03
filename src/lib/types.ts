@@ -17,6 +17,7 @@ export type User = {
   interests?: string[];
   profession?: string;
   religion?: string;
+  location?: string;
 };
 
 export type Connection = {
