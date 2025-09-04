@@ -93,7 +93,7 @@ export default function Step1Page() {
         <CardDescription>
           {isLogin ? 'Sign in to continue your journey.' : 'Create an account to begin.'}
         </CardDescription>
-        <Progress value={10} className="mt-2" />
+        {!isLogin && <Progress value={10} className="mt-2" />}
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
