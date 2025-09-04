@@ -60,8 +60,8 @@ export function TestDbConnection() {
       
       if (error instanceof Error) {
         if (error.message === 'timeout') {
-          description = 'Please verify firestore security rules allows write to the test_connection collection';
-        } else if (error.message.includes('permission-denied')) {
+          description = 'Please verify your Firestore security rules allow writes to the `test_connection` collection for unauthenticated users.';
+        } else if (error.message.includes('permission-denied') || error.message.includes('PERMISSION_DENIED')) {
           description = 'Permission denied. Please check your Firestore security rules to ensure they allow writes to the "test_connection" collection.';
         } else {
             description = error.message;

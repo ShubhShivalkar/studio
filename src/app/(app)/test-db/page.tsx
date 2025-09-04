@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { db } from '@/lib/firebase';
-import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp, deleteDoc } from 'firebase/firestore';
 import { CheckCircle, AlertTriangle, Database } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 
@@ -26,8 +26,8 @@ export default function TestDbPage() {
     }
     
     setIsLoading(true);
+    const testDocRef = doc(db, 'test_connection', `user_test_${user.uid}`);
     try {
-      const testDocRef = doc(db, 'test_connection', `user_test_${user.uid}`);
       
       // 1. Write a test document
       await setDoc(testDocRef, {
@@ -41,9 +41,12 @@ export default function TestDbPage() {
         throw new Error('Read verification failed.');
       }
 
+      // 3. Clean up
+      await deleteDoc(testDocRef);
+
       toast({
         title: 'Connection Successful!',
-        description: 'Successfully wrote to and read from Firestore.',
+        description: 'Successfully wrote to and read from Firestore as an authenticated user.',
         action: <CheckCircle className="text-green-500" />,
       });
 
@@ -67,9 +70,9 @@ export default function TestDbPage() {
         <div className="flex items-center gap-4">
             <Database className="h-8 w-8 text-primary" />
             <div>
-                <CardTitle>Test Database Connection</CardTitle>
+                <CardTitle>Test Authenticated DB Connection</CardTitle>
                 <CardDescription>
-                    Verify that the app can connect to your Firestore database.
+                    Verify that an authenticated user can connect to Firestore.
                 </CardDescription>
             </div>
         </div>
@@ -77,9 +80,10 @@ export default function TestDbPage() {
       <CardContent className="text-center">
         <p className="text-sm text-muted-foreground mb-4">
           Click the button below to perform a test write and read operation.
-          This will confirm if your Firebase credentials and security rules are set up correctly for authenticated users.
+          This will confirm if your security rules are set up correctly for logged-in users.
+          This test uses the 'test_connection' collection.
         </p>
-        <Button onClick={handleTestConnection} disabled={isLoading}>
+        <Button onClick={handleTestConnection} disabled={isLoading || !user}>
           {isLoading ? 'Testing...' : 'Test Connection'}
         </Button>
       </CardContent>
