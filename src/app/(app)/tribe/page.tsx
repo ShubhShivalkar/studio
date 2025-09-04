@@ -15,9 +15,8 @@ import { Bot, Users, ShieldAlert, CheckCircle, XCircle, MessageSquare, Info, Use
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { User } from "@/lib/types";
+import type { User, MatchedUser, Tribe } from "@/lib/types";
 import { differenceInYears, parseISO, format, addDays, getDay, isSameDay } from "date-fns";
-import type { MatchUsersByTribePreferencesOutput } from "@/ai/flows/match-users-by-tribe-preferences";
 import { matchUsersByTribePreferences } from "@/ai/flows/match-users-by-tribe-preferences";
 import { ProfileCard } from "@/components/profile-card";
 import {
@@ -36,21 +35,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import useTribeStore from "@/store/tribe";
 
-
-type MatchedUser = MatchUsersByTribePreferencesOutput[0] & {
-  user: User;
-  rsvpStatus: 'accepted' | 'rejected' | 'pending';
-  rejectionReason?: string;
-};
-
-type Tribe = {
-    id: string;
-    members: MatchedUser[];
-    meetupDate: string;
-    meetupTime?: string;
-    location: string;
-}
 
 const getAge = (dob: string) => {
     if (!dob) return '';
@@ -59,7 +45,7 @@ const getAge = (dob: string) => {
 
 export default function TribePage() {
   const [tribeState, setTribeState] = useState<"loading" | "no-persona" | "not-interested" | "finding" | "found" | "no-matches">("loading");
-  const [tribe, setTribe] = useState<Tribe | null>(null);
+  const { tribe, setTribe, clearTribe } = useTribeStore();
   const { toast } = useToast();
   const [rejectionReason, setRejectionReason] = useState("");
   const [isDeclineDialogOpen, setIsDeclineDialogOpen] = useState(false);
@@ -68,6 +54,12 @@ export default function TribePage() {
     const findTribe = async () => {
         if (!currentUser || !currentUser.id) {
             setTribeState("loading");
+            return;
+        }
+        
+        // If a tribe is already in the store, the user joined from the discover page.
+        if (tribe) {
+            setTribeState("found");
             return;
         }
 
@@ -161,7 +153,7 @@ export default function TribePage() {
     const timer = setTimeout(findTribe, 2000);
     return () => clearTimeout(timer);
     
-  }, []);
+  }, [tribe, setTribe]);
 
   const updateCalendarEvent = (tribe: Tribe, accepted: boolean) => {
     const summaryIndex = dailySummaries.findIndex(d => d.date === tribe.meetupDate);
@@ -247,6 +239,8 @@ export default function TribePage() {
   
   const rejectedMembers = tribe?.members.filter(m => m.rsvpStatus === 'rejected');
   const isTribeComplete = attendingMembers && attendingMembers.length >= 4;
+  
+  const showDiscoverButton = tribeState === 'no-matches' || tribeState === 'not-interested' || (tribeState === "found" && currentUserRsvp === 'rejected');
   
   return (
     <Card>

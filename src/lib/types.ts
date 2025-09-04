@@ -84,4 +84,22 @@ export type DiscoveredTribe = {
     id: string;
     members: Pick<User, 'id' | 'name' | 'avatar' | 'dob' | 'gender' | 'location'>[];
     compatibilityScore: number;
+};
+
+export type MatchedUser = {
+  userId: string;
+  user: User;
+  compatibilityScore: number;
+  persona: string;
+  matchReason: string;
+  rsvpStatus: 'accepted' | 'rejected' | 'pending';
+  rejectionReason?: string;
+};
+
+export type Tribe = {
+    id: string;
+    members: MatchedUser[];
+    meetupDate: string;
+    meetupTime?: string;
+    location: string;
 }

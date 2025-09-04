@@ -12,8 +12,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Users, CheckCircle, Clock, MapPin } from 'lucide-react';
-import { discoveredTribes as mockTribes } from '@/lib/mock-data';
-import type { DiscoveredTribe, User } from '@/lib/types';
+import { discoveredTribes as mockTribes, currentUser } from '@/lib/mock-data';
+import type { DiscoveredTribe, User, Tribe } from '@/lib/types';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -26,6 +26,19 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import useTribeStore from '@/store/tribe';
+import { format } from 'date-fns';
 
 const getTribeCategory = (members: Pick<User, 'gender'>[]): 'Male' | 'Female' | 'Mixed' => {
   const genders = members.map(m => m.gender);
@@ -57,6 +70,7 @@ const getMostCommonLocation = (members: Pick<User, 'location'>[]): string | null
 export default function DiscoverTribesPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const { setTribe } = useTribeStore();
   const [tribes] = useState<DiscoveredTribe[]>(mockTribes);
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
@@ -87,11 +101,40 @@ export default function DiscoverTribesPage() {
     });
   }, [tribes, statusFilter, categoryFilter, locationFilter]);
   
-  const handleJoinRequest = (tribeId: string) => {
+  const handleJoinRequest = (tribe: DiscoveredTribe) => {
+    const newTribeForStore: Tribe = {
+      id: tribe.id,
+      members: [
+        {
+          userId: currentUser.id,
+          user: currentUser,
+          compatibilityScore: 100,
+          persona: currentUser.persona!,
+          matchReason: 'This is you!',
+          rsvpStatus: 'pending',
+        },
+        ...tribe.members.map(member => ({
+            userId: member.id,
+            user: member as User, // Cast for simplicity in mock
+            compatibilityScore: tribe.compatibilityScore,
+            persona: "A friendly and outgoing individual.", // Mock persona
+            matchReason: "Shared interests in art and technology.", // Mock reason
+            rsvpStatus: 'pending',
+        }))
+      ],
+      meetupDate: format(new Date(), 'yyyy-MM-dd'),
+      meetupTime: '3:00 PM',
+      location: getMostCommonLocation(tribe.members) || 'The Cozy Cafe',
+    };
+
+    setTribe(newTribeForStore);
+    
     toast({
         title: "Request Sent!",
-        description: `Your request to join tribe ${tribeId} has been sent for approval.`,
+        description: `Your request to join tribe ${tribe.id} has been sent.`,
     });
+    
+    router.push('/tribe');
   }
 
   return (
@@ -162,7 +205,8 @@ export default function DiscoverTribesPage() {
                 const category = getTribeCategory(tribe.members);
                 const commonLocation = getMostCommonLocation(tribe.members);
                 return (
-                  <Card key={tribe.id} className="flex flex-col sm:flex-row items-start sm:items-center p-4 gap-4">
+                 <AlertDialog key={tribe.id}>
+                  <Card className="flex flex-col sm:flex-row items-start sm:items-center p-4 gap-4">
                     <div className="flex-1 space-y-3">
                         <div className="flex items-center gap-4">
                             <h3 className="font-semibold text-lg">Tribe <span className="font-mono text-primary">{tribe.id}</span></h3>
@@ -208,12 +252,29 @@ export default function DiscoverTribesPage() {
                                 </Avatar>
                             ))}
                         </div>
-                       <Button className="w-full sm:w-auto mt-2" onClick={() => handleJoinRequest(tribe.id)}>
-                            <Users className="mr-2"/>
-                            Join Tribe
-                        </Button>
+                        <AlertDialogTrigger asChild>
+                           <Button className="w-full sm:w-auto mt-2">
+                                <Users className="mr-2"/>
+                                Join Tribe
+                            </Button>
+                        </AlertDialogTrigger>
                     </div>
                   </Card>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Join Tribe {tribe.id}?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to send a request to join this tribe? This will replace any pending tribe invitations for this week.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleJoinRequest(tribe)}>
+                          Confirm
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 )
               })
             ) : (
