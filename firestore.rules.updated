@@ -1,0 +1,39 @@
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --- USER DATA ---
+    // Users can create their own profile.
+    // They can only read and update their own profile.
+    match /users/{userId} {
+      allow create: if request.auth.uid != null;
+      allow read, update: if request.auth.uid == userId;
+    }
+
+    // --- CONNECTION TESTING ---
+    // Allow any unauthenticated user to read/write to a specific test document.
+    // This is safe because it only allows access to a single, known document ID.
+    match /test_connection/unauthenticated_test {
+      allow read, write;
+    }
+
+    // Allow any authenticated user to write to their own test document.
+    // This is useful for testing after login.
+    match /test_connection/{userId} {
+        allow read, write: if request.auth.uid == userId;
+    }
+
+    // --- APPLICATION DATA (Examples) ---
+    // Users can manage their own journal entries.
+    match /journalEntries/{entryId} {
+      allow read, write: if request.auth.uid == resource.data.userId;
+    }
+
+    // --- DEFAULT DENY ---
+    // Deny all other access to prevent accidental data exposure.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,12 +1,61 @@
 
+"use client";
+
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { PenLine, Bot, Users, Edit, Heart } from "lucide-react";
+import { PenLine, Bot, Users, Edit, Heart, CheckCircle, AlertTriangle, Database } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Image from "next/image";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
+import { db } from "@/lib/firebase";
+import { doc, setDoc, getDoc, serverTimestamp, deleteDoc } from "firebase/firestore";
 
 export default function Home() {
+  const [isTesting, setIsTesting] = useState(false);
+  const { toast } = useToast();
+
+  const handleTestConnection = async () => {
+    setIsTesting(true);
+    try {
+      const testDocRef = doc(db, 'test_connection', 'unauthenticated_test');
+      
+      // 1. Write to the database
+      await setDoc(testDocRef, {
+        status: 'testing',
+        timestamp: serverTimestamp(),
+      });
+      
+      // 2. Read from the database to verify
+      const docSnap = await getDoc(testDocRef);
+      if (!docSnap.exists() || docSnap.data().status !== 'testing') {
+        throw new Error('Read verification failed.');
+      }
+
+      // 3. Clean up the test document
+      await deleteDoc(testDocRef);
+
+      toast({
+        title: 'Connection Successful!',
+        description: 'Successfully connected to Firestore.',
+        action: <CheckCircle className="text-green-500" />,
+      });
+
+    } catch (error) {
+      console.error("Database connection test failed:", error);
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
+      toast({
+        variant: 'destructive',
+        title: 'Connection Failed',
+        description: `Could not connect to Firestore. Check console or security rules. Error: ${errorMessage}`,
+        action: <AlertTriangle className="text-white" />,
+      });
+    } finally {
+      setIsTesting(false);
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-screen">
       <header className="px-4 lg:px-6 h-14 flex items-center absolute top-0 left-0 w-full z-10">
@@ -14,6 +63,12 @@ export default function Home() {
           <PenLine className="h-6 w-6 text-primary" />
           <span className="sr-only">anuvaad - Translating experiences into real meaningful connections</span>
         </Link>
+        <div className="ml-auto">
+          <Button onClick={handleTestConnection} disabled={isTesting} variant="outline">
+            <Database className="mr-2 h-4 w-4" />
+            {isTesting ? 'Testing...' : 'Test DB Connection'}
+          </Button>
+        </div>
       </header>
       <main className="flex-1">
         <section className="w-full py-12 md:py-24 lg:py-32 xl:py-48 bg-background relative">
