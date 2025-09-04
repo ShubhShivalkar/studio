@@ -13,8 +13,6 @@ import { useState } from 'react';
 import { auth } from '@/lib/firebase';
 import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from 'firebase/auth';
 import { getUser } from '@/services/user-service';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { countryCodes } from '@/lib/country-codes';
 
 declare global {
   interface Window {
@@ -61,7 +59,7 @@ export default function Step1Page() {
       toast({
         variant: "destructive",
         title: "Failed to send OTP",
-        description: "Please check the phone number and country code, then try again.",
+        description: "Please check the phone number and try again.",
       });
     } finally {
       setIsLoading(false);
@@ -109,7 +107,7 @@ export default function Step1Page() {
         <CardTitle>{step === 'phone' ? "Welcome! Let's get started." : "Enter Verification Code"}</CardTitle>
         <CardDescription>
           {step === 'phone' 
-            ? "First, what's your mobile number? Select your country code and enter the number."
+            ? "First, what's your mobile number? Enter the number to continue."
             : `We sent a code to +${countryCode}${phone}.`}
         </CardDescription>
         <Progress value={step === 'phone' ? 10 : 20} className="mt-2" />
@@ -119,19 +117,10 @@ export default function Step1Page() {
           <CardContent>
             <div className="space-y-2">
               <Label htmlFor="phone">Mobile Number</Label>
-              <div className="flex gap-2">
-                <Select value={countryCode} onValueChange={(value) => setData({ countryCode: value })}>
-                    <SelectTrigger className="w-[120px]">
-                        <SelectValue placeholder="Code" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {countryCodes.map(c => (
-                            <SelectItem key={c.code} value={c.dial_code}>
-                                {c.code} (+{c.dial_code})
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
+              <div className="flex items-center gap-2">
+                 <div className="flex h-10 items-center rounded-md border border-input bg-background px-3">
+                    <span className="text-sm text-muted-foreground">+91</span>
+                 </div>
                 <Input 
                   id="phone" 
                   type="tel" 
