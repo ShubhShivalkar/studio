@@ -21,7 +21,9 @@ export function TestDbConnection() {
 
     let timeoutId: NodeJS.Timeout | null = null;
     const timeoutPromise = new Promise((_, reject) => {
-      timeoutId = setTimeout(() => reject(new Error('timeout')), TEST_TIMEOUT);
+      timeoutId = setTimeout(() => {
+        reject(new Error('timeout'));
+      }, TEST_TIMEOUT);
     });
 
     try {
