@@ -18,7 +18,8 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { differenceInDays, parseISO, format } from 'date-fns';
 import { EditProfileDialog } from "@/components/edit-profile-dialog";
-import type { User } from "@/lib/types";
+import type { User, TribePreference } from "@/lib/types";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function ProfilePage() {
   const [persona, setPersona] = useState<GeneratePersonalityPersonaOutput | null>(null);
@@ -27,6 +28,7 @@ export default function ProfilePage() {
   const [canRegenerate, setCanRegenerate] = useState(true);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [userData, setUserData] = useState<User>(currentUser);
+  const [tribePreference, setTribePreference] = useState<TribePreference>(currentUser.tribePreference || 'No Preference');
 
   const { toast } = useToast();
   const router = useRouter();
@@ -136,6 +138,17 @@ export default function ProfilePage() {
         description: `You are now ${checked ? 'discoverable by' : 'hidden from'} potential tribes.`
     });
   }
+  
+  const handlePreferenceChange = (value: TribePreference) => {
+    setTribePreference(value);
+    const updatedUserData = { ...userData, tribePreference: value };
+    Object.assign(currentUser, updatedUserData);
+    setUserData(updatedUserData);
+     toast({
+        title: "Tribe Preference Saved",
+        description: `Your preference has been set to "${value}".`
+    });
+  }
 
   const handleSignOut = () => {
     router.push('/');
@@ -197,7 +210,7 @@ export default function ProfilePage() {
                       Manage your visibility for tribe meetups.
                     </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="space-y-4">
                     <div className="flex items-center justify-between">
                         <Label htmlFor="meetup-interest" className="flex-grow pr-4">
                             Interested in meeting new people
@@ -208,6 +221,21 @@ export default function ProfilePage() {
                             onCheckedChange={handleInterestToggle}
                         />
                     </div>
+                     {isInterested && (
+                        <div className="space-y-2 border-t border-accent-foreground/20 pt-4">
+                            <Label htmlFor="tribe-preference">Tribe Preference</Label>
+                            <Select value={tribePreference} onValueChange={handlePreferenceChange}>
+                                <SelectTrigger id="tribe-preference" className="bg-accent text-accent-foreground border-accent-foreground/50">
+                                    <SelectValue placeholder="Select a preference" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="No Preference">No Preference</SelectItem>
+                                    <SelectItem value="Same Gender">Same Gender</SelectItem>
+                                    <SelectItem value="Mixed Gender">Mixed Gender</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    )}
                 </CardContent>
             </Card>
         </div>

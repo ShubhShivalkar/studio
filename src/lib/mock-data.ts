@@ -20,6 +20,7 @@ export let currentUser: User = {
   profession: undefined,
   religion: undefined,
   location: undefined,
+  tribePreference: 'No Preference',
 };
 
 // This represents our "database" of all users in the system.
