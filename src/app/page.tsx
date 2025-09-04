@@ -6,8 +6,12 @@ import Link from "next/link";
 import { PenLine, Bot, Users, Edit, Heart } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useAuth } from "@/context/auth-context";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Home() {
+  const { user, loading } = useAuth();
+
   return (
     <div className="flex flex-col min-h-screen">
       <header className="px-4 lg:px-6 h-14 flex items-center absolute top-0 left-0 w-full z-10">
@@ -34,11 +38,17 @@ export default function Home() {
               </p>
             </div>
             <div className="mt-8 flex justify-center">
-              <Button asChild size="lg">
-                <Link href="/onboarding/step-1">
-                  Begin Your Journey
-                </Link>
-              </Button>
+              {loading ? (
+                <Skeleton className="h-11 w-48 rounded-md" />
+              ) : user ? (
+                <Button asChild size="lg">
+                  <Link href="/journal">Open Application</Link>
+                </Button>
+              ) : (
+                <Button asChild size="lg">
+                  <Link href="/onboarding/step-1">Begin Your Journey</Link>
+                </Button>
+              )}
             </div>
           </div>
         </section>
