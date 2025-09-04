@@ -19,9 +19,10 @@ export function TestDbConnection() {
     const testDocId = `test-${Date.now()}`;
     const testDocRef = doc(db, 'test_connection', testDocId);
 
-    const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('timeout')), TEST_TIMEOUT)
-    );
+    let timeoutId: NodeJS.Timeout;
+    const timeoutPromise = new Promise((_, reject) => {
+      timeoutId = setTimeout(() => reject(new Error('timeout')), TEST_TIMEOUT);
+    });
 
     try {
       const testPromise = async () => {
@@ -43,12 +44,15 @@ export function TestDbConnection() {
 
       await Promise.race([testPromise(), timeoutPromise]);
 
+      clearTimeout(timeoutId!); // Clear the timeout if the promise resolves
+
       toast({
         title: 'Connection Successful!',
         description: 'Successfully wrote to and read from the database.',
         action: <CheckCircle className="text-green-500" />,
       });
     } catch (error) {
+      clearTimeout(timeoutId!); // Clear the timeout if the promise rejects
       console.error("Database connection test failed:", error);
       let description = 'Could not connect to Firestore. Check the console for details.';
       
@@ -67,6 +71,7 @@ export function TestDbConnection() {
         title: 'Connection Failed',
         description: description,
         action: <AlertTriangle className="text-white" />,
+        duration: 10000,
       });
     } finally {
       setIsLoading(false);
