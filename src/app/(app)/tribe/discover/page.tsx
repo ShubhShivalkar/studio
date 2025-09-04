@@ -81,6 +81,7 @@ export default function DiscoverTribesPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [locationFilter, setLocationFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('default');
 
   const uniqueLocations = useMemo(() => {
     const locations = new Set<string>();
@@ -93,8 +94,8 @@ export default function DiscoverTribesPage() {
     return Array.from(locations);
   }, [tribes]);
 
-  const filteredTribes = useMemo(() => {
-    return tribes.filter(tribe => {
+  const filteredAndSortedTribes = useMemo(() => {
+    const filtered = tribes.filter(tribe => {
       const status = getTribeStatus(tribe.members.length);
       const category = getTribeCategory(tribe.members);
       const commonLocation = getMostCommonLocation(tribe.members);
@@ -105,7 +106,19 @@ export default function DiscoverTribesPage() {
 
       return statusMatch && categoryMatch && locationMatch;
     });
-  }, [tribes, statusFilter, categoryFilter, locationFilter]);
+
+    switch (sortBy) {
+        case 'compatibility_desc':
+            return filtered.sort((a, b) => b.compatibilityScore - a.compatibilityScore);
+        case 'members_desc':
+            return filtered.sort((a, b) => b.members.length - a.members.length);
+        case 'members_asc':
+            return filtered.sort((a, b) => a.members.length - b.members.length);
+        default:
+            return filtered;
+    }
+
+  }, [tribes, statusFilter, categoryFilter, locationFilter, sortBy]);
   
   const handleJoinRequest = (tribe: DiscoveredTribe) => {
     const newTribeForStore: Tribe = {
@@ -160,7 +173,7 @@ export default function DiscoverTribesPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col sm:flex-row gap-4 mb-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <div className="flex-1">
               <label htmlFor="status-filter" className="text-sm font-medium">Status</label>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -202,11 +215,25 @@ export default function DiscoverTribesPage() {
                 </SelectContent>
               </Select>
             </div>
+             <div className="flex-1">
+               <label htmlFor="sort-by" className="text-sm font-medium">Sort by</label>
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger id="sort-by">
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="default">Default</SelectItem>
+                  <SelectItem value="compatibility_desc">Compatibility (High to Low)</SelectItem>
+                  <SelectItem value="members_desc">Members (High to Low)</SelectItem>
+                  <SelectItem value="members_asc">Members (Low to High)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="space-y-4">
-            {filteredTribes.length > 0 ? (
-              filteredTribes.map(tribe => {
+            {filteredAndSortedTribes.length > 0 ? (
+              filteredAndSortedTribes.map(tribe => {
                 const status = getTribeStatus(tribe.members.length);
                 const category = getTribeCategory(tribe.members);
                 const commonLocation = getMostCommonLocation(tribe.members);
@@ -217,7 +244,7 @@ export default function DiscoverTribesPage() {
                         <div className="flex items-center gap-4">
                             <h3 className="font-semibold text-lg">Tribe <span className="font-mono text-primary">{tribe.id}</span></h3>
                             <div className="flex gap-2">
-                                <Badge className={cn('border-transparent text-white', status === 'Complete' ? 'bg-green-500 hover:bg-green-500/80' : 'bg-orange-500 hover:bg-orange-500/80')}>
+                                <Badge className={cn('border-transparent', status === 'Complete' ? 'bg-green-500 hover:bg-green-500/80 text-white' : 'bg-orange-500 hover:bg-orange-500/80 text-white')}>
                                     {status === 'Complete' ? <CheckCircle className="mr-1.5"/> : <Clock className="mr-1.5"/>}
                                     {status}
                                 </Badge>
