@@ -10,7 +10,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { currentUser } from "@/lib/mock-data";
 import { Bot, LogOut, Users, BookOpen, Flame, Briefcase, HandHeart, MapPin, Phone } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
@@ -22,6 +21,8 @@ import type { User, TribePreferences } from "@/lib/types";
 import { TribePreferenceDialog } from "@/components/tribe-preference-dialog";
 import { useAuth } from "@/context/auth-context";
 import { updateUser } from "@/services/user-service";
+import { signOut } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 
 export default function ProfilePage() {
   const { profile, loading: authLoading } = useAuth();
@@ -96,7 +97,6 @@ export default function ProfilePage() {
       await updateUser(userData.id, updatedFields);
       const updatedUser = { ...userData, ...updatedFields };
       setUserData(updatedUser);
-      Object.assign(currentUser, updatedUser); // Sync mock object for session continuity
     } catch (error) {
       console.error("Failed to update user:", error);
       toast({
@@ -164,8 +164,22 @@ export default function ProfilePage() {
     });
   }
 
-  const handleSignOut = () => {
-    router.push('/');
+  const handleSignOut = async () => {
+    try {
+      await signOut(auth);
+      toast({
+        title: "Signed Out",
+        description: "You have been successfully signed out.",
+      });
+      router.push('/');
+    } catch (error) {
+      console.error("Error signing out:", error);
+      toast({
+        variant: "destructive",
+        title: "Sign Out Failed",
+        description: "There was an issue signing you out. Please try again.",
+      });
+    }
   };
 
   if (authLoading || !userData) {
@@ -408,3 +422,5 @@ export default function ProfilePage() {
     </>
   );
 }
+
+    
