@@ -210,7 +210,7 @@ export default function DiscoverTribesPage() {
                         </div>
                        <Button className="w-full sm:w-auto mt-2" onClick={() => handleJoinRequest(tribe.id)}>
                             <Users className="mr-2"/>
-                            Request to Join
+                            Join Tribe
                         </Button>
                     </div>
                   </Card>
