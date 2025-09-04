@@ -19,7 +19,7 @@ export function TestDbConnection() {
     const testDocId = `test-${Date.now()}`;
     const testDocRef = doc(db, 'test_connection', testDocId);
 
-    let timeoutId: NodeJS.Timeout;
+    let timeoutId: NodeJS.Timeout | null = null;
     const timeoutPromise = new Promise((_, reject) => {
       timeoutId = setTimeout(() => reject(new Error('timeout')), TEST_TIMEOUT);
     });
@@ -44,7 +44,7 @@ export function TestDbConnection() {
 
       await Promise.race([testPromise(), timeoutPromise]);
 
-      clearTimeout(timeoutId!); // Clear the timeout if the promise resolves
+      if (timeoutId) clearTimeout(timeoutId);
 
       toast({
         title: 'Connection Successful!',
@@ -52,13 +52,13 @@ export function TestDbConnection() {
         action: <CheckCircle className="text-green-500" />,
       });
     } catch (error) {
-      clearTimeout(timeoutId!); // Clear the timeout if the promise rejects
+      if (timeoutId) clearTimeout(timeoutId);
       console.error("Database connection test failed:", error);
       let description = 'Could not connect to Firestore. Check the console for details.';
       
       if (error instanceof Error) {
         if (error.message === 'timeout') {
-          description = 'The connection timed out. Please verify your Firestore security rules allow writes to the "test_connection" collection and try again.';
+          description = 'Please verify firestore security rules allows write to the test_connection collection';
         } else if (error.message.includes('permission-denied')) {
           description = 'Permission denied. Please check your Firestore security rules to ensure they allow writes to the "test_connection" collection.';
         } else {
