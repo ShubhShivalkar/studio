@@ -247,10 +247,7 @@ export default function TribePage() {
   
   const rejectedMembers = tribe?.members.filter(m => m.rsvpStatus === 'rejected');
   const isTribeComplete = attendingMembers && attendingMembers.length >= 4;
-
-  const showDiscoverButton = (tribeState === 'no-matches' || tribeState === 'not-interested') && currentUserRsvp !== 'rejected';
-
-
+  
   return (
     <Card>
       <CardHeader>
@@ -274,9 +271,11 @@ export default function TribePage() {
                 </CardDescription>
             </div>
             <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                <Button variant="outline" size="sm" className="w-full">
-                    <Compass className="mr-2" />
-                    Discover
+                <Button asChild variant="outline" size="sm" className="w-full">
+                     <Link href="/tribe/discover">
+                        <Compass className="mr-2" />
+                        Discover
+                    </Link>
                 </Button>
                 <Button asChild variant="outline" size="sm" className="w-full">
                     <Link href="/tribe/history">

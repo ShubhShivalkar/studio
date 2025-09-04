@@ -14,7 +14,7 @@ export type User = {
   dob: string;
   gender: 'Male' | 'Female' | 'Other' | 'Prefer not to say';
   journalEntries?: string[];
-  phone: string;
+  phone?: string;
   interestedInMeetups?: boolean;
   availableDates?: string[]; // YYY-MM-DD
   personaLastGenerated?: string; // ISO date string
@@ -79,3 +79,9 @@ export type PastTribe = {
     location: string;
     attendance: 'attended' | 'not attended';
 };
+
+export type DiscoveredTribe = {
+    id: string;
+    members: Pick<User, 'id' | 'name' | 'avatar' | 'dob' | 'gender'>[];
+    compatibilityScore: number;
+}
