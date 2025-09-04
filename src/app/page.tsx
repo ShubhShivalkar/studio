@@ -24,7 +24,7 @@ export default function Home() {
           </div>
           <div className="container px-4 md:px-6 relative z-10">
             <div className="flex flex-col items-center space-y-1 text-center">
-              <h1 className="font-headline text-4xl font-light tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl">
+              <h1 className="font-headline text-4xl font-normal tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl">
                 anuvaad
               </h1>
               <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl">
