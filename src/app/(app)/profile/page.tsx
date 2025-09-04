@@ -18,8 +18,8 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { differenceInDays, parseISO, format } from 'date-fns';
 import { EditProfileDialog } from "@/components/edit-profile-dialog";
-import type { User, TribePreference } from "@/lib/types";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import type { User, TribePreferences } from "@/lib/types";
+import { TribePreferenceDialog } from "@/components/tribe-preference-dialog";
 
 export default function ProfilePage() {
   const [persona, setPersona] = useState<GeneratePersonalityPersonaOutput | null>(null);
@@ -27,9 +27,9 @@ export default function ProfilePage() {
   const [isInterested, setIsInterested] = useState(currentUser.interestedInMeetups || false);
   const [canRegenerate, setCanRegenerate] = useState(true);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isPreferenceDialogOpen, setIsPreferenceDialogOpen] = useState(false);
   const [userData, setUserData] = useState<User>(currentUser);
-  const [tribePreference, setTribePreference] = useState<TribePreference>(currentUser.tribePreference || 'No Preference');
-
+  
   const { toast } = useToast();
   const router = useRouter();
 
@@ -139,14 +139,13 @@ export default function ProfilePage() {
     });
   }
   
-  const handlePreferenceChange = (value: TribePreference) => {
-    setTribePreference(value);
-    const updatedUserData = { ...userData, tribePreference: value };
+  const handlePreferenceSave = (preferences: TribePreferences) => {
+    const updatedUserData = { ...userData, tribePreferences: preferences };
     Object.assign(currentUser, updatedUserData);
     setUserData(updatedUserData);
      toast({
-        title: "Tribe Preference Saved",
-        description: `Your preference has been set to "${value}".`
+        title: "Tribe Preferences Saved",
+        description: `Your preferences have been updated.`
     });
   }
 
@@ -207,7 +206,7 @@ export default function ProfilePage() {
                         <Users /> Tribe Meetups
                     </CardTitle>
                     <CardDescription className="text-accent-foreground/80">
-                      Manage your visibility for tribe meetups.
+                      Manage your visibility and preferences for tribe meetups.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -222,18 +221,10 @@ export default function ProfilePage() {
                         />
                     </div>
                      {isInterested && (
-                        <div className="space-y-2 border-t border-accent-foreground/20 pt-4">
-                            <Label htmlFor="tribe-preference">Tribe Preference</Label>
-                            <Select value={tribePreference} onValueChange={handlePreferenceChange}>
-                                <SelectTrigger id="tribe-preference" className="bg-accent text-accent-foreground border-accent-foreground/50">
-                                    <SelectValue placeholder="Select a preference" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="No Preference">No Preference</SelectItem>
-                                    <SelectItem value="Same Gender">Same Gender</SelectItem>
-                                    <SelectItem value="Mixed Gender">Mixed Gender</SelectItem>
-                                </SelectContent>
-                            </Select>
+                        <div className="border-t border-accent-foreground/20 pt-4">
+                            <Button className="w-full" variant="outline" onClick={() => setIsPreferenceDialogOpen(true)}>
+                                Set Tribe Preferences
+                            </Button>
                         </div>
                     )}
                 </CardContent>
@@ -353,6 +344,12 @@ export default function ProfilePage() {
         onUpdate={handleUpdateUser}
         open={isEditDialogOpen}
         onOpenChange={setIsEditDialogOpen}
+      />
+      <TribePreferenceDialog
+        preferences={userData.tribePreferences}
+        onSave={handlePreferenceSave}
+        open={isPreferenceDialogOpen}
+        onOpenChange={setIsPreferenceDialogOpen}
       />
     </>
   );

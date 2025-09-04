@@ -1,7 +1,10 @@
 
 import type { LucideIcon } from "lucide-react";
 
-export type TribePreference = "No Preference" | "Same Gender" | "Mixed Gender";
+export type TribePreferences = {
+  ageRange: [number, number];
+  gender: "No Preference" | "Same Gender" | "Mixed Gender";
+};
 
 export type User = {
   id: string;
@@ -20,7 +23,7 @@ export type User = {
   profession?: string;
   religion?: string;
   location?: string;
-  tribePreference?: TribePreference;
+  tribePreferences?: TribePreferences;
 };
 
 export type Connection = {
