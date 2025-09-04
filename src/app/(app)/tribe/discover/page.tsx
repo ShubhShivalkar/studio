@@ -149,8 +149,8 @@ export default function DiscoverTribesPage() {
     setTribe(newTribeForStore);
     
     toast({
-        title: "Request Sent!",
-        description: `Your request to join tribe ${tribe.id} has been sent.`,
+        title: "Hurray! 🎉",
+        description: "You've been invited to join the event.",
     });
     
     router.push('/tribe');
