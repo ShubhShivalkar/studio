@@ -200,35 +200,37 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
 
-          <Card className="bg-accent text-accent-foreground">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <Users /> Tribe Meetups
-                    </CardTitle>
-                    <CardDescription className="text-accent-foreground/80">
-                      Manage your visibility and preferences for tribe meetups.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between">
-                        <Label htmlFor="meetup-interest" className="flex-grow pr-4">
-                            Interested in meeting new people
-                        </Label>
-                        <Switch
-                            id="meetup-interest"
-                            checked={isInterested}
-                            onCheckedChange={handleInterestToggle}
-                        />
-                    </div>
-                     {isInterested && (
-                        <div className="border-t border-accent-foreground/20 pt-4">
-                            <Button className="w-full" variant="outline" onClick={() => setIsPreferenceDialogOpen(true)}>
-                                Set Tribe Preferences
-                            </Button>
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
+          {persona && (
+            <Card className="bg-accent text-accent-foreground">
+                  <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                          <Users /> Tribe Meetups
+                      </CardTitle>
+                      <CardDescription className="text-accent-foreground/80">
+                        Manage your visibility and preferences for tribe meetups.
+                      </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                      <div className="flex items-center justify-between">
+                          <Label htmlFor="meetup-interest" className="flex-grow pr-4">
+                              Interested in meeting new people
+                          </Label>
+                          <Switch
+                              id="meetup-interest"
+                              checked={isInterested}
+                              onCheckedChange={handleInterestToggle}
+                          />
+                      </div>
+                      {isInterested && (
+                          <div className="border-t border-accent-foreground/20 pt-4">
+                              <Button className="w-full" variant="outline" onClick={() => setIsPreferenceDialogOpen(true)}>
+                                  Set Tribe Preferences
+                              </Button>
+                          </div>
+                      )}
+                  </CardContent>
+              </Card>
+          )}
         </div>
         <div className="md:col-span-1 lg:col-span-2 space-y-6">
           <Card>
