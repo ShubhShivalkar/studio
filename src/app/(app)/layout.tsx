@@ -54,9 +54,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
   if (loading || !user || !currentUser || currentUser.id !== user.uid) {
     return (
-        <div className="flex items-center justify-center h-screen">
-            <div className="w-full max-w-md p-8 space-y-4">
-                <p>Loading your soulful session...</p>
+        <div className="flex items-center justify-center h-screen bg-background">
+            <div className="w-full max-w-md p-8 space-y-4 text-center">
+                <p className="text-lg text-muted-foreground animate-pulse">Loading your soulful session...</p>
             </div>
         </div>
       )
