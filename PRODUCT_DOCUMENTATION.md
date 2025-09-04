@@ -1,4 +1,3 @@
-
 # Soulful Sync (anuvaad) - Product Documentation
 
 ## 1. Overview
@@ -114,3 +113,8 @@ The application leverages an AI-powered journaling companion, Anu, to guide user
 -   **Generative AI**: Google AI via Genkit
 -   **State Management**: Zustand (for onboarding and tribe state)
 -   **Icons**: Lucide React
+
+---
+## 4. Footnotes
+
+An Anubhav Social's product
