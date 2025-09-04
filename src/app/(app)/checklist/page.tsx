@@ -151,12 +151,12 @@ export default function ChecklistPage() {
 
   return (
     <div className="space-y-6">
-       <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-headline">Checklists</h1>
-            <Button variant="outline" onClick={() => router.back()}>
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back
+       <div className="flex items-center gap-4">
+            <Button variant="outline" size="icon" onClick={() => router.back()}>
+                <ArrowLeft className="h-4 w-4" />
+                <span className="sr-only">Back</span>
             </Button>
+            <h1 className="text-2xl font-headline flex-grow">Checklists</h1>
         </div>
         <div className="grid gap-6 md:grid-cols-2">
             <div className="md:col-span-1">

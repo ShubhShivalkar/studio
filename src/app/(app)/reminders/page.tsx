@@ -101,63 +101,63 @@ export default function RemindersPage() {
     <Card>
       <CardHeader>
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-              <CardTitle>Your Reminders</CardTitle>
-              <CardDescription>Keep track of your important events and tasks.</CardDescription>
-            </div>
-             <div className="flex w-full sm:w-auto gap-2">
-                <Button variant="outline" onClick={() => router.back()} className="w-full">
-                    <ArrowLeft className="mr-2 h-4 w-4" />
-                    Back
+            <div className="flex items-center gap-4 flex-grow">
+               <Button variant="outline" size="icon" onClick={() => router.back()}>
+                    <ArrowLeft className="h-4 w-4" />
+                    <span className="sr-only">Back</span>
                 </Button>
-                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogTrigger asChild>
-                    <Button className="w-full">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Set Reminder
-                    </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[425px]">
-                    <DialogHeader>
-                    <DialogTitle>Set a new reminder</DialogTitle>
-                    <DialogDescription>
-                        Fill in the details for your new reminder below.
-                    </DialogDescription>
-                    </DialogHeader>
-                    <form onSubmit={handleSetReminder}>
-                        <div className="grid gap-4 py-4">
-                            <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="title" className="text-right">
-                                Title
-                                </Label>
-                                <Input id="title" name="title" className="col-span-3" required />
-                            </div>
-                            <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="date" className="text-right">
-                                Date
-                                </Label>
-                                <Input id="date" name="date" type="date" className="col-span-3" defaultValue={new Date().toISOString().split('T')[0]} required />
-                            </div>
-                            <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="time" className="text-right">
-                                Time
-                                </Label>
-                                <Input id="time" name="time" type="time" className="col-span-3" required />
-                            </div>
-                            <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="details" className="text-right">
-                                Details
-                                </Label>
-                                <Textarea id="details" name="details" className="col-span-3" placeholder="Optional details..."/>
-                            </div>
-                        </div>
-                        <DialogFooter>
-                            <Button type="submit">Set Reminder</Button>
-                        </DialogFooter>
-                    </form>
-                </DialogContent>
-                </Dialog>
+                <div>
+                    <CardTitle>Your Reminders</CardTitle>
+                    <CardDescription>Keep track of your important events and tasks.</CardDescription>
+                </div>
             </div>
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+                <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                Set Reminder
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                <DialogTitle>Set a new reminder</DialogTitle>
+                <DialogDescription>
+                    Fill in the details for your new reminder below.
+                </DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleSetReminder}>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="title" className="text-right">
+                            Title
+                            </Label>
+                            <Input id="title" name="title" className="col-span-3" required />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="date" className="text-right">
+                            Date
+                            </Label>
+                            <Input id="date" name="date" type="date" className="col-span-3" defaultValue={new Date().toISOString().split('T')[0]} required />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="time" className="text-right">
+                            Time
+                            </Label>
+                            <Input id="time" name="time" type="time" className="col-span-3" required />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="details" className="text-right">
+                            Details
+                            </Label>
+                            <Textarea id="details" name="details" className="col-span-3" placeholder="Optional details..."/>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button type="submit">Set Reminder</Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+            </Dialog>
         </div>
       </CardHeader>
       <CardContent>
