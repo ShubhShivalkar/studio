@@ -20,31 +20,39 @@ import { differenceInDays, parseISO, format } from 'date-fns';
 import { EditProfileDialog } from "@/components/edit-profile-dialog";
 import type { User, TribePreferences } from "@/lib/types";
 import { TribePreferenceDialog } from "@/components/tribe-preference-dialog";
+import { useAuth } from "@/context/auth-context";
+import { updateUser } from "@/services/user-service";
 
 export default function ProfilePage() {
+  const { profile, loading: authLoading } = useAuth();
   const [persona, setPersona] = useState<GeneratePersonalityPersonaOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [isInterested, setIsInterested] = useState(currentUser.interestedInMeetups || false);
+  const [isInterested, setIsInterested] = useState(false);
   const [canRegenerate, setCanRegenerate] = useState(true);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isPreferenceDialogOpen, setIsPreferenceDialogOpen] = useState(false);
-  const [userData, setUserData] = useState<User>(currentUser);
+  const [userData, setUserData] = useState<User | null>(profile);
   
   const { toast } = useToast();
   const router = useRouter();
 
-  const journalEntriesCount = userData.journalEntries?.length || 0;
+  useEffect(() => {
+    if (profile) {
+      setUserData(profile);
+      setIsInterested(profile.interestedInMeetups || false);
+    }
+  }, [profile]);
+
+  const journalEntriesCount = userData?.journalEntries?.length || 0;
   const progress = Math.min((journalEntriesCount / 15) * 100, 100);
   const canGenerate = journalEntriesCount >= 15;
-  const streakDays = userData.journalEntries ? Math.min(userData.journalEntries.length, 15) : 0;
+  const streakDays = userData?.journalEntries ? Math.min(userData.journalEntries.length, 15) : 0;
   
   useEffect(() => {
-    // Fetch location
-    if (!userData.location && "geolocation" in navigator) {
+    if (userData && !userData.location && "geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(async (position) => {
         try {
           const { latitude, longitude } = position.coords;
-          // Using a free reverse geocoding API
           const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
           const data = await response.json();
           const city = data.address.city || data.address.town || data.address.village;
@@ -65,14 +73,14 @@ export default function ProfilePage() {
           }
       });
     }
-  }, [toast, userData.location]);
+  }, [toast, userData]);
 
   useEffect(() => {
-    if (userData.persona) {
+    if (userData?.persona) {
         setPersona({ persona: userData.persona, hobbies: [], interests: [], personalityTraits: [] });
     }
 
-    if (userData.personaLastGenerated) {
+    if (userData?.personaLastGenerated) {
         const lastGeneratedDate = parseISO(userData.personaLastGenerated);
         const daysSinceLastGeneration = differenceInDays(new Date(), lastGeneratedDate);
         if (daysSinceLastGeneration < 7) {
@@ -81,14 +89,26 @@ export default function ProfilePage() {
     }
   }, [userData]);
 
-  const handleUpdateUser = (updatedFields: Partial<User>) => {
-    const updatedUser = { ...userData, ...updatedFields };
-    Object.assign(currentUser, updatedUser); // Update the mock data source
-    setUserData(updatedUser);
+  const handleUpdateUser = async (updatedFields: Partial<User>) => {
+    if (!userData || !userData.id) return;
+    
+    try {
+      await updateUser(userData.id, updatedFields);
+      const updatedUser = { ...userData, ...updatedFields };
+      setUserData(updatedUser);
+      Object.assign(currentUser, updatedUser); // Sync mock object for session continuity
+    } catch (error) {
+      console.error("Failed to update user:", error);
+      toast({
+        variant: 'destructive',
+        title: 'Update Failed',
+        description: 'Your profile could not be updated. Please try again.',
+      });
+    }
   };
 
   const handleGeneratePersona = async () => {
-    if (isLoading || !canRegenerate) return;
+    if (isLoading || !canRegenerate || !userData) return;
 
     setIsLoading(true);
     setPersona(null);
@@ -108,12 +128,11 @@ export default function ProfilePage() {
       setPersona(result);
       
       const updatedUserData = {
-        ...userData,
         persona: result.persona,
         personaLastGenerated: new Date().toISOString()
       };
-      Object.assign(currentUser, updatedUserData);
-      setUserData(updatedUserData);
+      
+      await handleUpdateUser(updatedUserData);
 
       setCanRegenerate(false);
     } catch (error) {
@@ -128,21 +147,17 @@ export default function ProfilePage() {
     }
   };
 
-  const handleInterestToggle = (checked: boolean) => {
+  const handleInterestToggle = async (checked: boolean) => {
     setIsInterested(checked);
-    const updatedUserData = { ...userData, interestedInMeetups: checked };
-    Object.assign(currentUser, updatedUserData);
-    setUserData(updatedUserData);
+    await handleUpdateUser({ interestedInMeetups: checked });
     toast({
         title: "Meetup Preference Updated",
         description: `You are now ${checked ? 'discoverable by' : 'hidden from'} potential tribes.`
     });
   }
   
-  const handlePreferenceSave = (preferences: TribePreferences) => {
-    const updatedUserData = { ...userData, tribePreferences: preferences };
-    Object.assign(currentUser, updatedUserData);
-    setUserData(updatedUserData);
+  const handlePreferenceSave = async (preferences: TribePreferences) => {
+    await handleUpdateUser({ tribePreferences: preferences });
      toast({
         title: "Tribe Preferences Saved",
         description: `Your preferences have been updated.`
@@ -152,6 +167,37 @@ export default function ProfilePage() {
   const handleSignOut = () => {
     router.push('/');
   };
+
+  if (authLoading || !userData) {
+    return (
+       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="lg:col-span-1 space-y-6">
+          <Card>
+            <CardHeader className="items-center text-center">
+              <Skeleton className="w-24 h-24 rounded-full mb-4" />
+              <Skeleton className="h-6 w-3/4" />
+              <Skeleton className="h-4 w-1/2" />
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+            </CardContent>
+          </Card>
+        </div>
+        <div className="md:col-span-1 lg:col-span-2 space-y-6">
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-8 w-1/2" />
+              <Skeleton className="h-4 w-3/4" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-24 w-full" />
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>

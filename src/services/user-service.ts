@@ -1,5 +1,5 @@
 
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { User } from '@/lib/types';
 
@@ -27,4 +27,14 @@ export async function createUser(userId: string, data: User): Promise<void> {
   // Omit the id from the data being written to the document, as it's the document's key.
   const { id, ...userData } = data;
   await setDoc(userDocRef, userData);
+}
+
+/**
+ * Updates an existing user's profile in Firestore.
+ * @param userId The UID of the user.
+ * @param data A partial object of the user's data to update.
+ */
+export async function updateUser(userId: string, data: Partial<User>): Promise<void> {
+  const userDocRef = doc(db, 'users', userId);
+  await updateDoc(userDocRef, data);
 }
