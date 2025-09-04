@@ -48,12 +48,18 @@ const PROMPT_SUGGESTIONS = [
 ];
 
 
-const getInitialMessage = (name?: string) => {
+const getInitialMessage = (name?: string, todaysSummary?: DailySummary | null) => {
     const userName = name ? `, ${name.split(' ')[0]}` : '';
+    let text = `Hi${userName}, I'm Anu, your journaling companion. What's on your mind today?`;
+
+    if (todaysSummary?.summary) {
+        text = `Hi${userName}! I see you've already written a bit today about:\n\n*"${todaysSummary.summary}"*\n\nWould you like to reflect more on that, or is there something new on your mind?`;
+    }
+    
     return {
         id: '0',
         sender: 'ai' as const,
-        text: `Hi${userName}, I'm Anu, your journaling companion. What's on your mind today?`
+        text: text
     };
 };
 
@@ -71,8 +77,7 @@ export function JournalChat() {
   const [todaysSummary, setTodaysSummary] = useState<DailySummary | null>(null);
   
   const userName = useMemo(() => profile?.name.split(' ')[0] || 'there', [profile]);
-  const initialMessage = useMemo(() => getInitialMessage(profile?.name), [profile]);
-
+  
   const STORAGE_KEY_MESSAGES = useMemo(() => `journalChatMessages_${profile?.id}`, [profile]);
   const STORAGE_KEY_DATE = useMemo(() => `journalChatDate_${profile?.id}`, [profile]);
 
@@ -115,31 +120,36 @@ export function JournalChat() {
     getJournalEntries(profile.id).then(entries => {
         const summaryForToday = entries.find(e => e.date === todayStr) || null;
         setTodaysSummary(summaryForToday);
-    });
-    
-    if (storedDate === todayStr) {
-        const storedMessages = localStorage.getItem(STORAGE_KEY_MESSAGES);
-        if (storedMessages) {
-            try {
-                const parsedMessages = JSON.parse(storedMessages);
-                setMessages(parsedMessages);
-                const lastMessage = parsedMessages[parsedMessages.length - 1];
-                if (lastMessage && lastMessage.text.includes("I've saved this as your journal entry.")) {
-                    setIsComplete(true);
+
+        const initialMessage = getInitialMessage(profile?.name, summaryForToday);
+        
+        if (storedDate === todayStr) {
+            const storedMessages = localStorage.getItem(STORAGE_KEY_MESSAGES);
+            if (storedMessages) {
+                try {
+                    const parsedMessages = JSON.parse(storedMessages);
+                    // Use stored messages but ensure the first message is the latest initial message
+                    parsedMessages[0] = initialMessage;
+                    setMessages(parsedMessages);
+                    const lastMessage = parsedMessages[parsedMessages.length - 1];
+                    if (lastMessage && lastMessage.text.includes("I've saved this as your journal entry.")) {
+                        setIsComplete(true);
+                    }
+                } catch (e) {
+                    setMessages([initialMessage]);
                 }
-            } catch (e) {
-                setMessages([initialMessage]);
+            } else {
+                 setMessages([initialMessage]);
             }
         } else {
-             setMessages([initialMessage]);
+            localStorage.removeItem(STORAGE_KEY_MESSAGES);
+            localStorage.removeItem(STORAGE_KEY_DATE);
+            setMessages([initialMessage]);
         }
-    } else {
-        localStorage.removeItem(STORAGE_KEY_MESSAGES);
-        localStorage.removeItem(STORAGE_KEY_DATE);
-        setMessages([initialMessage]);
-    }
-    setIsInitialized(true);
-  }, [initialMessage, STORAGE_KEY_DATE, STORAGE_KEY_MESSAGES, profile]);
+        setIsInitialized(true);
+    });
+    
+  }, [STORAGE_KEY_DATE, STORAGE_KEY_MESSAGES, profile]);
 
   useEffect(() => {
     if (isInitialized && profile) {
@@ -281,6 +291,7 @@ export function JournalChat() {
     localStorage.removeItem(STORAGE_KEY_MESSAGES);
     // We don't remove the date, so if they refresh, the old convo comes back for the same day.
     // This allows multiple sessions in one day.
+    const initialMessage = getInitialMessage(profile.name, todaysSummary);
     setMessages([initialMessage]);
     setIsComplete(false);
     setInput("");
