@@ -6,7 +6,7 @@ import { ThemeProvider } from '@/components/theme-provider';
 
 export const metadata: Metadata = {
   title: 'anuvaad',
-  description: 'Translate your experiences into real meaningful connections',
+  description: 'Translating experiences into real meaningful connections',
 };
 
 export default function RootLayout({

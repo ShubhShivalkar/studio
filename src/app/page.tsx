@@ -11,7 +11,7 @@ export default function Home() {
       <header className="px-4 lg:px-6 h-14 flex items-center absolute top-0 left-0 w-full z-10">
         <Link href="#" className="flex items-center justify-center" prefetch={false}>
           <PenLine className="h-6 w-6 text-primary" />
-          <span className="sr-only">anuvaad - Translate your experiences into real meaningful connections</span>
+          <span className="sr-only">anuvaad - Translating experiences into real meaningful connections</span>
         </Link>
       </header>
       <main className="flex-1">
@@ -28,7 +28,7 @@ export default function Home() {
                 anuvaad
               </h1>
               <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl">
-                Translate your experiences into real meaningful connections
+                Translating experiences into real meaningful connections
               </p>
             </div>
             <div className="mt-8 flex justify-center">
