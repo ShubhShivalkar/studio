@@ -237,17 +237,6 @@ export default function DiscoverTribesPage() {
                             <span className="text-muted-foreground">Compatibility</span>
                             <Badge variant="outline">{tribe.compatibilityScore}%</Badge>
                         </div>
-
-                        {commonLocation && (
-                            <div className="flex items-center justify-between text-sm">
-                                <span className="text-muted-foreground">Common Location</span>
-                                <div className="flex items-center gap-1">
-                                    <MapPin className="h-4 w-4" />
-                                    <span>{commonLocation}</span>
-                                </div>
-                            </div>
-                        )}
-
                     </div>
                     <div className="flex flex-col items-center gap-2 w-full sm:w-auto">
                         <div className="flex -space-x-2 overflow-hidden">
@@ -264,6 +253,12 @@ export default function DiscoverTribesPage() {
                                 Join Tribe
                             </Button>
                         </AlertDialogTrigger>
+                         {commonLocation && (
+                            <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
+                                <MapPin className="h-4 w-4" />
+                                <span>{commonLocation}</span>
+                            </div>
+                        )}
                     </div>
                   </Card>
                     <AlertDialogContent>
