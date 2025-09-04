@@ -9,14 +9,15 @@ import {
   Users,
 } from "lucide-react";
 import Link from "next/link";
-import { type ReactNode } from "react";
-import { usePathname } from "next/navigation";
+import { type ReactNode, useEffect } from "react";
+import { usePathname, useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Header } from "@/components/header";
 import { currentUser } from "@/lib/mock-data";
 import { useAuth } from "@/context/auth-context";
+import { getUser } from "@/services/user-service";
 
 const navLinks = [
   { href: "/journal", label: "Journal", icon: <BookText className="h-5 w-5" /> },
@@ -27,25 +28,38 @@ const navLinks = [
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname(); 
+  const router = useRouter();
   const { user, loading } = useAuth();
   
-  if (loading) {
+  useEffect(() => {
+    if (!loading && !user) {
+      // If not loading and no user, redirect to login
+      router.push('/onboarding/step-1');
+    } else if (user && (!currentUser || currentUser.id !== user.uid)) {
+      // If there is a firebase user but the mock user is not set or is incorrect,
+      // fetch the user profile from Firestore and update the mock data object.
+      getUser(user.uid).then(profile => {
+        if (profile) {
+          Object.assign(currentUser, profile);
+          // We might need to force a re-render here if components don't update.
+          // For now, this direct mutation is how the app is structured.
+        } else {
+          // Profile doesn't exist, maybe they didn't finish onboarding
+          router.push('/onboarding/step-2');
+        }
+      });
+    }
+  }, [user, loading, router]);
+
+
+  if (loading || !user || !currentUser || currentUser.id !== user.uid) {
     return (
         <div className="flex items-center justify-center h-screen">
             <div className="w-full max-w-md p-8 space-y-4">
-                <p>Loading user...</p>
+                <p>Loading your soulful session...</p>
             </div>
         </div>
       )
-  }
-
-  // If there's no user in mock data and no firebase user, redirect to onboarding
-  // This is a temporary measure for the mock data setup
-  if (!user && !currentUser.id) {
-     if (typeof window !== 'undefined') {
-      window.location.href = '/onboarding/step-1';
-    }
-    return null;
   }
 
   return (
