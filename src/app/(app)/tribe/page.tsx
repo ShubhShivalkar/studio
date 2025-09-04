@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { User } from "@/lib/types";
-import { differenceInYears, parseISO, format, addDays } from "date-fns";
+import { differenceInYears, parseISO, format, addDays, getDay, isSameDay } from "date-fns";
 import type { MatchUsersByTribePreferencesOutput } from "@/ai/flows/match-users-by-tribe-preferences";
 import { matchUsersByTribePreferences } from "@/ai/flows/match-users-by-tribe-preferences";
 import { ProfileCard } from "@/components/profile-card";
@@ -100,6 +100,27 @@ export default function TribePage() {
                  return;
             }
 
+            // Find the next available weekend day
+            const today = new Date();
+            const dayOfWeek = getDay(today); // Sunday = 0, Saturday = 6
+
+            const daysUntilSaturday = (6 - dayOfWeek + 7) % 7;
+            const nextSaturday = addDays(today, daysUntilSaturday);
+            const nextSunday = addDays(nextSaturday, 1);
+            
+            const isAvailableOnSaturday = dailySummaries.some(d => isSameDay(parseISO(d.date), nextSaturday) && d.isAvailable);
+            const isAvailableOnSunday = dailySummaries.some(d => isSameDay(parseISO(d.date), nextSunday) && d.isAvailable);
+
+            let meetupDay;
+            if(isAvailableOnSaturday) {
+                meetupDay = nextSaturday;
+            } else if (isAvailableOnSunday) {
+                meetupDay = nextSunday;
+            } else {
+                setTribeState("no-matches");
+                return;
+            }
+
             // Create a mock tribe with the current user and the matches
             const currentUserAsMatchedUser: MatchedUser = {
                 userId: currentUser.id,
@@ -119,12 +140,10 @@ export default function TribePage() {
                 };
             });
             
-            const nextSaturday = addDays(new Date(), (6 - new Date().getDay() + 7) % 7);
-
             const newTribe: Tribe = {
                 id: `tribe-${Date.now()}`,
                 members: [currentUserAsMatchedUser, ...matchedUsersWithDetails],
-                meetupDate: format(nextSaturday, 'yyyy-MM-dd'),
+                meetupDate: format(meetupDay, 'yyyy-MM-dd'),
                 meetupTime: '3:00 PM',
                 location: 'The Cozy Cafe',
             };
