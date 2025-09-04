@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Users, CheckCircle, Clock } from 'lucide-react';
+import { ArrowLeft, Users, CheckCircle, Clock, MapPin } from 'lucide-react';
 import { discoveredTribes as mockTribes } from '@/lib/mock-data';
 import type { DiscoveredTribe, User } from '@/lib/types';
 import { Progress } from '@/components/ui/progress';
@@ -27,7 +27,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
-const getTribeCategory = (members: User[]): 'Male' | 'Female' | 'Mixed' => {
+const getTribeCategory = (members: Pick<User, 'gender'>[]): 'Male' | 'Female' | 'Mixed' => {
   const genders = members.map(m => m.gender);
   const hasMale = genders.includes('Male');
   const hasFemale = genders.includes('Female');
@@ -40,6 +40,19 @@ const getTribeCategory = (members: User[]): 'Male' | 'Female' | 'Mixed' => {
 const getTribeStatus = (memberCount: number): 'Complete' | 'Partial' => {
   return memberCount > 4 ? 'Complete' : 'Partial';
 };
+
+const getMostCommonLocation = (members: Pick<User, 'location'>[]): string | null => {
+  const locations = members.map(m => m.location).filter(Boolean) as string[];
+  if (locations.length === 0) return null;
+
+  const locationCounts = locations.reduce((acc, loc) => {
+    acc[loc] = (acc[loc] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  return Object.keys(locationCounts).reduce((a, b) => locationCounts[a] > locationCounts[b] ? a : b);
+};
+
 
 export default function DiscoverTribesPage() {
   const router = useRouter();
@@ -119,6 +132,7 @@ export default function DiscoverTribesPage() {
               filteredTribes.map(tribe => {
                 const status = getTribeStatus(tribe.members.length);
                 const category = getTribeCategory(tribe.members);
+                const commonLocation = getMostCommonLocation(tribe.members);
                 return (
                   <Card key={tribe.id} className="flex flex-col sm:flex-row items-start sm:items-center p-4 gap-4">
                     <div className="flex-1 space-y-3">
@@ -145,6 +159,16 @@ export default function DiscoverTribesPage() {
                             <span className="text-muted-foreground">Compatibility</span>
                             <Badge variant="outline">{tribe.compatibilityScore}%</Badge>
                         </div>
+
+                        {commonLocation && (
+                            <div className="flex items-center justify-between text-sm">
+                                <span className="text-muted-foreground">Common Location</span>
+                                <div className="flex items-center gap-1">
+                                    <MapPin className="h-4 w-4" />
+                                    <span>{commonLocation}</span>
+                                </div>
+                            </div>
+                        )}
 
                     </div>
                     <div className="flex flex-col items-center gap-2 w-full sm:w-auto">

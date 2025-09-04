@@ -82,6 +82,6 @@ export type PastTribe = {
 
 export type DiscoveredTribe = {
     id: string;
-    members: Pick<User, 'id' | 'name' | 'avatar' | 'dob' | 'gender'>[];
+    members: Pick<User, 'id' | 'name' | 'avatar' | 'dob' | 'gender' | 'location'>[];
     compatibilityScore: number;
 }
