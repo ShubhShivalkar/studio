@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useRouter } from 'next/navigation';
@@ -37,7 +38,7 @@ export default function Step5Page() {
   return (
     <Card className="text-center">
       <CardHeader>
-        <CardTitle className="font-headline">You're all set!</CardTitle>
+        <CardTitle>You're all set!</CardTitle>
         <CardDescription>You are ready to begin your journey with anuvaad.</CardDescription>
         <Progress value={100} className="mt-2" />
       </CardHeader>
@@ -46,7 +47,7 @@ export default function Step5Page() {
         <p>Your profile has been created.</p>
       </CardContent>
       <CardFooter>
-        <Button onClick={handleFinish} className="w-full">
+        <Button className="w-full" onClick={handleFinish}>
           Start Journaling
         </Button>
       </CardFooter>

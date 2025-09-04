@@ -66,7 +66,7 @@ export default function RemindersPage() {
     <Card>
       <CardHeader>
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <CardTitle className="font-headline">Your Reminders</CardTitle>
+            <CardTitle>Your Reminders</CardTitle>
             <Dialog>
             <DialogTrigger asChild>
                 <Button className="w-full sm:w-auto">

@@ -16,8 +16,9 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { User } from "@/lib/types";
-import { differenceInYears, parseISO, format, addDays } from "date-fns";
-import type { MatchUsersByPersonalityOutput } from "@/ai/flows/match-users-by-personality";
+import { differenceInYears, parseISO, format, addDays, getDay, isSameDay } from "date-fns";
+import type { MatchUsersByTribePreferencesOutput } from "@/ai/flows/match-users-by-tribe-preferences";
+import { matchUsersByTribePreferences } from "@/ai/flows/match-users-by-tribe-preferences";
 import { ProfileCard } from "@/components/profile-card";
 import {
   Dialog,
@@ -37,9 +38,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 
-type MatchedUser = MatchUsersByPersonalityOutput[0] & {
+type MatchedUser = MatchUsersByTribePreferencesOutput[0] & {
   user: User;
-  matchReason: string;
   rsvpStatus: 'accepted' | 'rejected' | 'pending';
   rejectionReason?: string;
 };
@@ -58,33 +58,103 @@ const getAge = (dob: string) => {
 }
 
 export default function TribePage() {
-  const [tribeState, setTribeState] = useState<"loading" | "no-persona" | "not-interested" | "finding" | "found">("loading");
+  const [tribeState, setTribeState] = useState<"loading" | "no-persona" | "not-interested" | "finding" | "found" | "no-matches">("loading");
   const [tribe, setTribe] = useState<Tribe | null>(null);
   const { toast } = useToast();
   const [rejectionReason, setRejectionReason] = useState("");
   const [isDeclineDialogOpen, setIsDeclineDialogOpen] = useState(false);
 
   useEffect(() => {
-    if (!currentUser || !currentUser.id) {
-        setTribeState("loading");
-        return;
-    }
+    const findTribe = async () => {
+        if (!currentUser || !currentUser.id) {
+            setTribeState("loading");
+            return;
+        }
 
-    if (!currentUser.persona) {
-        setTribeState("no-persona");
-        return;
-    }
+        if (!currentUser.persona) {
+            setTribeState("no-persona");
+            return;
+        }
+
+        const activeMeetup = dailySummaries.some(d => d.hasMeetup && new Date(d.date) >= new Date());
+
+        if (!currentUser.interestedInMeetups && !activeMeetup) {
+            setTribeState("not-interested");
+            return;
+        }
+
+        setTribeState("finding");
+        
+        try {
+            const matches = await matchUsersByTribePreferences({
+                currentUser: {
+                    ...currentUser,
+                    interestedInMeetups: true, // ensure current user is considered interested
+                },
+                otherUsers: allUsers,
+                preferences: currentUser.tribePreferences || { ageRange: [18, 60], gender: 'No Preference' }
+            });
+
+            // Find the next available weekend day
+            const today = new Date();
+            const dayOfWeek = getDay(today); // Sunday = 0, Saturday = 6
+
+            const daysUntilSaturday = (6 - dayOfWeek + 7) % 7;
+            const nextSaturday = addDays(today, daysUntilSaturday);
+            const nextSunday = addDays(nextSaturday, 1);
+            
+            const isAvailableOnSaturday = dailySummaries.some(d => isSameDay(parseISO(d.date), nextSaturday) && d.isAvailable);
+            const isAvailableOnSunday = dailySummaries.some(d => isSameDay(parseISO(d.date), nextSunday) && d.isAvailable);
+
+            let meetupDay;
+            if(isAvailableOnSaturday) {
+                meetupDay = nextSaturday;
+            } else if (isAvailableOnSunday) {
+                meetupDay = nextSunday;
+            } else {
+                setTribeState("no-matches");
+                return;
+            }
+
+            // Create a mock tribe with the current user and the matches
+            const currentUserAsMatchedUser: MatchedUser = {
+                userId: currentUser.id,
+                user: currentUser,
+                compatibilityScore: 100,
+                persona: currentUser.persona,
+                matchReason: 'This is you!',
+                rsvpStatus: 'pending',
+            };
+
+            const matchedUsersWithDetails: MatchedUser[] = matches.map(match => {
+                const user = allUsers.find(u => u.id === match.userId);
+                return {
+                    ...match,
+                    user: user!, // Assume user is always found for this mock scenario
+                    rsvpStatus: 'pending',
+                };
+            });
+            
+            const newTribe: Tribe = {
+                id: `tribe-${Date.now()}`,
+                members: [currentUserAsMatchedUser, ...matchedUsersWithDetails],
+                meetupDate: format(meetupDay, 'yyyy-MM-dd'),
+                meetupTime: '3:00 PM',
+                location: 'The Cozy Cafe',
+            };
+            
+            setTribe(newTribe);
+            setTribeState("found");
+
+        } catch (error) {
+            console.error("Error finding tribe:", error);
+            setTribeState("no-matches"); // Show an error/retry state
+        }
+    };
     
-    const activeMeetup = dailySummaries.some(d => d.hasMeetup && new Date(d.date) >= new Date());
-
-    if (!currentUser.interestedInMeetups && !activeMeetup) {
-        setTribeState("not-interested");
-        return;
-    }
-
-    // TODO: Implement actual tribe finding logic here.
-    // For now, it will just stay in the "finding" state.
-    setTribeState("finding");
+    // Using a timeout to simulate the async operation of finding a tribe
+    const timer = setTimeout(findTribe, 2000);
+    return () => clearTimeout(timer);
     
   }, []);
 
@@ -179,7 +249,7 @@ export default function TribePage() {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
                 <div className="flex items-center gap-2">
-                    <CardTitle className="font-headline">Meet Your Tribe</CardTitle>
+                    <CardTitle>Meet Your Tribe</CardTitle>
                     <TooltipProvider>
                         <Tooltip>
                             <TooltipTrigger>
@@ -237,6 +307,14 @@ export default function TribePage() {
                 </Button>
             </div>
         )}
+        
+        {tribeState === "no-matches" && (
+             <div className="text-center text-muted-foreground py-16 flex flex-col items-center">
+                <UserX className="h-12 w-12 mb-4" />
+                <p className="font-semibold text-lg">No suitable tribe found this week.</p>
+                <p className="text-sm max-w-sm">We couldn't find enough compatible members based on your preferences this time. Please check back next week!</p>
+            </div>
+        )}
 
         {tribeState === "finding" && (
             <div className="text-center text-muted-foreground py-16 flex flex-col items-center">
@@ -257,7 +335,7 @@ export default function TribePage() {
                     <>
                         <Card className="mb-6 bg-secondary text-secondary-foreground">
                             <CardHeader>
-                                <CardTitle className="font-headline text-center">
+                                <CardTitle className="text-center">
                                     {isTribeComplete ? "Your Tribe is Ready! 🎉" : "Partial Tribe Formed ⏳"}
                                 </CardTitle>
                                 <CardDescription className="text-center text-secondary-foreground/80">

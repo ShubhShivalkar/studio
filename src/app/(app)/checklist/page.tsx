@@ -114,7 +114,7 @@ export default function ChecklistPage() {
       <div className="md:col-span-1">
         <Card>
             <CardHeader>
-                <CardTitle className="font-headline">New Checklist</CardTitle>
+                <CardTitle>New Checklist</CardTitle>
                 <CardDescription>Create a new checklist to stay organized.</CardDescription>
             </CardHeader>
             <CardContent>

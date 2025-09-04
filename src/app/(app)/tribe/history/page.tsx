@@ -31,7 +31,7 @@ export default function TribeHistoryPage() {
       <CardHeader>
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
-                <CardTitle className="font-headline">Meet-up History</CardTitle>
+                <CardTitle>Meet-up History</CardTitle>
                 <CardDescription>
                 A record of all your past tribe meetups.
                 </CardDescription>

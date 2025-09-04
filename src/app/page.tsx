@@ -11,7 +11,7 @@ export default function Home() {
       <header className="px-4 lg:px-6 h-14 flex items-center absolute top-0 left-0 w-full z-10">
         <Link href="#" className="flex items-center justify-center" prefetch={false}>
           <PenLine className="h-6 w-6 text-primary" />
-          <span className="sr-only">anuvaad - Translate your experiences into real meaningful connections</span>
+          <span className="sr-only">anuvaad - Translating experiences into real meaningful connections</span>
         </Link>
       </header>
       <main className="flex-1">
@@ -24,11 +24,11 @@ export default function Home() {
           </div>
           <div className="container px-4 md:px-6 relative z-10">
             <div className="flex flex-col items-center space-y-1 text-center">
-              <h1 className="font-headline text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl">
+              <h1 className="font-headline text-5xl font-normal tracking-tighter sm:text-6xl md:text-7xl lg:text-8xl">
                 anuvaad
               </h1>
               <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl">
-                Translate your experiences into real meaningful connections
+                Translating experiences into real meaningful connections
               </p>
             </div>
             <div className="mt-8 flex justify-center">
@@ -45,7 +45,7 @@ export default function Home() {
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <div className="space-y-2">
                 <div className="inline-block rounded-lg bg-secondary px-3 py-1 text-sm text-secondary-foreground">Key Features</div>
-                <h2 className="text-3xl font-headline font-bold tracking-tighter sm:text-5xl">Connect on a Deeper Level</h2>
+                <h2 className="text-4xl font-headline font-light tracking-tighter sm:text-6xl">Connect on a Deeper Level</h2>
                 <p className="max-w-[900px] text-foreground/80 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
                   Our platform offers a unique approach to forming connections. Explore features designed to foster introspection and meaningful interactions.
                 </p>
@@ -57,7 +57,7 @@ export default function Home() {
                   <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
                     <Edit className="h-6 w-6 text-primary" />
                   </div>
-                  <CardTitle className="font-headline mt-4">AI-Guided Journaling</CardTitle>
+                  <CardTitle className="mt-4">AI-Guided Journaling</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-foreground/80">
@@ -70,7 +70,7 @@ export default function Home() {
                   <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
                     <Bot className="h-6 w-6 text-primary" />
                   </div>
-                  <CardTitle className="font-headline mt-4">Persona Creation</CardTitle>
+                  <CardTitle className="mt-4">Persona Creation</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-foreground/80">
@@ -83,7 +83,7 @@ export default function Home() {
                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
                     <Users className="h-6 w-6 text-primary" />
                   </div>
-                  <CardTitle className="font-headline mt-4">Meaningful Matching</CardTitle>
+                  <CardTitle className="mt-4">Meaningful Matching</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-foreground/80">
@@ -108,7 +108,7 @@ export default function Home() {
                </div>
               <div className="space-y-4">
                  <div className="inline-block rounded-lg bg-secondary px-3 py-1 text-sm text-secondary-foreground">Your AI Companion</div>
-                <h2 className="text-3xl font-headline font-bold tracking-tighter sm:text-4xl md:text-5xl">Meet Anu</h2>
+                <h2 className="text-4xl font-headline font-normal tracking-tighter sm:text-5xl md:text-6xl">Meet Anu</h2>
                 <p className="text-foreground/80 md:text-lg">
                   Anu is a gentle and caring companion with a very empathetic nature. She is understanding and curious about you. Instead of giving advice, she prefers to listen, asking thoughtful questions to help you explore your own thoughts and feelings.
                 </p>

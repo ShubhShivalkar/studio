@@ -45,7 +45,7 @@ export default function Step1Page() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="font-headline">Welcome! Let's get started.</CardTitle>
+        <CardTitle>Welcome! Let's get started.</CardTitle>
         <CardDescription>First, what's your mobile number? If you have an account, this will log you in.</CardDescription>
         <Progress value={20} className="mt-2" />
       </CardHeader>
