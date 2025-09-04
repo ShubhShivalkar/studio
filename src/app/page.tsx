@@ -31,7 +31,6 @@ export default function Home() {
                   </h1>
                   <div className="relative h-[2.5rem] sm:h-[3.25rem] md:h-[3.75rem] lg:h-[4.5rem] overflow-hidden text-left align-baseline">
                     <div className="animate-roll-words text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl font-headline text-primary">
-                      <div>bhav</div>
                       <div>bandh</div>
                       <div>varta</div>
                       <div>vaad</div>

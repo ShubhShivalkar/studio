@@ -88,14 +88,11 @@ export default {
             height: '0',
           },
         },
-        typing: {
-          "0%": {
-            width: "0%",
-            visibility: "hidden"
-          },
-          "100%": {
-            width: "100%"
-          }
+        "roll-words": {
+          "0%, 25%": { transform: "translateY(0)" },
+          "33%, 58%": { transform: "translateY(-100%)" },
+          "66%, 92%": { transform: "translateY(-200%)" },
+          "100%": { transform: "translateY(-200%)" },
         },
         "caret-blink": {
           "50%": {
@@ -106,7 +103,7 @@ export default {
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
-        typing: "typing 2s steps(20) infinite alternate, caret-blink .7s infinite"
+        "roll-words": "roll-words 6s ease-in-out infinite",
       },
     },
   },
