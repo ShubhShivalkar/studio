@@ -140,12 +140,9 @@ export default function DiscoverTribesPage() {
                             <Progress value={(tribe.members.length / 8) * 100} />
                         </div>
                        
-                        <div className="space-y-1">
-                            <div className="flex justify-between items-center text-sm text-muted-foreground">
-                                <span>Compatibility</span>
-                                <span>{tribe.compatibilityScore}%</span>
-                            </div>
-                            <Progress value={tribe.compatibilityScore} />
+                        <div className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">Compatibility</span>
+                            <Badge variant="outline">{tribe.compatibilityScore}%</Badge>
                         </div>
 
                     </div>
