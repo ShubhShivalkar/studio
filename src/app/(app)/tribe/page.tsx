@@ -11,7 +11,7 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { currentUser, dailySummaries, allUsers } from "@/lib/mock-data";
-import { Bot, Users, ShieldAlert, CheckCircle, XCircle, MessageSquare, Info, UserX, UserCheck, Heart, History, AlertTriangle } from "lucide-react";
+import { Bot, Users, ShieldAlert, CheckCircle, XCircle, MessageSquare, Info, UserX, UserCheck, Heart, History, AlertTriangle, Compass } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -112,6 +112,11 @@ export default function TribePage() {
             } else if (isAvailableOnSunday) {
                 meetupDay = nextSunday;
             } else {
+                setTribeState("no-matches");
+                return;
+            }
+
+            if (!matches || matches.length === 0) {
                 setTribeState("no-matches");
                 return;
             }
@@ -265,12 +270,18 @@ export default function TribePage() {
                   We'll connect you with people who understand your Vibe
                 </CardDescription>
             </div>
-             <Button asChild variant="outline" size="sm" className="w-full sm:w-auto">
-                <Link href="/tribe/history">
-                    <History className="mr-2" />
-                    Meet-up History
-                </Link>
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                <Button variant="outline" size="sm" className="w-full" disabled>
+                    <Compass className="mr-2" />
+                    Discover Tribes
+                </Button>
+                <Button asChild variant="outline" size="sm" className="w-full">
+                    <Link href="/tribe/history">
+                        <History className="mr-2" />
+                        Meet-up History
+                    </Link>
+                </Button>
+            </div>
         </div>
       </CardHeader>
       <CardContent className="min-h-[30rem] flex items-center justify-center p-2 sm:p-6">
