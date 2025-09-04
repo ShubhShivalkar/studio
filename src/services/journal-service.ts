@@ -26,6 +26,7 @@ export async function getJournalEntries(userId: string): Promise<DailySummary[]>
 
 /**
  * Creates or updates a journal entry for a specific date.
+ * If a summary already exists for the day, the new summary will be appended.
  * @param userId The UID of the user.
  * @param entry The daily summary object.
  */
@@ -47,8 +48,18 @@ export async function setJournalEntry(userId: string, entry: Partial<DailySummar
         });
     } else {
         // Update existing entry
-        const docRef = querySnapshot.docs[0].ref;
-        await updateDoc(docRef, entryData);
+        const existingDoc = querySnapshot.docs[0];
+        const docRef = existingDoc.ref;
+        const existingData = existingDoc.data() as DailySummary;
+
+        const updatePayload: Partial<DailySummary> = { ...entryData };
+
+        // If a new summary is being added and one already exists, append it.
+        if (entryData.summary && existingData.summary) {
+            updatePayload.summary = `${existingData.summary}\n\n${entryData.summary}`;
+        }
+        
+        await updateDoc(docRef, updatePayload);
     }
 }
 

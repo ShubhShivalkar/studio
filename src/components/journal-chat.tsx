@@ -6,16 +6,16 @@ import { summarizeJournalConversation } from "@/ai/flows/summarize-journal-conve
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
-import type { Message } from "@/lib/types";
+import type { DailySummary, Message } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Bot, SendHorizonal, CheckCircle, RotateCcw } from "lucide-react";
 import { useEffect, useRef, useState, useMemo } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { format } from 'date-fns';
+import { format, isSameDay, parseISO } from 'date-fns';
 import { useAuth } from "@/context/auth-context";
 import { getReminders } from "@/services/reminder-service";
 import { getChecklists } from "@/services/checklist-service";
-import { setJournalEntry, addJournalSummaryToUser } from "@/services/journal-service";
+import { setJournalEntry, addJournalSummaryToUser, getJournalEntries } from "@/services/journal-service";
 
 const MAX_AI_QUESTIONS = 10;
 
@@ -68,6 +68,7 @@ export function JournalChat() {
   const [isInitialized, setIsInitialized] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [timezone, setTimezone] = useState('');
+  const [todaysSummary, setTodaysSummary] = useState<DailySummary | null>(null);
   
   const userName = useMemo(() => profile?.name.split(' ')[0] || 'there', [profile]);
   const initialMessage = useMemo(() => getInitialMessage(profile?.name), [profile]);
@@ -106,8 +107,15 @@ export function JournalChat() {
 
   useEffect(() => {
     if (!profile) return;
-    const todayStr = format(new Date(), 'yyyy-MM-dd');
+    const today = new Date();
+    const todayStr = format(today, 'yyyy-MM-dd');
     const storedDate = localStorage.getItem(STORAGE_KEY_DATE);
+    
+    // Fetch today's summary regardless of local storage state
+    getJournalEntries(profile.id).then(entries => {
+        const summaryForToday = entries.find(e => e.date === todayStr) || null;
+        setTodaysSummary(summaryForToday);
+    });
     
     if (storedDate === todayStr) {
         const storedMessages = localStorage.getItem(STORAGE_KEY_MESSAGES);
@@ -199,6 +207,7 @@ export function JournalChat() {
           timezone,
           dob: profile.dob,
           profession: profile.profession,
+          todaysSummary: todaysSummary?.summary,
       });
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -270,7 +279,8 @@ export function JournalChat() {
   const handleNewChat = () => {
     if (!profile) return;
     localStorage.removeItem(STORAGE_KEY_MESSAGES);
-    localStorage.removeItem(STORAGE_KEY_DATE);
+    // We don't remove the date, so if they refresh, the old convo comes back for the same day.
+    // This allows multiple sessions in one day.
     setMessages([initialMessage]);
     setIsComplete(false);
     setInput("");

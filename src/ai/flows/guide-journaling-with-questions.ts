@@ -22,6 +22,7 @@ const GuideJournalingWithQuestionsInputSchema = z.object({
   timezone: z.string().optional().describe("The user's local timezone (e.g., 'America/New_York')."),
   dob: z.string().optional().describe("The user's date of birth in YYYY-MM-DD format."),
   profession: z.string().optional().describe("The user's profession."),
+  todaysSummary: z.string().optional().describe("The user's journal summary from earlier today."),
 });
 export type GuideJournalingWithQuestionsInput = z.infer<
   typeof GuideJournalingWithQuestionsInputSchema
@@ -74,6 +75,11 @@ const prompt = ai.definePrompt({
 The user just said: "{{{topic}}}"
 
 Ask a single, gentle, and encouraging follow-up question related to this topic.
+
+{{#if todaysSummary}}
+For context, the user has already written this in their journal earlier today. You can refer to this to make your questions more relevant.
+Today's Entry so far: {{{todaysSummary}}}
+{{/if}}
 
 {{#if journalHistory}}
 For your context, here are some of the user's past entries:
