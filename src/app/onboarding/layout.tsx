@@ -8,7 +8,7 @@ export default function OnboardingLayout({ children }: { children: ReactNode }) 
       <header className="absolute top-0 left-0 w-full px-4 lg:px-6 h-14 flex items-center">
         <Link href="/" className="flex items-center justify-center" prefetch={false}>
           <PenLine className="h-6 w-6 text-primary" />
-           <span className="font-headline text-lg ml-2">Soulful Sync</span>
+           <span className="font-headline text-lg ml-2">anuvaad</span>
         </Link>
       </header>
       <main className="w-full max-w-md">

@@ -38,7 +38,7 @@ export default function Step5Page() {
     <Card className="text-center">
       <CardHeader>
         <CardTitle className="font-headline">You're all set!</CardTitle>
-        <CardDescription>You are ready to begin your journey with Soulful Sync.</CardDescription>
+        <CardDescription>You are ready to begin your journey with anuvaad.</CardDescription>
         <Progress value={100} className="mt-2" />
       </CardHeader>
       <CardContent className="flex flex-col items-center space-y-4 py-8">

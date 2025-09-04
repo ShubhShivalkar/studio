@@ -35,7 +35,7 @@ const navLinks = [
 
 export function Header() {
   const pathname = usePathname();
-  const pageTitle = navLinks.find(link => link.href === pathname)?.label || "Soulful Sync";
+  const pageTitle = navLinks.find(link => link.href === pathname)?.label || "anuvaad";
   const showNewButton = pathname === '/calendar';
 
   return (
@@ -57,7 +57,7 @@ export function Header() {
               className="flex items-center gap-2 text-lg font-semibold mb-4"
             >
               <PenLine className="h-6 w-6 text-primary" />
-              <span className="font-headline">Soulful Sync</span>
+              <span className="font-headline">anuvaad</span>
             </Link>
             {navLinks.map((link) => (
               <Link

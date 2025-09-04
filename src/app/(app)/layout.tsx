@@ -33,7 +33,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
             <Link href="/journal" className="flex items-center gap-2 font-semibold">
               <PenLine className="h-6 w-6 text-primary" />
-              <span className="font-headline text-lg">Soulful Sync</span>
+              <span className="font-headline text-lg">anuvaad</span>
             </Link>
           </div>
           <div className="flex-1">

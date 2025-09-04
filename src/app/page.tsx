@@ -11,30 +11,44 @@ export default function Home() {
       <header className="px-4 lg:px-6 h-14 flex items-center absolute top-0 left-0 w-full z-10">
         <Link href="#" className="flex items-center justify-center" prefetch={false}>
           <PenLine className="h-6 w-6 text-primary" />
-          <span className="sr-only">Soulful Sync</span>
+          <span className="sr-only">anuvaad - Translate your experiences into real meaningful connections</span>
         </Link>
       </header>
       <main className="flex-1">
-        <section className="w-full py-12 md:py-24 lg:py-32 xl:py-48 bg-background">
-          <div className="container px-4 md:px-6">
-            <div className="flex flex-col items-center space-y-4 text-center">
-              <div className="space-y-2 text-foreground">
-                <div className="inline-block">
-                  <h1 className="font-headline text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl overflow-hidden whitespace-nowrap animate-typing border-r-4 border-r-foreground">
-                    Soulful Sync
+        <section className="w-full py-12 md:py-24 lg:py-32 xl:py-48 bg-background relative">
+          <div className="absolute inset-0 z-0">
+            <svg width="100%" height="100%" viewBox="0 0 1000 600" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="200" cy="150" r="250" fill="hsla(var(--primary)/0.05)" />
+              <circle cx="800" cy="450" r="200" fill="hsla(var(--accent)/0.1)" />
+            </svg>
+          </div>
+          <div className="container px-4 md:px-6 relative z-10">
+            <div className="flex flex-col items-center space-y-1 text-center">
+              <div className="inline-block relative">
+                <div className="flex justify-center items-baseline">
+                  <h1 className="font-headline text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl">
+                    Anu
                   </h1>
+                  <div className="relative h-[2.5rem] sm:h-[3.25rem] md:h-[3.75rem] lg:h-[4.5rem] overflow-hidden text-left align-baseline">
+                    <div className="animate-roll-words text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl font-headline text-primary">
+                      <div>bhav</div>
+                      <div>bandh</div>
+                      <div>varta</div>
+                      <div>vaad</div>
+                    </div>
+                  </div>
                 </div>
-                <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl">
-                  Discover deeper connections with yourself and others through the power of guided journaling and AI-driven personality insights.
-                </p>
               </div>
-              <div className="space-x-4">
-                <Button asChild size="lg">
-                  <Link href="/onboarding/step-1">
-                    Begin Your Journey
-                  </Link>
-                </Button>
-              </div>
+              <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl">
+                Translate your experiences into real meaningful connections
+              </p>
+            </div>
+            <div className="mt-8 flex justify-center">
+              <Button asChild size="lg">
+                <Link href="/onboarding/step-1">
+                  Begin Your Journey
+                </Link>
+              </Button>
             </div>
           </div>
         </section>
@@ -120,7 +134,7 @@ export default function Home() {
 
       </main>
       <footer className="flex flex-col gap-2 sm:flex-row py-6 w-full shrink-0 items-center px-4 md:px-6 border-t">
-        <p className="text-xs text-foreground/60">&copy; 2024 Soulful Sync. All rights reserved.</p>
+        <p className="text-xs text-foreground/60">&copy; 2024 anuvaad. All rights reserved.</p>
         <nav className="sm:ml-auto flex gap-4 sm:gap-6">
           <Link href="#" className="text-xs hover:underline underline-offset-4" prefetch={false}>
             Terms of Service

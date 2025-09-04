@@ -5,8 +5,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from '@/components/theme-provider';
 
 export const metadata: Metadata = {
-  title: 'Soulful Sync',
-  description: 'Find meaningful connections through guided journaling.',
+  title: 'anuvaad',
+  description: 'Translate your experiences into real meaningful connections',
 };
 
 export default function RootLayout({
