@@ -10,7 +10,7 @@ import useOnboardingStore from '@/store/onboarding';
 import type { User } from '@/lib/types';
 import { createUser } from '@/services/user-service';
 import { useToast } from '@/hooks/use-toast';
-import { allUsers } from '@/lib/mock-data';
+import { allUsers, currentUser } from '@/lib/mock-data';
 
 export default function Step5Page() {
   const router = useRouter();
@@ -18,8 +18,7 @@ export default function Step5Page() {
   const { toast } = useToast();
 
   const handleFinish = async () => {
-    // Generate a unique ID for the new user.
-    // In a real scenario, this would come from Firebase Auth after verification.
+    // Generate a unique ID for the new user for testing.
     const userId = `user-${Date.now()}`;
     const userPhone = `+${onboardingData.countryCode}${onboardingData.phone}`;
 
@@ -38,8 +37,11 @@ export default function Step5Page() {
         // Save the new user to the database
         await createUser(userId, newUser);
         
-        // Also add to mock data for immediate use in the app session
+        // Add to mock data for immediate use in the app session
         allUsers.push(newUser);
+
+        // Update the global currentUser object for the current session
+        Object.assign(currentUser, newUser);
 
         toast({
             title: "Profile Created!",
