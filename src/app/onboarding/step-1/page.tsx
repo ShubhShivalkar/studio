@@ -9,118 +9,36 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import useOnboardingStore from '@/store/onboarding';
 import { useToast } from '@/hooks/use-toast';
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
 import { currentUser } from '@/lib/mock-data';
-import { signInWithPhoneNumber, RecaptchaVerifier, type ConfirmationResult } from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { getUser } from '@/services/user-service';
 
-declare global {
-  interface Window {
-    recaptchaVerifier?: RecaptchaVerifier;
-    confirmationResult?: ConfirmationResult;
-  }
-}
-
 export default function Step1Page() {
   const router = useRouter();
-  const { phone, setData } = useOnboardingStore();
+  const { email, password, setData } = useOnboardingStore();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [otpSent, setOtpSent] = useState(false);
-  const [otp, setOtp] = useState('');
+  const [isLogin, setIsLogin] = useState(true);
 
-  const setupRecaptcha = useCallback(() => {
-    if (!auth || window.recaptchaVerifier) return;
-    try {
-      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-        'size': 'invisible',
-        'callback': (response: any) => {
-          // reCAPTCHA solved, allow signInWithPhoneNumber.
-        }
-      });
-    } catch (error) {
-      console.error("Error setting up reCAPTCHA:", error);
+  const handleAuth = async () => {
+    if (!email || !password) {
       toast({
-          variant: "destructive",
-          title: "reCAPTCHA Error",
-          description: "Could not initialize reCAPTCHA. Please refresh the page.",
-      });
-    }
-  }, [toast]);
-
-  useEffect(() => {
-    setupRecaptcha();
-  }, [setupRecaptcha]);
-
-  const handleSendOtp = async () => {
-    if (!phone || phone.length < 10) {
-      toast({
-        variant: "destructive",
-        title: "Invalid Phone Number",
-        description: "Please enter a valid 10-digit phone number.",
+        variant: 'destructive',
+        title: 'Missing Information',
+        description: 'Please enter both email and password.',
       });
       return;
     }
     setIsLoading(true);
 
-    const phoneNumber = `+91${phone}`;
-    const appVerifier = window.recaptchaVerifier;
-
-    if (!appVerifier) {
-       toast({
-        variant: "destructive",
-        title: "reCAPTCHA Not Ready",
-        description: "Please wait a moment and try again.",
-      });
-      setIsLoading(false);
-      return;
-    }
-
     try {
-      const confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
-      window.confirmationResult = confirmationResult;
-      setOtpSent(true);
-      toast({
-        title: "OTP Sent!",
-        description: "Please check your phone for the verification code.",
-      });
-    } catch (error) {
-      console.error("Error sending OTP:", error);
-      toast({
-        variant: "destructive",
-        title: "Failed to Send OTP",
-        description: "Could not send verification code. Please check the phone number or try again later.",
-      });
-       // Reset reCAPTCHA
-      window.recaptchaVerifier?.render().then((widgetId) => {
-        if (window.grecaptcha) {
-            window.grecaptcha.reset(widgetId);
-        }
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleVerifyOtp = async () => {
-    if (otp.length !== 6) {
-        toast({
-            variant: "destructive",
-            title: "Invalid OTP",
-            description: "Please enter the 6-digit code.",
-        });
-        return;
-    }
-    setIsLoading(true);
-    try {
-        const confirmationResult = window.confirmationResult;
-        if (!confirmationResult) {
-            throw new Error("No confirmation result found.");
-        }
-        const result = await confirmationResult.confirm(otp);
-        const user = result.user;
-
+      let userCredential;
+      if (isLogin) {
+        // Sign in existing user
+        userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
         const userProfile = await getUser(user.uid);
         if (userProfile) {
             Object.assign(currentUser, userProfile);
@@ -130,81 +48,85 @@ export default function Step1Page() {
             });
             router.push('/journal');
         } else {
-            setData({ phone, countryCode: '91' });
+             // This case is unlikely if auth and db are in sync, but good to handle.
+             // It means they have an auth record but no db profile.
+            setData({ email, password });
             router.push('/onboarding/step-2');
         }
-    } catch (error) {
-        console.error("Error verifying OTP:", error);
-        toast({
-            variant: "destructive",
-            title: "OTP Verification Failed",
-            description: "The code you entered is incorrect. Please try again.",
-        });
+
+      } else {
+        // Sign up new user
+        userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        setData({ email, password });
+        router.push('/onboarding/step-2');
+      }
+    } catch (error: any) {
+      console.error(`Error during ${isLogin ? 'login' : 'sign up'}:`, error);
+      let description = 'An unexpected error occurred. Please try again.';
+      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+          description = 'Invalid email or password. Please try again.';
+      } else if (error.code === 'auth/email-already-in-use') {
+          description = 'This email is already registered. Please log in instead.';
+      } else if (error.code === 'auth/weak-password') {
+          description = 'Password should be at least 6 characters long.';
+      }
+      
+      toast({
+        variant: 'destructive',
+        title: `${isLogin ? 'Login' : 'Sign Up'} Failed`,
+        description,
+      });
     } finally {
-        setIsLoading(false);
+      setIsLoading(false);
     }
   };
 
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (otpSent) {
-      handleVerifyOtp();
-    } else {
-      handleSendOtp();
-    }
+    handleAuth();
   };
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Welcome! Let's get started.</CardTitle>
+        <CardTitle>{isLogin ? 'Welcome Back!' : "Let's Get Started"}</CardTitle>
         <CardDescription>
-          {otpSent ? 'Enter the OTP we sent to your phone.' : "First, what's your mobile number?"}
+          {isLogin ? 'Sign in to continue your journey.' : 'Create an account to begin.'}
         </CardDescription>
-        <Progress value={otpSent ? 20 : 10} className="mt-2" />
+        <Progress value={10} className="mt-2" />
       </CardHeader>
       <form onSubmit={handleSubmit}>
-        <CardContent>
-          {!otpSent ? (
-            <div className="space-y-2">
-              <Label htmlFor="phone">Mobile Number</Label>
-              <div className="flex items-center gap-2">
-                <div className="flex h-10 items-center rounded-md border border-input bg-background px-3">
-                  <span className="text-sm text-muted-foreground">+91</span>
-                </div>
-                <Input
-                  id="phone"
-                  type="tel"
-                  placeholder="e.g. 2345678900"
-                  required
-                  value={phone}
-                  onChange={(e) => setData({ phone: e.target.value.replace(/\D/g, '') })}
-                  className="flex-1"
-                  maxLength={10}
-                />
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              <Label htmlFor="otp">Verification Code</Label>
+        <CardContent className="space-y-4">
+           <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
               <Input
-                id="otp"
-                type="text"
-                placeholder="Enter 6-digit OTP"
+                id="email"
+                type="email"
+                placeholder="e.g. you@example.com"
                 required
-                value={otp}
-                onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-                maxLength={6}
+                value={email}
+                onChange={(e) => setData({ email: e.target.value })}
               />
             </div>
-          )}
-          <div id="recaptcha-container"></div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="Enter your password"
+                required
+                value={password}
+                onChange={(e) => setData({ password: e.target.value })}
+              />
+            </div>
         </CardContent>
-        <CardFooter>
+        <CardFooter className="flex flex-col gap-4">
           <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? 'Verifying...' : (otpSent ? 'Verify & Continue' : 'Send OTP')}
+            {isLoading ? 'Verifying...' : (isLogin ? 'Login' : 'Create Account')}
           </Button>
+           <Button variant="link" type="button" onClick={() => setIsLogin(!isLogin)} className="text-sm">
+              {isLogin ? "Don't have an account? Sign Up" : 'Already have an account? Log In'}
+            </Button>
         </CardFooter>
       </form>
     </Card>

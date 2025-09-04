@@ -42,7 +42,7 @@ export default function Step5Page() {
             dob: onboardingData.dob,
             gender: onboardingData.gender as 'Male' | 'Female' | 'Other' | 'Prefer not to say',
             avatar: onboardingData.avatar,
-            phone: user.phoneNumber,
+            email: user.email,
             journalEntries: [],
             interestedInMeetups: false,
         };
