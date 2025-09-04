@@ -12,19 +12,14 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// Validate that the config values are present.
+// Validate that the config values are present. This will cause an error during build if they are missing.
 if (!firebaseConfig.apiKey) {
     throw new Error('NEXT_PUBLIC_FIREBASE_API_KEY is not set. Please check your .env.local file and restart the server.');
 }
 
 
 // Initialize Firebase
-let app;
-if (!getApps().length) {
-  app = initializeApp(firebaseConfig);
-} else {
-  app = getApp();
-}
+const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
 export const db = getFirestore(app);
 export const auth = getAuth(app);

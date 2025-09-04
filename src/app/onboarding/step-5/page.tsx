@@ -44,6 +44,7 @@ export default function Step5Page() {
             avatar: onboardingData.avatar,
             phone: user.phoneNumber,
             journalEntries: [],
+            interestedInMeetups: false,
         };
         
         // Save the new user to the database
