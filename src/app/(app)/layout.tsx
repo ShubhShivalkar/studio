@@ -7,6 +7,7 @@ import {
   PenLine,
   UserCircle,
   Users,
+  Database,
 } from "lucide-react";
 import Link from "next/link";
 import { type ReactNode } from "react";
@@ -21,6 +22,7 @@ const navLinks = [
   { href: "/calendar", label: "Calendar", icon: <Calendar className="h-5 w-5" /> },
   { href: "/tribe", label: "Tribe", icon: <Users className="h-5 w-5" /> },
   { href: "/profile", label: "Profile", icon: <UserCircle className="h-5 w-5" /> },
+  { href: "/test-db", label: "Test DB", icon: <Database className="h-5 w-5" /> },
 ];
 
 export default function AppLayout({ children }: { children: ReactNode }) {
