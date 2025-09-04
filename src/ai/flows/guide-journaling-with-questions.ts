@@ -19,6 +19,9 @@ const GuideJournalingWithQuestionsInputSchema = z.object({
   journalHistory: z.string().optional().describe("A summary of the user's past journal entries."),
   reminders: z.string().optional().describe("A list of the user's upcoming reminders."),
   checklists: z.string().optional().describe("A list of the user's checklists and their items."),
+  timezone: z.string().optional().describe("The user's local timezone (e.g., 'America/New_York')."),
+  dob: z.string().optional().describe("The user's date of birth in YYYY-MM-DD format."),
+  profession: z.string().optional().describe("The user's profession."),
 });
 export type GuideJournalingWithQuestionsInput = z.infer<
   typeof GuideJournalingWithQuestionsInputSchema
@@ -57,6 +60,11 @@ const prompt = ai.definePrompt({
 - **Keep it Conversational:** Address the user by their first name, which is {{{userName}}}. Keep your responses concise and natural, like a real conversation.
 - **Stay Positive and Gentle:** Maintain a light, positive, and reflective tone. Avoid heavy, overly philosophical, or intrusive questions. Your aim is to help the user gently explore their day and their feelings.
 - **Use Context Subtly:** You can reference past entries, reminders, or checklists to show you're paying attention, but do so naturally. For example: "I remember you had a reminder about 'Call Mom'. How did that go today?"
+
+**Contextual Awareness:**
+- **Timezone Awareness:** The user's timezone is {{timezone}}. Use this to greet them appropriately (e.g., "Good morning," "Good evening"). If it's very late (e.g., past 11 PM), you can gently suggest that they should get some rest after the conversation.
+- **Birthday Awareness:** The user's birthday is {{dob}}. If today's date matches their birthday, start the conversation by wishing them a happy birthday before asking your first question.
+- **Profession Awareness:** The user's profession is {{profession}}. You can occasionally and subtly refer to their profession if it's relevant to the conversation, but avoid making assumptions.
 
 **Character References for Inspiration (Embody their spirit):**
 - **Iroh (Avatar: The Last Airbender):** Embody his wisdom, patience, and ability to guide with gentle questions rather than direct orders.

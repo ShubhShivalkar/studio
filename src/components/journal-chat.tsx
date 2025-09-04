@@ -67,6 +67,7 @@ export function JournalChat() {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [timezone, setTimezone] = useState('');
   
   const userName = useMemo(() => profile?.name.split(' ')[0] || 'there', [profile]);
   const initialMessage = useMemo(() => getInitialMessage(profile?.name), [profile]);
@@ -74,6 +75,10 @@ export function JournalChat() {
   const STORAGE_KEY_MESSAGES = useMemo(() => `journalChatMessages_${profile?.id}`, [profile]);
   const STORAGE_KEY_DATE = useMemo(() => `journalChatDate_${profile?.id}`, [profile]);
 
+  useEffect(() => {
+    // Get client's timezone once the component mounts
+    setTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone);
+  }, []);
 
   const aiQuestionCount = useMemo(() => {
     return messages.filter(m => m.sender === 'ai').length - 1;
@@ -190,7 +195,10 @@ export function JournalChat() {
           userName, 
           journalHistory,
           reminders: remindersText,
-          checklists: checklistsText
+          checklists: checklistsText,
+          timezone,
+          dob: profile.dob,
+          profession: profile.profession,
       });
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
