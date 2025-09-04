@@ -179,7 +179,7 @@ export default function ProfilePage() {
                     {userData.phone && (
                       <div className="flex items-center justify-center gap-2">
                         <Phone className="h-4 w-4" />
-                        <span>{userData.phone}</span>
+                        <span>+91 {userData.phone}</span>
                       </div>
                     )}
                     {userData.profession && (

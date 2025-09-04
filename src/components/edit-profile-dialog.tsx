@@ -136,14 +136,17 @@ export function EditProfileDialog({ user, onUpdate, open, onOpenChange }: EditPr
             <Label htmlFor="phone" className="text-right">
               Phone
             </Label>
-            <Input
-              id="phone"
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="Your phone number"
-              className="col-span-3"
-            />
+            <div className="col-span-3 flex items-center rounded-md border border-input focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+                <span className="pl-3 text-sm text-muted-foreground">+91</span>
+                <Input
+                  id="phone"
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="Your phone number"
+                  className="w-full border-0 shadow-none px-2 focus-visible:ring-0"
+                />
+            </div>
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="profession" className="text-right">
