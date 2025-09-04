@@ -8,6 +8,8 @@ import { db } from '@/lib/firebase';
 import { doc, setDoc, getDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { CheckCircle, AlertTriangle, Database } from 'lucide-react';
 
+const TEST_TIMEOUT = 10000; // 10 seconds
+
 export function TestDbConnection() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -17,21 +19,29 @@ export function TestDbConnection() {
     const testDocId = `test-${Date.now()}`;
     const testDocRef = doc(db, 'test_connection', testDocId);
 
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('timeout')), TEST_TIMEOUT)
+    );
+
     try {
-      // 1. Write to the database
-      await setDoc(testDocRef, {
-        status: 'testing',
-        timestamp: serverTimestamp(),
-      });
+      const testPromise = async () => {
+        // 1. Write to the database
+        await setDoc(testDocRef, {
+          status: 'testing',
+          timestamp: serverTimestamp(),
+        });
 
-      // 2. Read from the database to verify
-      const docSnap = await getDoc(testDocRef);
-      if (!docSnap.exists() || docSnap.data().status !== 'testing') {
-        throw new Error('Read verification failed.');
-      }
+        // 2. Read from the database to verify
+        const docSnap = await getDoc(testDocRef);
+        if (!docSnap.exists() || docSnap.data().status !== 'testing') {
+          throw new Error('Read verification failed.');
+        }
 
-      // 3. Clean up the test document
-      await deleteDoc(testDocRef);
+        // 3. Clean up the test document
+        await deleteDoc(testDocRef);
+      };
+
+      await Promise.race([testPromise(), timeoutPromise]);
 
       toast({
         title: 'Connection Successful!',
@@ -40,11 +50,22 @@ export function TestDbConnection() {
       });
     } catch (error) {
       console.error("Database connection test failed:", error);
-      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
+      let description = 'Could not connect to Firestore. Check the console for details.';
+      
+      if (error instanceof Error) {
+        if (error.message === 'timeout') {
+          description = 'The connection timed out. Please verify your Firestore security rules allow writes to the "test_connection" collection and try again.';
+        } else if (error.message.includes('permission-denied')) {
+          description = 'Permission denied. Please check your Firestore security rules to ensure they allow writes to the "test_connection" collection.';
+        } else {
+            description = error.message;
+        }
+      }
+      
       toast({
         variant: 'destructive',
         title: 'Connection Failed',
-        description: `Could not connect to Firestore. Check console for details. Error: ${errorMessage}`,
+        description: description,
         action: <AlertTriangle className="text-white" />,
       });
     } finally {
