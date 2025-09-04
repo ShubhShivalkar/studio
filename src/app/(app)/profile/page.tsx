@@ -188,30 +188,28 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
 
-          {persona && (
-            <Card className="bg-accent text-accent-foreground">
-                  <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                          <Users /> Tribe Meetups
-                      </CardTitle>
-                      <CardDescription className="text-accent-foreground/80">
-                        Manage your visibility for tribe meetups.
-                      </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                      <div className="flex items-center justify-between">
-                          <Label htmlFor="meetup-interest" className="flex-grow pr-4">
-                              Interested in meeting new people
-                          </Label>
-                          <Switch
-                              id="meetup-interest"
-                              checked={isInterested}
-                              onCheckedChange={handleInterestToggle}
-                          />
-                      </div>
-                  </CardContent>
-              </Card>
-          )}
+          <Card className="bg-accent text-accent-foreground">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <Users /> Tribe Meetups
+                    </CardTitle>
+                    <CardDescription className="text-accent-foreground/80">
+                      Manage your visibility for tribe meetups.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="flex items-center justify-between">
+                        <Label htmlFor="meetup-interest" className="flex-grow pr-4">
+                            Interested in meeting new people
+                        </Label>
+                        <Switch
+                            id="meetup-interest"
+                            checked={isInterested}
+                            onCheckedChange={handleInterestToggle}
+                        />
+                    </div>
+                </CardContent>
+            </Card>
         </div>
         <div className="md:col-span-1 lg:col-span-2 space-y-6">
           <Card>
