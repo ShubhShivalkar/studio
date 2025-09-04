@@ -11,22 +11,23 @@ import {
   DialogDescription,
   DialogFooter,
   DialogTrigger,
-  DialogClose,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Bell, Plus, Trash2 } from "lucide-react";
+import { Bell, Plus, Trash2, ArrowLeft } from "lucide-react";
 import { format } from "date-fns";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useAuth } from "@/context/auth-context";
 import { getReminders, createReminder, deleteReminder } from "@/services/reminder-service";
 import type { Reminder } from "@/lib/types";
+import { useRouter } from "next/navigation";
 
 export default function RemindersPage() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const router = useRouter();
   const [remindersList, setRemindersList] = useState<Reminder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -100,54 +101,63 @@ export default function RemindersPage() {
     <Card>
       <CardHeader>
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <CardTitle>Your Reminders</CardTitle>
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-                <Button className="w-full sm:w-auto">
-                <Plus className="mr-2 h-4 w-4" />
-                Set Reminder
+            <div>
+              <CardTitle>Your Reminders</CardTitle>
+              <CardDescription>Keep track of your important events and tasks.</CardDescription>
+            </div>
+             <div className="flex w-full sm:w-auto gap-2">
+                <Button variant="outline" onClick={() => router.back()} className="w-full">
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Back
                 </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                <DialogTitle>Set a new reminder</DialogTitle>
-                <DialogDescription>
-                    Fill in the details for your new reminder below.
-                </DialogDescription>
-                </DialogHeader>
-                <form onSubmit={handleSetReminder}>
-                    <div className="grid gap-4 py-4">
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="title" className="text-right">
-                            Title
-                            </Label>
-                            <Input id="title" name="title" className="col-span-3" required />
+                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogTrigger asChild>
+                    <Button className="w-full">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Set Reminder
+                    </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                    <DialogTitle>Set a new reminder</DialogTitle>
+                    <DialogDescription>
+                        Fill in the details for your new reminder below.
+                    </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleSetReminder}>
+                        <div className="grid gap-4 py-4">
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="title" className="text-right">
+                                Title
+                                </Label>
+                                <Input id="title" name="title" className="col-span-3" required />
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="date" className="text-right">
+                                Date
+                                </Label>
+                                <Input id="date" name="date" type="date" className="col-span-3" defaultValue={new Date().toISOString().split('T')[0]} required />
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="time" className="text-right">
+                                Time
+                                </Label>
+                                <Input id="time" name="time" type="time" className="col-span-3" required />
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="details" className="text-right">
+                                Details
+                                </Label>
+                                <Textarea id="details" name="details" className="col-span-3" placeholder="Optional details..."/>
+                            </div>
                         </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="date" className="text-right">
-                            Date
-                            </Label>
-                            <Input id="date" name="date" type="date" className="col-span-3" defaultValue={new Date().toISOString().split('T')[0]} required />
-                        </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="time" className="text-right">
-                            Time
-                            </Label>
-                            <Input id="time" name="time" type="time" className="col-span-3" required />
-                        </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="details" className="text-right">
-                            Details
-                            </Label>
-                            <Textarea id="details" name="details" className="col-span-3" placeholder="Optional details..."/>
-                        </div>
-                    </div>
-                    <DialogFooter>
-                        <Button type="submit">Set Reminder</Button>
-                    </DialogFooter>
-                </form>
-            </DialogContent>
-            </Dialog>
+                        <DialogFooter>
+                            <Button type="submit">Set Reminder</Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+                </Dialog>
+            </div>
         </div>
       </CardHeader>
       <CardContent>
