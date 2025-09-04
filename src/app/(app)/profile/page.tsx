@@ -11,7 +11,7 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { currentUser } from "@/lib/mock-data";
-import { Bot, LogOut, Users, BookOpen, Flame, Briefcase, HandHeart, MapPin } from "lucide-react";
+import { Bot, LogOut, Users, BookOpen, Flame, Briefcase, HandHeart, MapPin, Phone } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { Switch } from "@/components/ui/switch";
@@ -173,9 +173,15 @@ export default function ProfilePage() {
                   )}
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4 text-center">
-                {(userData.profession || userData.religion) && (
+            <CardContent className="space-y-4">
+                {(userData.profession || userData.religion || userData.phone) && (
                   <div className="space-y-2 text-sm text-muted-foreground border-t pt-4">
+                    {userData.phone && (
+                      <div className="flex items-center justify-center gap-2">
+                        <Phone className="h-4 w-4" />
+                        <span>{userData.phone}</span>
+                      </div>
+                    )}
                     {userData.profession && (
                       <div className="flex items-center justify-center gap-2">
                         <Briefcase className="h-4 w-4" />
