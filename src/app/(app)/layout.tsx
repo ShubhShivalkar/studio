@@ -9,12 +9,14 @@ import {
   Users,
 } from "lucide-react";
 import Link from "next/link";
-import { type ReactNode } from "react";
-import { usePathname } from "next/navigation";
+import { type ReactNode, useEffect } from "react";
+import { usePathname, useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Header } from "@/components/header";
+import { useAuth } from "@/context/auth-context";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const navLinks = [
   { href: "/journal", label: "Journal", icon: <BookText className="h-5 w-5" /> },
@@ -25,6 +27,40 @@ const navLinks = [
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname(); 
+  const router = useRouter();
+  const { user, profile, loading } = useAuth();
+  
+  useEffect(() => {
+    if (!loading) {
+      if (!user) {
+        // If not loading and no user, redirect to login
+        router.push('/onboarding/step-1');
+      } else if (!profile) {
+        // If there's a user but no profile, they likely abandoned onboarding
+        router.push('/onboarding/step-2');
+      }
+    }
+  }, [user, profile, loading, router]);
+
+
+  if (loading) {
+    return (
+        <div className="flex items-center justify-center h-screen bg-background">
+            <div className="w-full max-w-md p-8 space-y-4">
+                <p className="text-lg text-center text-muted-foreground animate-pulse mb-4">Loading your soulful session...</p>
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-8 w-3/4" />
+                <Skeleton className="h-24 w-full" />
+                <Skeleton className="h-10 w-full" />
+            </div>
+        </div>
+      )
+  }
+  
+  if (!profile) {
+    // This will show briefly before the redirect kicks in
+    return null;
+  }
 
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">

@@ -14,6 +14,7 @@ export type User = {
   dob: string;
   gender: 'Male' | 'Female' | 'Other' | 'Prefer not to say';
   journalEntries?: string[];
+  email?: string | null;
   phone?: string;
   interestedInMeetups?: boolean;
   availableDates?: string[]; // YYY-MM-DD

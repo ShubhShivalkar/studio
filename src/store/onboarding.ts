@@ -1,7 +1,9 @@
+
 import { create } from 'zustand';
 
 type OnboardingState = {
-  phone: string;
+  email: string;
+  password: string;
   name: string;
   gender: string;
   dob: string;
@@ -11,13 +13,14 @@ type OnboardingState = {
 };
 
 const useOnboardingStore = create<OnboardingState>((set) => ({
-  phone: '',
+  email: '',
+  password: '',
   name: '',
   gender: 'Prefer not to say',
   dob: '',
   avatar: '',
   setData: (data) => set((state) => ({ ...state, ...data })),
-  reset: () => set({ phone: '', name: '', gender: 'Prefer not to say', dob: '', avatar: '' }),
+  reset: () => set({ email: '', password: '', name: '', gender: 'Prefer not to say', dob: '', avatar: '' }),
 }));
 
 export default useOnboardingStore;

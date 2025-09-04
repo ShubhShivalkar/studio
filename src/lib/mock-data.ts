@@ -11,6 +11,7 @@ export let currentUser: User = {
   dob: '',
   gender: 'Prefer not to say',
   journalEntries: [],
+  email: '',
   phone: '',
   persona: undefined,
   interestedInMeetups: false,

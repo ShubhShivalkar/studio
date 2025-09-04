@@ -1,9 +1,11 @@
+
+"use client";
+
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { PenLine, Bot, Users, Edit, Heart } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import Image from "next/image";
 
 export default function Home() {
   return (
@@ -122,7 +124,11 @@ export default function Home() {
 
       </main>
       <footer className="flex flex-col gap-2 sm:flex-row py-6 w-full shrink-0 items-center px-4 md:px-6 border-t">
-        <p className="text-xs text-foreground/60">&copy; 2024 anuvaad. All rights reserved.</p>
+        <div className="flex flex-col sm:flex-row items-center gap-2 text-xs text-foreground/60">
+            <p>&copy; 2024 anuvaad. All rights reserved.</p>
+            <p className="hidden sm:block">|</p>
+            <p>An Anubhav Social's product</p>
+        </div>
         <nav className="sm:ml-auto flex gap-4 sm:gap-6">
           <Link href="#" className="text-xs hover:underline underline-offset-4" prefetch={false}>
             Terms of Service

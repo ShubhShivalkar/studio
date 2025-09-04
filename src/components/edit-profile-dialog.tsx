@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -50,7 +50,17 @@ export function EditProfileDialog({ user, onUpdate, open, onOpenChange }: EditPr
   const [avatarPreview, setAvatarPreview] = useState<string>(user.avatar);
   const [profession, setProfession] = useState(user.profession || '');
   const [religion, setReligion] = useState(user.religion || '');
+  const [phone, setPhone] = useState(user.phone || '');
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (open) {
+      setAvatarPreview(user.avatar);
+      setProfession(user.profession || '');
+      setReligion(user.religion || '');
+      setPhone(user.phone || '');
+    }
+  }, [open, user]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -69,6 +79,7 @@ export function EditProfileDialog({ user, onUpdate, open, onOpenChange }: EditPr
       avatar: avatarPreview,
       profession: profession.trim(),
       religion: religion.trim(),
+      phone: phone.trim(),
     };
     onUpdate(updatedUser);
     toast({
@@ -120,6 +131,22 @@ export function EditProfileDialog({ user, onUpdate, open, onOpenChange }: EditPr
               Birth Date
             </Label>
             <Input id="dob" value={user.dob ? format(parseISO(user.dob), 'MMMM d, yyyy') : ''} disabled className="col-span-3" />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="phone" className="text-right">
+              Phone
+            </Label>
+            <div className="col-span-3 flex items-center rounded-md border border-input focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+                <span className="pl-3 text-sm text-muted-foreground">+91</span>
+                <Input
+                  id="phone"
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="Your phone number"
+                  className="w-full border-0 shadow-none px-2 focus-visible:ring-0"
+                />
+            </div>
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="profession" className="text-right">
