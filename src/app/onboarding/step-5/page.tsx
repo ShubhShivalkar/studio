@@ -11,6 +11,7 @@ import type { User } from '@/lib/types';
 import { useAuth } from '@/context/auth-context';
 import { createUser } from '@/services/user-service';
 import { useToast } from '@/hooks/use-toast';
+import { allUsers } from '@/lib/mock-data';
 
 export default function Step5Page() {
   const router = useRouter();
@@ -19,28 +20,32 @@ export default function Step5Page() {
   const { toast } = useToast();
 
   const handleFinish = async () => {
-    if (!authUser) {
-        toast({
-            variant: "destructive",
-            title: "Authentication Error",
-            description: "You must be logged in to create a profile.",
-        });
-        router.push('/onboarding/step-1');
-        return;
-    }
-    
+    // For testing: if no user is authenticated via Firebase, create a temporary ID.
+    const userId = authUser?.uid || `temp-${Date.now()}`;
+    const userPhone = authUser?.phoneNumber || `+${onboardingData.countryCode}${onboardingData.phone}`;
+
     // Create the new user object
-    const newUser: Omit<User, 'id'> = {
+    const newUser: User = {
+        id: userId,
         name: onboardingData.name,
         dob: onboardingData.dob,
         gender: onboardingData.gender as 'Male' | 'Female' | 'Other' | 'Prefer not to say',
         avatar: onboardingData.avatar,
-        phone: authUser.phoneNumber || onboardingData.phone, // Prefer phone from auth
+        phone: userPhone,
         journalEntries: [],
     };
     
     try {
-        await createUser(authUser.uid, newUser);
+        await createUser(userId, newUser);
+        
+        // Also add to mock data for immediate use in the app session
+        allUsers.push(newUser);
+
+        toast({
+            title: "Profile Created!",
+            description: "Welcome! Your journey begins now.",
+        });
+        
         router.push('/journal');
     } catch (error) {
         console.error("Failed to create user profile:", error);

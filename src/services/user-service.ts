@@ -22,7 +22,9 @@ export async function getUser(userId: string): Promise<User | null> {
  * @param userId The UID of the user from Firebase Auth.
  * @param data The user profile data to save.
  */
-export async function createUser(userId: string, data: Omit<User, 'id'>): Promise<void> {
+export async function createUser(userId: string, data: User): Promise<void> {
   const userDocRef = doc(db, 'users', userId);
-  await setDoc(userDocRef, data);
+  // Omit the id from the data being written to the document, as it's the document's key.
+  const { id, ...userData } = data;
+  await setDoc(userDocRef, userData);
 }
