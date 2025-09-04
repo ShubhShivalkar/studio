@@ -274,12 +274,10 @@ export default function TribePage() {
                 </CardDescription>
             </div>
             <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                {showDiscoverButton && (
-                    <Button variant="outline" size="sm" className="w-full" disabled>
-                        <Compass className="mr-2" />
-                        Discover
-                    </Button>
-                )}
+                <Button variant="outline" size="sm" className="w-full">
+                    <Compass className="mr-2" />
+                    Discover
+                </Button>
                 <Button asChild variant="outline" size="sm" className="w-full">
                     <Link href="/tribe/history">
                         <History className="mr-2" />
