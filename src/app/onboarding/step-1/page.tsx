@@ -10,7 +10,10 @@ import { Progress } from '@/components/ui/progress';
 import useOnboardingStore from '@/store/onboarding';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
-import { allUsers } from '@/lib/mock-data';
+import { allUsers, currentUser } from '@/lib/mock-data';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
+import { getUser } from '@/services/user-service';
 
 export default function Step1Page() {
   const router = useRouter();
@@ -18,29 +21,45 @@ export default function Step1Page() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleContinue = (e: React.FormEvent) => {
+  const handleContinue = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!phone || phone.length < 10) {
+      toast({
+        variant: "destructive",
+        title: "Invalid Phone Number",
+        description: "Please enter a valid 10-digit phone number.",
+      });
+      return;
+    }
     setIsLoading(true);
 
-    // Bypassing OTP. In a real app, you would verify the phone number here.
-    // For now, we'll just check if a user with this number exists in our mock data.
-    // NOTE: This mock check will be replaced later when we query the real database.
-    const existingUser = allUsers.find(user => user.phone === `+91${phone}`);
+    const userPhone = `+91${phone}`;
+    const email = `${userPhone}@soulfulsync.app`;
+    const password = `password_${userPhone}`;
 
-    setTimeout(() => { // Simulate network delay
-      if (existingUser) {
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const userProfile = await getUser(userCredential.user.uid);
+
+      if (userProfile) {
+        Object.assign(currentUser, userProfile);
         toast({
-          title: `Welcome back, ${existingUser.name}!`,
+          title: `Welcome back, ${userProfile.name}!`,
           description: "We're redirecting you to your journal.",
         });
-        // In a real scenario, you'd also set the auth context here
         router.push('/journal');
       } else {
+        // This case is unlikely if auth succeeded, but good for robustness
         setData({ phone, countryCode: '91' });
         router.push('/onboarding/step-2');
       }
+    } catch (error) {
+      // User does not exist, so proceed with onboarding
+      setData({ phone, countryCode: '91' });
+      router.push('/onboarding/step-2');
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -68,6 +87,7 @@ export default function Step1Page() {
                 value={phone}
                 onChange={(e) => setData({ phone: e.target.value.replace(/\D/g, '') })}
                 className="flex-1"
+                maxLength={10}
               />
             </div>
           </div>

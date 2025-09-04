@@ -13,13 +13,16 @@ import { useToast } from '@/hooks/use-toast';
 import { allUsers, currentUser } from '@/lib/mock-data';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, AuthErrorCodes } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
+import { useState } from 'react';
 
 export default function Step5Page() {
   const router = useRouter();
   const onboardingData = useOnboardingStore((state) => state);
   const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleFinish = async () => {
+    setIsLoading(true);
     // For testing, we generate a fake email from the phone number to use Firebase Auth
     const userPhone = `+${onboardingData.countryCode}${onboardingData.phone}`;
     const email = `${userPhone}@soulfulsync.app`;
@@ -31,7 +34,7 @@ export default function Step5Page() {
             // Try to sign in first, in case the user was already created during a previous attempt
              userCredential = await signInWithEmailAndPassword(auth, email, password);
         } catch (error: any) {
-             if (error.code === AuthErrorCodes.INVALID_LOGIN_CREDENTIALS || error.code === 'auth/user-not-found') {
+             if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found') {
                 // If user not found, create a new one.
                 userCredential = await createUserWithEmailAndPassword(auth, email, password);
              } else {
@@ -81,6 +84,8 @@ export default function Step5Page() {
             title: "Profile Creation Failed",
             description: description,
         });
+    } finally {
+        setIsLoading(false);
     }
   };
 
@@ -96,8 +101,8 @@ export default function Step5Page() {
         <p>Your profile has been created.</p>
       </CardContent>
       <CardFooter>
-        <Button className="w-full" onClick={handleFinish}>
-          Start Journaling
+        <Button className="w-full" onClick={handleFinish} disabled={isLoading}>
+          {isLoading ? 'Finishing...' : 'Start Journaling'}
         </Button>
       </CardFooter>
     </Card>
