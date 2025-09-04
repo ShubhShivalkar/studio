@@ -60,18 +60,32 @@ export default function DiscoverTribesPage() {
   const [tribes] = useState<DiscoveredTribe[]>(mockTribes);
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [locationFilter, setLocationFilter] = useState('all');
+
+  const uniqueLocations = useMemo(() => {
+    const locations = new Set<string>();
+    tribes.forEach(tribe => {
+        const commonLocation = getMostCommonLocation(tribe.members);
+        if (commonLocation) {
+            locations.add(commonLocation);
+        }
+    });
+    return Array.from(locations);
+  }, [tribes]);
 
   const filteredTribes = useMemo(() => {
     return tribes.filter(tribe => {
       const status = getTribeStatus(tribe.members.length);
       const category = getTribeCategory(tribe.members);
+      const commonLocation = getMostCommonLocation(tribe.members);
 
       const statusMatch = statusFilter === 'all' || status.toLowerCase() === statusFilter;
       const categoryMatch = categoryFilter === 'all' || category.toLowerCase() === categoryFilter;
+      const locationMatch = locationFilter === 'all' || commonLocation === locationFilter;
 
-      return statusMatch && categoryMatch;
+      return statusMatch && categoryMatch && locationMatch;
     });
-  }, [tribes, statusFilter, categoryFilter]);
+  }, [tribes, statusFilter, categoryFilter, locationFilter]);
   
   const handleJoinRequest = (tribeId: string) => {
     toast({
@@ -122,6 +136,20 @@ export default function DiscoverTribesPage() {
                   <SelectItem value="male">Male</SelectItem>
                   <SelectItem value="female">Female</SelectItem>
                   <SelectItem value="mixed">Mixed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+             <div className="flex-1">
+               <label htmlFor="location-filter" className="text-sm font-medium">Location</label>
+              <Select value={locationFilter} onValueChange={setLocationFilter}>
+                <SelectTrigger id="location-filter">
+                  <SelectValue placeholder="Filter by location" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Locations</SelectItem>
+                  {uniqueLocations.map(location => (
+                    <SelectItem key={location} value={location}>{location}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
