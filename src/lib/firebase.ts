@@ -12,6 +12,12 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
+// Validate that the config values are present.
+if (!firebaseConfig.apiKey) {
+    throw new Error('NEXT_PUBLIC_FIREBASE_API_KEY is not set. Please check your .env.local file and restart the server.');
+}
+
+
 // Initialize Firebase
 let app;
 if (!getApps().length) {

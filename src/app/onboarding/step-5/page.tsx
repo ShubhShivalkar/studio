@@ -78,7 +78,7 @@ export default function Step5Page() {
         if (error.code === 'auth/operation-not-allowed') {
             description = "Email/Password sign-in is not enabled in your Firebase project. Please enable it in the Firebase Console under Authentication > Sign-in method.";
         } else if (error.code === 'auth/api-key-not-valid') {
-            description = "Your Firebase API key is not valid. Please check your .env.local file."
+            description = "Your Firebase API key is not valid. Please check your .env.local file and restart your server."
         }
 
 
