@@ -18,6 +18,7 @@ import { Header } from "@/components/header";
 import { currentUser } from "@/lib/mock-data";
 import { useAuth } from "@/context/auth-context";
 import { getUser } from "@/services/user-service";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const navLinks = [
   { href: "/journal", label: "Journal", icon: <BookText className="h-5 w-5" /> },
@@ -55,8 +56,12 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   if (loading || !user || !currentUser || currentUser.id !== user.uid) {
     return (
         <div className="flex items-center justify-center h-screen bg-background">
-            <div className="w-full max-w-md p-8 space-y-4 text-center">
-                <p className="text-lg text-muted-foreground animate-pulse">Loading your soulful session...</p>
+            <div className="w-full max-w-md p-8 space-y-4">
+                <p className="text-lg text-center text-muted-foreground animate-pulse mb-4">Loading your soulful session...</p>
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-8 w-3/4" />
+                <Skeleton className="h-24 w-full" />
+                <Skeleton className="h-10 w-full" />
             </div>
         </div>
       )
