@@ -16,6 +16,8 @@ import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Header } from "@/components/header";
+import { currentUser } from "@/lib/mock-data";
+import { useAuth } from "@/context/auth-context";
 
 const navLinks = [
   { href: "/journal", label: "Journal", icon: <BookText className="h-5 w-5" /> },
@@ -27,6 +29,26 @@ const navLinks = [
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname(); 
+  const { user, loading } = useAuth();
+  
+  if (loading) {
+    return (
+        <div className="flex items-center justify-center h-screen">
+            <div className="w-full max-w-md p-8 space-y-4">
+                <p>Loading user...</p>
+            </div>
+        </div>
+      )
+  }
+
+  // If there's no user in mock data and no firebase user, redirect to onboarding
+  // This is a temporary measure for the mock data setup
+  if (!user && !currentUser.id) {
+     if (typeof window !== 'undefined') {
+      window.location.href = '/onboarding/step-1';
+    }
+    return null;
+  }
 
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">

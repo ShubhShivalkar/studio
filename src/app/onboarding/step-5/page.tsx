@@ -8,9 +8,11 @@ import { CheckCircle } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import useOnboardingStore from '@/store/onboarding';
 import type { User } from '@/lib/types';
-import { createUser } from '@/services/user-service';
+import { createUser as saveUser } from '@/services/user-service';
 import { useToast } from '@/hooks/use-toast';
 import { allUsers, currentUser } from '@/lib/mock-data';
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 
 export default function Step5Page() {
   const router = useRouter();
@@ -18,24 +20,35 @@ export default function Step5Page() {
   const { toast } = useToast();
 
   const handleFinish = async () => {
-    // Generate a unique ID for the new user for testing.
-    const userId = `user-${Date.now()}`;
+    // For testing, we generate a fake email from the phone number to use Firebase Auth
     const userPhone = `+${onboardingData.countryCode}${onboardingData.phone}`;
+    const email = `${userPhone}@soulfulsync.app`;
+    const password = `password_${userPhone}`; // Simple password for testing
 
-    // Create the new user object from the data collected during onboarding
-    const newUser: User = {
-        id: userId,
-        name: onboardingData.name,
-        dob: onboardingData.dob,
-        gender: onboardingData.gender as 'Male' | 'Female' | 'Other' | 'Prefer not to say',
-        avatar: onboardingData.avatar,
-        phone: userPhone,
-        journalEntries: [],
-    };
-    
     try {
+        let userCredential;
+        try {
+            // Try to sign in first, in case the user was already created during a previous attempt
+             userCredential = await signInWithEmailAndPassword(auth, email, password);
+        } catch (error) {
+            // If sign-in fails (e.g., user not found), create a new user
+            userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        }
+
+        const userId = userCredential.user.uid;
+
+        const newUser: User = {
+            id: userId,
+            name: onboardingData.name,
+            dob: onboardingData.dob,
+            gender: onboardingData.gender as 'Male' | 'Female' | 'Other' | 'Prefer not to say',
+            avatar: onboardingData.avatar,
+            phone: userPhone,
+            journalEntries: [],
+        };
+        
         // Save the new user to the database
-        await createUser(userId, newUser);
+        await saveUser(userId, newUser);
         
         // Add to mock data for immediate use in the app session
         allUsers.push(newUser);
