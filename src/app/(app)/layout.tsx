@@ -15,9 +15,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Header } from "@/components/header";
-import { currentUser } from "@/lib/mock-data";
 import { useAuth } from "@/context/auth-context";
-import { getUser } from "@/services/user-service";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const navLinks = [
@@ -30,30 +28,22 @@ const navLinks = [
 export default function AppLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname(); 
   const router = useRouter();
-  const { user, loading } = useAuth();
+  const { user, profile, loading } = useAuth();
   
   useEffect(() => {
-    if (!loading && !user) {
-      // If not loading and no user, redirect to login
-      router.push('/onboarding/step-1');
-    } else if (user && (!currentUser || currentUser.id !== user.uid)) {
-      // If there is a firebase user but the mock user is not set or is incorrect,
-      // fetch the user profile from Firestore and update the mock data object.
-      getUser(user.uid).then(profile => {
-        if (profile) {
-          Object.assign(currentUser, profile);
-          // We might need to force a re-render here if components don't update.
-          // For now, this direct mutation is how the app is structured.
-        } else {
-          // Profile doesn't exist, maybe they didn't finish onboarding
-          router.push('/onboarding/step-2');
-        }
-      });
+    if (!loading) {
+      if (!user) {
+        // If not loading and no user, redirect to login
+        router.push('/onboarding/step-1');
+      } else if (!profile) {
+        // If there's a user but no profile, they likely abandoned onboarding
+        router.push('/onboarding/step-2');
+      }
     }
-  }, [user, loading, router]);
+  }, [user, profile, loading, router]);
 
 
-  if (loading || !user || !currentUser || currentUser.id !== user.uid) {
+  if (loading) {
     return (
         <div className="flex items-center justify-center h-screen bg-background">
             <div className="w-full max-w-md p-8 space-y-4">
@@ -65,6 +55,11 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             </div>
         </div>
       )
+  }
+  
+  if (!profile) {
+    // This will show briefly before the redirect kicks in
+    return null;
   }
 
   return (
