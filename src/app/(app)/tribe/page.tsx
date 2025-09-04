@@ -116,7 +116,7 @@ export default function TribePage() {
                 return;
             }
 
-            if (!matches || matches.length === 0) {
+            if (!matches) {
                 setTribeState("no-matches");
                 return;
             }
@@ -273,12 +273,12 @@ export default function TribePage() {
             <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                 <Button variant="outline" size="sm" className="w-full" disabled>
                     <Compass className="mr-2" />
-                    Discover Tribes
+                    Discover
                 </Button>
                 <Button asChild variant="outline" size="sm" className="w-full">
                     <Link href="/tribe/history">
                         <History className="mr-2" />
-                        Meet-up History
+                        History
                     </Link>
                 </Button>
             </div>
