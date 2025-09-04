@@ -24,20 +24,9 @@ export default function Home() {
           </div>
           <div className="container px-4 md:px-6 relative z-10">
             <div className="flex flex-col items-center space-y-1 text-center">
-              <div className="inline-block relative">
-                <div className="flex justify-center items-baseline">
-                  <h1 className="font-headline text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl">
-                    Anu
-                  </h1>
-                  <div className="relative h-[2.5rem] sm:h-[3.25rem] md:h-[3.75rem] lg:h-[4.5rem] overflow-hidden text-left align-baseline">
-                    <div className="animate-roll-words text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl font-headline text-primary">
-                      <div>bandh</div>
-                      <div>varta</div>
-                      <div>vaad</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <h1 className="font-headline text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl">
+                anuvaad
+              </h1>
               <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl">
                 Translate your experiences into real meaningful connections
               </p>

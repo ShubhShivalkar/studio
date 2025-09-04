@@ -88,12 +88,6 @@ export default {
             height: '0',
           },
         },
-        "roll-words": {
-          "0%, 25%": { transform: "translateY(0)" },
-          "33%, 58%": { transform: "translateY(-100%)" },
-          "66%, 92%": { transform: "translateY(-200%)" },
-          "100%": { transform: "translateY(-200%)" },
-        },
         "caret-blink": {
           "50%": {
             borderColor: "transparent"
@@ -103,7 +97,6 @@ export default {
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
-        "roll-words": "roll-words 6s ease-in-out infinite",
       },
     },
   },
