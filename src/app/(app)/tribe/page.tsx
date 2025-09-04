@@ -140,11 +140,6 @@ export default function TribePage() {
                 };
             });
             
-            if (matchedUsersWithDetails.length === 0) {
-                 setTribeState("no-matches");
-                return;
-            }
-
             const newTribe: Tribe = {
                 id: `tribe-${Date.now()}`,
                 members: [currentUserAsMatchedUser, ...matchedUsersWithDetails],
@@ -253,7 +248,8 @@ export default function TribePage() {
   const rejectedMembers = tribe?.members.filter(m => m.rsvpStatus === 'rejected');
   const isTribeComplete = attendingMembers && attendingMembers.length >= 4;
 
-  const showDiscoverButton = tribeState === 'no-matches' || tribeState === 'not-interested';
+  const showDiscoverButton = (tribeState === 'no-matches' || tribeState === 'not-interested') && currentUserRsvp !== 'rejected';
+
 
   return (
     <Card>
