@@ -11,7 +11,6 @@ import type { User } from '@/lib/types';
 import { createUser as saveUser } from '@/services/user-service';
 import { useToast } from '@/hooks/use-toast';
 import { allUsers, currentUser } from '@/lib/mock-data';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, AuthErrorCodes } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useState } from 'react';
 
@@ -23,40 +22,32 @@ export default function Step5Page() {
 
   const handleFinish = async () => {
     setIsLoading(true);
-    // For testing, we generate a fake email from the phone number to use Firebase Auth
-    const userPhone = `+${onboardingData.countryCode}${onboardingData.phone}`;
-    const email = `${userPhone}@soulfulsync.app`;
-    const password = `password_${userPhone}`; // Simple password for testing
+    
+    const user = auth.currentUser;
+    if (!user) {
+        toast({
+            variant: "destructive",
+            title: "Authentication Error",
+            description: "You are not logged in. Please start the onboarding process again.",
+        });
+        setIsLoading(false);
+        router.push('/onboarding/step-1');
+        return;
+    }
 
     try {
-        let userCredential;
-        try {
-            // Try to sign in first, in case the user was already created during a previous attempt
-             userCredential = await signInWithEmailAndPassword(auth, email, password);
-        } catch (error: any) {
-             if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found') {
-                // If user not found, create a new one.
-                userCredential = await createUserWithEmailAndPassword(auth, email, password);
-             } else {
-                // For other errors, re-throw to be caught by the outer catch block.
-                throw error;
-             }
-        }
-
-        const userId = userCredential.user.uid;
-
         const newUser: User = {
-            id: userId,
+            id: user.uid,
             name: onboardingData.name,
             dob: onboardingData.dob,
             gender: onboardingData.gender as 'Male' | 'Female' | 'Other' | 'Prefer not to say',
             avatar: onboardingData.avatar,
-            phone: userPhone,
+            phone: user.phoneNumber,
             journalEntries: [],
         };
         
         // Save the new user to the database
-        await saveUser(userId, newUser);
+        await saveUser(user.uid, newUser);
         
         // Add to mock data for immediate use in the app session
         allUsers.push(newUser);
@@ -74,18 +65,10 @@ export default function Step5Page() {
     } catch (error: any) {
         console.error("Failed to create user profile:", error);
         
-        let description = "We couldn't save your profile. Please try again.";
-        if (error.code === 'auth/operation-not-allowed') {
-            description = "Email/Password sign-in is not enabled in your Firebase project. Please enable it in the Firebase Console under Authentication > Sign-in method.";
-        } else if (error.code === 'auth/api-key-not-valid') {
-            description = "Your Firebase API key is not valid. Please check your .env.local file and restart your server."
-        }
-
-
         toast({
             variant: "destructive",
             title: "Profile Creation Failed",
-            description: description,
+            description: "We couldn't save your profile. Please try again.",
         });
     } finally {
         setIsLoading(false);
