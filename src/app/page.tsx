@@ -6,7 +6,6 @@ import Link from "next/link";
 import { PenLine, Bot, Users, Edit, Heart } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { TestDbConnection } from "@/components/test-db-connection";
 
 export default function Home() {
   return (
@@ -16,9 +15,6 @@ export default function Home() {
           <PenLine className="h-6 w-6 text-primary" />
           <span className="sr-only">anuvaad - Translating experiences into real meaningful connections</span>
         </Link>
-        <div className="ml-auto">
-            <TestDbConnection />
-        </div>
       </header>
       <main className="flex-1">
         <section className="w-full py-12 md:py-24 lg:py-32 xl:py-48 bg-background relative">
