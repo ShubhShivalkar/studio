@@ -11,7 +11,7 @@ import type { User } from '@/lib/types';
 import { createUser as saveUser } from '@/services/user-service';
 import { useToast } from '@/hooks/use-toast';
 import { allUsers, currentUser } from '@/lib/mock-data';
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, AuthErrorCodes } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 
 export default function Step5Page() {
@@ -30,9 +30,14 @@ export default function Step5Page() {
         try {
             // Try to sign in first, in case the user was already created during a previous attempt
              userCredential = await signInWithEmailAndPassword(auth, email, password);
-        } catch (error) {
-            // If sign-in fails (e.g., user not found), create a new user
-            userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        } catch (error: any) {
+             if (error.code === AuthErrorCodes.USER_DELETED) {
+                // If user not found, create a new one.
+                userCredential = await createUserWithEmailAndPassword(auth, email, password);
+             } else {
+                // For other errors, re-throw to be caught by the outer catch block.
+                throw error;
+             }
         }
 
         const userId = userCredential.user.uid;
@@ -63,12 +68,18 @@ export default function Step5Page() {
         
         // Redirect to the main app
         router.push('/journal');
-    } catch (error) {
+    } catch (error: any) {
         console.error("Failed to create user profile:", error);
+        
+        let description = "We couldn't save your profile. Please try again.";
+        if (error.code === 'auth/operation-not-allowed') {
+            description = "Email/Password sign-in is not enabled in your Firebase project. Please enable it in the Firebase Console under Authentication > Sign-in method.";
+        }
+
         toast({
             variant: "destructive",
             title: "Profile Creation Failed",
-            description: "We couldn't save your profile. Please try again.",
+            description: description,
         });
     }
   };
