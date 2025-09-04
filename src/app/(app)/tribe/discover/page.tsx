@@ -25,6 +25,7 @@ import {
 } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 const getTribeCategory = (members: User[]): 'Male' | 'Female' | 'Mixed' => {
   const genders = members.map(m => m.gender);
@@ -124,7 +125,7 @@ export default function DiscoverTribesPage() {
                         <div className="flex items-center gap-4">
                             <h3 className="font-semibold text-lg">Tribe <span className="font-mono text-primary">{tribe.id}</span></h3>
                             <div className="flex gap-2">
-                                <Badge variant={status === 'Complete' ? 'default' : 'secondary'}>
+                                <Badge className={cn('border-transparent text-white', status === 'Complete' ? 'bg-green-500 hover:bg-green-500/80' : 'bg-orange-500 hover:bg-orange-500/80')}>
                                     {status === 'Complete' ? <CheckCircle className="mr-1.5"/> : <Clock className="mr-1.5"/>}
                                     {status}
                                 </Badge>
