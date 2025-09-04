@@ -66,6 +66,12 @@ const getMostCommonLocation = (members: Pick<User, 'location'>[]): string | null
   return Object.keys(locationCounts).reduce((a, b) => locationCounts[a] > locationCounts[b] ? a : b);
 };
 
+const categorySymbols = {
+  Male: '♂',
+  Female: '♀',
+  Mixed: '♂♀',
+};
+
 
 export default function DiscoverTribesPage() {
   const router = useRouter();
@@ -215,7 +221,7 @@ export default function DiscoverTribesPage() {
                                     {status === 'Complete' ? <CheckCircle className="mr-1.5"/> : <Clock className="mr-1.5"/>}
                                     {status}
                                 </Badge>
-                                <Badge variant="outline">{category}</Badge>
+                                <Badge variant="outline">{categorySymbols[category]}</Badge>
                             </div>
                         </div>
                         
