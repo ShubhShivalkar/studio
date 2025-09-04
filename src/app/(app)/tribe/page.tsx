@@ -95,11 +95,6 @@ export default function TribePage() {
                 preferences: currentUser.tribePreferences || { ageRange: [18, 60], gender: 'No Preference' }
             });
 
-            if (matches.length < 3) {
-                 setTribeState("no-matches");
-                 return;
-            }
-
             // Find the next available weekend day
             const today = new Date();
             const dayOfWeek = getDay(today); // Sunday = 0, Saturday = 6
