@@ -8,7 +8,6 @@ import { CheckCircle } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import useOnboardingStore from '@/store/onboarding';
 import type { User } from '@/lib/types';
-import { useAuth } from '@/context/auth-context';
 import { createUser } from '@/services/user-service';
 import { useToast } from '@/hooks/use-toast';
 import { allUsers } from '@/lib/mock-data';
@@ -16,15 +15,15 @@ import { allUsers } from '@/lib/mock-data';
 export default function Step5Page() {
   const router = useRouter();
   const onboardingData = useOnboardingStore((state) => state);
-  const { user: authUser } = useAuth();
   const { toast } = useToast();
 
   const handleFinish = async () => {
-    // For testing: if no user is authenticated via Firebase, create a temporary ID.
-    const userId = authUser?.uid || `temp-${Date.now()}`;
-    const userPhone = authUser?.phoneNumber || `+${onboardingData.countryCode}${onboardingData.phone}`;
+    // Generate a unique ID for the new user.
+    // In a real scenario, this would come from Firebase Auth after verification.
+    const userId = `user-${Date.now()}`;
+    const userPhone = `+${onboardingData.countryCode}${onboardingData.phone}`;
 
-    // Create the new user object
+    // Create the new user object from the data collected during onboarding
     const newUser: User = {
         id: userId,
         name: onboardingData.name,
@@ -36,6 +35,7 @@ export default function Step5Page() {
     };
     
     try {
+        // Save the new user to the database
         await createUser(userId, newUser);
         
         // Also add to mock data for immediate use in the app session
@@ -46,6 +46,7 @@ export default function Step5Page() {
             description: "Welcome! Your journey begins now.",
         });
         
+        // Redirect to the main app
         router.push('/journal');
     } catch (error) {
         console.error("Failed to create user profile:", error);
