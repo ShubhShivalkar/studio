@@ -4,26 +4,17 @@
 import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, Users } from 'lucide-react';
+import { CheckCircle } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import useOnboardingStore from '@/store/onboarding';
 import { currentUser, allUsers } from '@/lib/mock-data';
 import type { User } from '@/lib/types';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
 
 export default function Step5Page() {
   const router = useRouter();
   const onboardingData = useOnboardingStore((state) => state);
 
-  const handleFinish = (isInterested: boolean) => {
+  const handleFinish = () => {
     // Create the new user object
     const newUser: User = {
         id: `user-${Date.now()}`,
@@ -33,7 +24,6 @@ export default function Step5Page() {
         avatar: onboardingData.avatar,
         phone: onboardingData.phone,
         journalEntries: [],
-        interestedInMeetups: isInterested,
     };
     
     // Add the new user to our mock "database"
@@ -57,27 +47,9 @@ export default function Step5Page() {
         <p>Your profile has been created.</p>
       </CardContent>
       <CardFooter>
-        <Dialog>
-            <DialogTrigger asChild>
-                <Button className="w-full">
-                    Start Journaling
-                </Button>
-            </DialogTrigger>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2">
-                       <Users className="h-6 w-6 text-primary" /> One last thing...
-                    </DialogTitle>
-                    <DialogDescription>
-                       Anuvaad is about connecting with people who share your vibe. Are you interested in meeting new people through our Tribe meetups?
-                    </DialogDescription>
-                </DialogHeader>
-                <DialogFooter className="gap-2 sm:justify-center">
-                    <Button onClick={() => handleFinish(false)} variant="outline">Maybe Later</Button>
-                    <Button onClick={() => handleFinish(true)}>Yes, I'm interested!</Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+        <Button className="w-full" onClick={handleFinish}>
+          Start Journaling
+        </Button>
       </CardFooter>
     </Card>
   );
