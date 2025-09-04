@@ -140,6 +140,11 @@ export default function TribePage() {
                 };
             });
             
+            if (matchedUsersWithDetails.length === 0) {
+                 setTribeState("no-matches");
+                return;
+            }
+
             const newTribe: Tribe = {
                 id: `tribe-${Date.now()}`,
                 members: [currentUserAsMatchedUser, ...matchedUsersWithDetails],
@@ -248,6 +253,8 @@ export default function TribePage() {
   const rejectedMembers = tribe?.members.filter(m => m.rsvpStatus === 'rejected');
   const isTribeComplete = attendingMembers && attendingMembers.length >= 4;
 
+  const showDiscoverButton = tribeState === 'no-matches' || tribeState === 'not-interested';
+
   return (
     <Card>
       <CardHeader>
@@ -271,10 +278,12 @@ export default function TribePage() {
                 </CardDescription>
             </div>
             <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                <Button variant="outline" size="sm" className="w-full" disabled>
-                    <Compass className="mr-2" />
-                    Discover
-                </Button>
+                {showDiscoverButton && (
+                    <Button variant="outline" size="sm" className="w-full" disabled>
+                        <Compass className="mr-2" />
+                        Discover
+                    </Button>
+                )}
                 <Button asChild variant="outline" size="sm" className="w-full">
                     <Link href="/tribe/history">
                         <History className="mr-2" />
