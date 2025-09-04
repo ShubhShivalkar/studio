@@ -37,7 +37,7 @@ export default function Step4Page() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="font-headline">Set your profile picture</CardTitle>
+        <CardTitle>Set your profile picture</CardTitle>
         <CardDescription>A picture helps others connect with you.</CardDescription>
         <Progress value={80} className="mt-2" />
       </CardHeader>

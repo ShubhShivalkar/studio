@@ -151,7 +151,7 @@ export default function ProfilePage() {
                 <AvatarImage src={userData.avatar} alt={userData.name} data-ai-hint="person photo" />
                 <AvatarFallback>{userData.name.charAt(0)}</AvatarFallback>
               </Avatar>
-              <CardTitle className="font-headline">{userData.name}</CardTitle>
+              <CardTitle>{userData.name}</CardTitle>
               <CardDescription>
                   {userData.gender}{userData.dob && `, Born ${format(parseISO(userData.dob), 'MMMM d, yyyy')}`}
                   {userData.location && (
@@ -191,7 +191,7 @@ export default function ProfilePage() {
           {persona && (
             <Card className="bg-accent text-accent-foreground">
                   <CardHeader>
-                      <CardTitle className="font-headline flex items-center gap-2">
+                      <CardTitle className="flex items-center gap-2">
                           <Users /> Tribe Meetups
                       </CardTitle>
                       <CardDescription className="text-accent-foreground/80">
@@ -218,7 +218,7 @@ export default function ProfilePage() {
             <CardHeader>
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                   <div className="flex-grow">
-                      <CardTitle className="font-headline flex items-center gap-2">
+                      <CardTitle className="flex items-center gap-2">
                           <Bot className="text-primary"/> Your Persona by Anu
                       </CardTitle>
                       <CardDescription>
@@ -300,7 +300,7 @@ export default function ProfilePage() {
           {journalEntriesCount > 0 && (
               <Card>
                   <CardHeader>
-                      <CardTitle className="font-headline">Journal Stats</CardTitle>
+                      <CardTitle>Journal Stats</CardTitle>
                   </CardHeader>
                   <CardContent className="flex flex-wrap items-center gap-8">
                       <div className="flex items-center gap-2">

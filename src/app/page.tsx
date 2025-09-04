@@ -57,7 +57,7 @@ export default function Home() {
                   <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
                     <Edit className="h-6 w-6 text-primary" />
                   </div>
-                  <CardTitle className="font-headline mt-4">AI-Guided Journaling</CardTitle>
+                  <CardTitle className="mt-4">AI-Guided Journaling</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-foreground/80">
@@ -70,7 +70,7 @@ export default function Home() {
                   <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
                     <Bot className="h-6 w-6 text-primary" />
                   </div>
-                  <CardTitle className="font-headline mt-4">Persona Creation</CardTitle>
+                  <CardTitle className="mt-4">Persona Creation</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-foreground/80">
@@ -83,7 +83,7 @@ export default function Home() {
                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
                     <Users className="h-6 w-6 text-primary" />
                   </div>
-                  <CardTitle className="font-headline mt-4">Meaningful Matching</CardTitle>
+                  <CardTitle className="mt-4">Meaningful Matching</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-foreground/80">

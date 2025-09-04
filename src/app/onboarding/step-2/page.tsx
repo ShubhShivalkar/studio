@@ -20,7 +20,7 @@ export default function Step2Page() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="font-headline">Great, what's your name?</CardTitle>
+        <CardTitle>Great, what's your name?</CardTitle>
         <CardDescription>This will be displayed on your profile.</CardDescription>
         <Progress value={40} className="mt-2" />
       </CardHeader>

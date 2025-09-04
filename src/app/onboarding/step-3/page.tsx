@@ -59,7 +59,7 @@ export default function Step3Page() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="font-headline">A little more about you</CardTitle>
+        <CardTitle>A little more about you</CardTitle>
         <CardDescription>Please provide your date of birth and gender.</CardDescription>
          <Progress value={60} className="mt-2" />
       </CardHeader>

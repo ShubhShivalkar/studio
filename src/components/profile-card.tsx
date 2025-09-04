@@ -59,7 +59,7 @@ export function ProfileCard({ user, compatibilityScore, rsvpStatus }: ProfileCar
           <AvatarImage src={user.avatar} alt={user.name} data-ai-hint="person photo" />
           <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
         </Avatar>
-        <CardTitle className="font-headline">{user.name}</CardTitle>
+        <CardTitle>{user.name}</CardTitle>
         <CardDescription>
             {user.gender}, {getAge(user.dob)}
         </CardDescription>

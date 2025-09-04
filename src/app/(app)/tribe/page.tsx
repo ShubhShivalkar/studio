@@ -179,7 +179,7 @@ export default function TribePage() {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
                 <div className="flex items-center gap-2">
-                    <CardTitle className="font-headline">Meet Your Tribe</CardTitle>
+                    <CardTitle>Meet Your Tribe</CardTitle>
                     <TooltipProvider>
                         <Tooltip>
                             <TooltipTrigger>
@@ -257,7 +257,7 @@ export default function TribePage() {
                     <>
                         <Card className="mb-6 bg-secondary text-secondary-foreground">
                             <CardHeader>
-                                <CardTitle className="font-headline text-center">
+                                <CardTitle className="text-center">
                                     {isTribeComplete ? "Your Tribe is Ready! 🎉" : "Partial Tribe Formed ⏳"}
                                 </CardTitle>
                                 <CardDescription className="text-center text-secondary-foreground/80">

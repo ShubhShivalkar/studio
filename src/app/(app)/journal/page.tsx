@@ -5,7 +5,7 @@ export default function JournalPage() {
   return (
     <Card className="h-full w-full flex flex-col">
         <CardHeader>
-            <CardTitle className="font-headline">My Journal</CardTitle>
+            <CardTitle>My Journal</CardTitle>
             <CardDescription>Engage in a conversation to explore your thoughts and feelings.</CardDescription>
         </CardHeader>
         <CardContent className="flex-1 p-0">

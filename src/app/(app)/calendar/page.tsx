@@ -203,7 +203,7 @@ export default function CalendarPage() {
     <div className="h-full flex flex-col">
       <Card className="flex-1 flex flex-col">
          <CardHeader>
-            <CardTitle className="font-headline">Your Calendar</CardTitle>
+            <CardTitle>Your Calendar</CardTitle>
         </CardHeader>
         <CardContent className="flex-1 flex flex-col p-2 md:p-6 pt-0">
           <Calendar
