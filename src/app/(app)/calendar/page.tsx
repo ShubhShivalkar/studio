@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
-import { dailySummaries as mockDailySummaries, reminders as mockReminders, checklists as mockChecklists } from "@/lib/mock-data";
 import type { DailySummary, Reminder, Checklist } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Pencil, Trash2, Bell, ListTodo, CheckCircle, MapPin, Clock, Users } from 'lucide-react';
@@ -17,30 +16,61 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
+import { useAuth } from '@/context/auth-context';
+import { getJournalEntries, setJournalEntry, deleteJournalEntry } from '@/services/journal-service';
+import { getReminders, deleteReminder } from '@/services/reminder-service';
+import { getChecklists, deleteChecklist, updateChecklist } from '@/services/checklist-service';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function CalendarPage() {
+  const { user } = useAuth();
+  const { toast } = useToast();
+
   const [date, setDate] = useState<Date | undefined>(undefined);
-  const [reminders, setReminders] = useState(mockReminders);
-  const [checklists, setChecklists] = useState(mockChecklists);
-  const [dailySummaries, setDailySummaries] = useState(mockDailySummaries);
-  const [selectedSummary, setSelectedSummary] = useState<Partial<DailySummary> | null>(null);
+  const [reminders, setReminders] = useState<Reminder[]>([]);
+  const [checklists, setChecklists] = useState<Checklist[]>([]);
+  const [dailySummaries, setDailySummaries] = useState<DailySummary[]>([]);
+  
+  const [selectedSummary, setSelectedSummary] = useState<DailySummary | null>(null);
   const [selectedReminders, setSelectedReminders] = useState<Reminder[]>([]);
   const [selectedChecklists, setSelectedChecklists] = useState<Checklist[]>([]);
+  
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isAvailableForTribe, setIsAvailableForTribe] = useState(false);
-  const { toast } = useToast();
-  const [isClient, setIsClient] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    setIsClient(true);
     // Set initial date only on the client
     setDate(new Date());
   }, []);
+  
+  useEffect(() => {
+    async function fetchData() {
+      if (!user) return;
+      setIsLoading(true);
+      try {
+        const [fetchedSummaries, fetchedReminders, fetchedChecklists] = await Promise.all([
+          getJournalEntries(user.uid),
+          getReminders(user.uid),
+          getChecklists(user.uid)
+        ]);
+        setDailySummaries(fetchedSummaries);
+        setReminders(fetchedReminders);
+        setChecklists(fetchedChecklists);
+      } catch (error) {
+        console.error("Failed to fetch calendar data:", error);
+        toast({ variant: "destructive", title: "Error", description: "Could not load your calendar data." });
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchData();
+  }, [user, toast]);
 
   const CustomDayContent = useCallback((props: DayContentProps) => {
       const dayData = dailySummaries.find(d => isSameDay(parseISO(d.date), props.date));
-      const dayReminders = mockReminders.filter(r => isSameDay(parseISO(r.date), props.date));
-      const dayChecklists = mockChecklists.filter(c => isSameDay(parseISO(c.date), props.date));
+      const dayReminders = reminders.filter(r => isSameDay(parseISO(r.date), props.date));
+      const dayChecklists = checklists.filter(c => isSameDay(parseISO(c.date), props.date));
   
       if (props.displayMonth.getMonth() !== props.date.getMonth()) {
         return <DayContent {...props} />;
@@ -53,9 +83,6 @@ export default function CalendarPage() {
               {dayData && (
                 <>
                   {dayData.mood && <span>{dayData.mood}</span>}
-                  {dayData.hobbies && dayData.hobbies.map((hobby, index) => (
-                    <hobby.icon key={index} className="w-3 h-3 md:w-4 md:h-4 text-muted-foreground" />
-                  ))}
                   {dayData.hasMeetup && <span>☕️</span>}
                   {dayData.isAvailable && !dayData.hasMeetup && <CheckCircle className="w-3 h-3 md:w-4 md:h-4 text-green-500" />}
                 </>
@@ -65,7 +92,7 @@ export default function CalendarPage() {
           </div>
         </div>
       );
-  }, [dailySummaries]);
+  }, [dailySummaries, reminders, checklists]);
 
   const handleDateSelect = (selectedDate: Date | undefined) => {
     setDate(selectedDate);
@@ -87,85 +114,138 @@ export default function CalendarPage() {
     }
   };
   
-  const handleDeleteReminder = (reminderId: string) => {
+  const handleDeleteReminder = async (reminderId: string) => {
+    if (!user) return;
+    const originalReminders = [...reminders];
     const reminderToDelete = reminders.find(r => r.id === reminderId);
-    if (!reminderToDelete) return;
-
-    const newReminders = reminders.filter(r => r.id !== reminderId);
-    setReminders(newReminders);
-    mockReminders.splice(0, mockReminders.length, ...newReminders);
-
+    
+    // Optimistic UI update
+    setReminders(prev => prev.filter(r => r.id !== reminderId));
     setSelectedReminders(prev => prev.filter(r => r.id !== reminderId));
 
-    toast({
-        variant: "destructive",
-        title: "Reminder Deleted",
-        description: `"${reminderToDelete.title}" has been removed.`
-    });
-  }
-
-  const handleDeleteChecklist = (checklistId: string) => {
-    const checklistToDelete = checklists.find(c => c.id === checklistId);
-    if (!checklistToDelete) return;
-
-    const newChecklists = checklists.filter(c => c.id !== checklistId);
-    setChecklists(newChecklists);
-    mockChecklists.splice(0, mockChecklists.length, ...newChecklists);
-
-    setSelectedChecklists(prev => prev.filter(c => c.id !== checklistId));
-
-    toast({
-        variant: "destructive",
-        title: "Checklist Deleted",
-        description: `"${checklistToDelete.title}" has been removed.`
-    });
-  }
-
-  const toggleChecklistItem = (checklistId: string, itemId: string) => {
-     const newChecklists = checklists.map(checklist => {
-        if (checklist.id === checklistId) {
-            const updatedItems = checklist.items.map(item =>
-                item.id === itemId ? { ...item, completed: !item.completed } : item
-            );
-            return { ...checklist, items: updatedItems };
-        }
-        return checklist;
-    });
-    setChecklists(newChecklists);
-    mockChecklists.splice(0, mockChecklists.length, ...newChecklists);
-    
-    // Update the selected checklists in the sheet
-    setSelectedChecklists(prev => prev.map(c => {
-        if(c.id === checklistId){
-            return newChecklists.find(nc => nc.id === checklistId)!;
-        }
-        return c;
-    }));
-  }
-
-  const handleAvailabilityChange = (checked: boolean) => {
-    setIsAvailableForTribe(checked);
-    if (date) {
-        const dateStr = format(date, 'yyyy-MM-dd');
-        const summaryIndex = dailySummaries.findIndex(d => d.date === dateStr);
-        let newSummaries;
-        if (summaryIndex > -1) {
-            newSummaries = dailySummaries.map((summary, index) => 
-              index === summaryIndex ? { ...summary, isAvailable: checked } : summary
-            );
-        } else {
-            newSummaries = [...dailySummaries, { date: dateStr, isAvailable: checked }];
-        }
-        setDailySummaries(newSummaries);
-        mockDailySummaries.splice(0, mockDailySummaries.length, ...newSummaries);
-        
-        toast({
-            title: "Availability Updated",
-            description: `You are now marked as ${checked ? 'available' : 'unavailable'} for tribe meetups on this day.`
-        });
+    try {
+      await deleteReminder(reminderId);
+      toast({
+          variant: "destructive",
+          title: "Reminder Deleted",
+          description: `"${reminderToDelete?.title}" has been removed.`
+      });
+    } catch (error) {
+      console.error("Failed to delete reminder:", error);
+      setReminders(originalReminders); // Revert on error
+      toast({ variant: 'destructive', title: 'Error', description: 'Could not delete reminder.' });
     }
   }
 
+  const handleDeleteChecklist = async (checklistId: string) => {
+    if (!user) return;
+    const originalChecklists = [...checklists];
+    const checklistToDelete = checklists.find(c => c.id === checklistId);
+    
+    // Optimistic UI update
+    setChecklists(prev => prev.filter(c => c.id !== checklistId));
+    setSelectedChecklists(prev => prev.filter(c => c.id !== checklistId));
+
+    try {
+      await deleteChecklist(checklistId);
+      toast({
+          variant: "destructive",
+          title: "Checklist Deleted",
+          description: `"${checklistToDelete?.title}" has been removed.`
+      });
+    } catch (error) {
+      console.error("Failed to delete checklist:", error);
+      setChecklists(originalChecklists); // Revert on error
+      toast({ variant: 'destructive', title: 'Error', description: 'Could not delete checklist.' });
+    }
+  }
+
+  const toggleChecklistItem = async (checklistId: string, itemId: string) => {
+    if(!user) return;
+    const originalChecklists = checklists.map(c => ({...c, items: [...c.items]}));
+    
+    let updatedChecklist: Checklist | undefined;
+    const newChecklists = checklists.map(checklist => {
+       if (checklist.id === checklistId) {
+           const updatedItems = checklist.items.map(item =>
+               item.id === itemId ? { ...item, completed: !item.completed } : item
+           );
+           updatedChecklist = { ...checklist, items: updatedItems };
+           return updatedChecklist;
+       }
+       return checklist;
+   });
+
+    // Optimistic UI update
+    setChecklists(newChecklists);
+    setSelectedChecklists(prev => prev.map(c => c.id === checklistId ? updatedChecklist! : c));
+    
+    try {
+      if (updatedChecklist) {
+        await updateChecklist(checklistId, { items: updatedChecklist.items });
+      }
+    } catch(error) {
+      console.error("Failed to update checklist item:", error);
+      setChecklists(originalChecklists); // Revert on error
+      toast({ variant: 'destructive', title: 'Error', description: 'Could not update checklist item.' });
+    }
+  }
+
+  const handleAvailabilityChange = async (checked: boolean) => {
+    if (!user || !date) return;
+    
+    setIsAvailableForTribe(checked);
+    const dateStr = format(date, 'yyyy-MM-dd');
+    const entryToUpdate = { date: dateStr, isAvailable: checked };
+
+    try {
+      await setJournalEntry(user.uid, entryToUpdate);
+      
+      const summaryIndex = dailySummaries.findIndex(d => d.date === dateStr);
+      let newSummaries;
+      if (summaryIndex > -1) {
+          newSummaries = dailySummaries.map((summary, index) => 
+            index === summaryIndex ? { ...summary, isAvailable: checked } : summary
+          );
+      } else {
+          newSummaries = [...dailySummaries, entryToUpdate];
+      }
+      setDailySummaries(newSummaries);
+      
+      toast({
+          title: "Availability Updated",
+          description: `You are now marked as ${checked ? 'available' : 'unavailable'} for tribe meetups on this day.`
+      });
+    } catch (error) {
+      console.error("Failed to update availability:", error);
+      setIsAvailableForTribe(!checked); // Revert on error
+      toast({ variant: 'destructive', title: 'Error', description: 'Could not update availability.' });
+    }
+  }
+
+  const handleDelete = async () => {
+    if (!user || !selectedSummary || !selectedSummary.id) return;
+    const originalSummaries = [...dailySummaries];
+    const summaryToDelete = selectedSummary;
+    
+    // Optimistic UI update
+    setDailySummaries(prev => prev.filter(s => s.id !== summaryToDelete.id));
+    setIsSheetOpen(false);
+    setSelectedSummary(null);
+
+    try {
+      await deleteJournalEntry(summaryToDelete.id);
+      toast({
+          variant: "destructive",
+          title: "Deleted Summary",
+          description: `Entry for ${summaryToDelete.date} has been deleted.`
+      });
+    } catch(error) {
+      console.error("Failed to delete summary:", error);
+      setDailySummaries(originalSummaries); // Revert
+      toast({ variant: 'destructive', title: 'Error', description: 'Could not delete summary.' });
+    }
+  }
 
   const handleEdit = () => {
     if (!selectedSummary) return;
@@ -175,28 +255,19 @@ export default function CalendarPage() {
     })
   }
   
-  const handleDelete = () => {
-    if (!selectedSummary || !selectedSummary.date) return;
-    const dateStr = selectedSummary.date;
-    const newSummaries = dailySummaries.filter(d => d.date !== dateStr);
-    
-    setDailySummaries(newSummaries);
-    mockDailySummaries.splice(0, mockDailySummaries.length, ...newSummaries);
-    
-    toast({
-        variant: "destructive",
-        title: "Deleted Summary",
-        description: `Entry for ${dateStr} has been deleted. (Frontend only)`
-    })
-    
-    setIsSheetOpen(false);
-    setSelectedSummary(null);
-  }
-
   const isSelectedDateWeekend = date ? isWeekend(date) : false;
 
-  if (!isClient) {
-    return null; // or a skeleton loader
+  if (isLoading) {
+    return (
+      <Card className="flex-1 flex flex-col">
+         <CardHeader>
+            <CardTitle>Your Calendar</CardTitle>
+        </CardHeader>
+        <CardContent className="flex-1 flex flex-col p-2 md:p-6 pt-0">
+          <Skeleton className="w-full h-full" />
+        </CardContent>
+      </Card>
+    )
   }
 
   return (
@@ -276,7 +347,7 @@ export default function CalendarPage() {
                             <ListTodo className="h-5 w-5 text-primary flex-shrink-0" />
                             <h3 className="font-semibold">{checklist.title}</h3>
                            </div>
-                            <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive flex-shrink-0" onClick={() => handleDeleteChecklist(checklist.id)}>
+                            <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive flex-shrink-0" onClick={() => handleDeleteChecklist(checklist.id!)}>
                                 <Trash2 className="h-4 w-4" />
                             </Button>
                         </div>
@@ -286,7 +357,7 @@ export default function CalendarPage() {
                                    <Checkbox 
                                        id={`${checklist.id}-${item.id}`} 
                                        checked={item.completed}
-                                       onCheckedChange={() => toggleChecklistItem(checklist.id, item.id)}
+                                       onCheckedChange={() => toggleChecklistItem(checklist.id!, item.id)}
                                    />
                                    <Label htmlFor={`${checklist.id}-${item.id}`} className={cn("text-sm", item.completed && "line-through text-muted-foreground")}>{item.text}</Label>
                                </div>
@@ -309,7 +380,7 @@ export default function CalendarPage() {
                                         {reminder.details && ` - ${reminder.details}`}
                                     </p>
                                 </div>
-                                <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive flex-shrink-0" onClick={() => handleDeleteReminder(reminder.id)}>
+                                <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive flex-shrink-0" onClick={() => handleDeleteReminder(reminder.id!)}>
                                     <Trash2 className="h-4 w-4" />
                                 </Button>
                             </div>
@@ -340,20 +411,6 @@ export default function CalendarPage() {
                             <h3 className="font-semibold">Vibe</h3>
                             <p className="text-2xl">{selectedSummary.mood}</p>
                         </div>
-                        
-                        {selectedSummary.hobbies && selectedSummary.hobbies.length > 0 && (
-                            <div>
-                                <h3 className="font-semibold">Hobbies</h3>
-                                <div className="flex gap-2 items-center">
-                                    {selectedSummary.hobbies.map((hobby, index) => (
-                                        <div key={index} className="flex items-center gap-1 text-sm text-muted-foreground bg-secondary px-2 py-1 rounded-md">
-                                            <hobby.icon className="h-4 w-4" />
-                                            <span>{hobby.name}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
                     </>
                 )}
                 
@@ -414,5 +471,3 @@ export default function CalendarPage() {
     </div>
   );
 }
-
-    

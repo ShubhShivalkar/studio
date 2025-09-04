@@ -82,22 +82,29 @@ const guideJournalingWithQuestionsFlow = ai.defineFlow(
   async input => {
     try {
       const {output} = await prompt(input);
-      return output!;
+      if (!output) {
+         throw new Error("AI model did not return an output.");
+      }
+      return output;
     } catch (error) {
+      console.error('An unexpected error occurred in the journaling flow:', error);
       if (error instanceof Error && (error.message.includes('429') || error.message.includes('503'))) {
         console.warn('AI model is overloaded or rate-limited, retrying in 2 seconds...');
         await new Promise(resolve => setTimeout(resolve, 2000));
         try {
           const {output} = await prompt(input);
-          return output!;
+          if (!output) {
+            throw new Error("AI model did not return an output on retry.");
+          }
+          return output;
         } catch (retryError) {
            console.error('AI model retry failed:', retryError);
            // After a failed retry, return a user-friendly error message.
            return { question: "I'm having a little trouble connecting right now. Let's pause for a moment and try again soon." };
         }
       }
-      // For other types of errors, we can still throw them.
-      console.error('An unexpected error occurred in the journaling flow:', error);
+      
+      // For other types of errors, return a safe, user-friendly message.
       return { question: "I'm sorry, an unexpected error occurred. Let's try again in a bit." };
     }
   }
