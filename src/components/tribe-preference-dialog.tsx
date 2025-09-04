@@ -75,7 +75,7 @@ export function TribePreferenceDialog({ preferences, onSave, open, onOpenChange 
         <div className="space-y-6 py-4">
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-                <Label htmlFor="age-range">Age</Label>
+                <Label htmlFor="age-range">Age Range</Label>
                 <span className="text-sm font-medium text-muted-foreground">
                     {ageRange[0]} - {ageRange[1]} years
                 </span>
