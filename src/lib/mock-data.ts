@@ -1,5 +1,5 @@
 
-import type { User, DailySummary, Reminder, Checklist, PastTribe } from './types';
+import type { User, DailySummary, Reminder, Checklist, PastTribe, DiscoveredTribe } from './types';
 import { subYears, format } from 'date-fns';
 
 // The user who is currently logged in.
@@ -38,3 +38,6 @@ export const dailySummaries: DailySummary[] = [];
 
 // Past tribe meetups for the current user, initially empty.
 export const pastTribes: PastTribe[] = [];
+
+// Mock data for discoverable tribes
+export const discoveredTribes: DiscoveredTribe[] = [];

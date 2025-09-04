@@ -11,13 +11,12 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { currentUser, dailySummaries, allUsers } from "@/lib/mock-data";
-import { Bot, Users, ShieldAlert, CheckCircle, XCircle, MessageSquare, Info, UserX, UserCheck, Heart, History, AlertTriangle } from "lucide-react";
+import { Bot, Users, ShieldAlert, CheckCircle, XCircle, MessageSquare, Info, UserX, UserCheck, Heart, History, AlertTriangle, Compass } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { User } from "@/lib/types";
+import type { User, MatchedUser, Tribe } from "@/lib/types";
 import { differenceInYears, parseISO, format, addDays, getDay, isSameDay } from "date-fns";
-import type { MatchUsersByTribePreferencesOutput } from "@/ai/flows/match-users-by-tribe-preferences";
 import { matchUsersByTribePreferences } from "@/ai/flows/match-users-by-tribe-preferences";
 import { ProfileCard } from "@/components/profile-card";
 import {
@@ -36,21 +35,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import useTribeStore from "@/store/tribe";
 
-
-type MatchedUser = MatchUsersByTribePreferencesOutput[0] & {
-  user: User;
-  rsvpStatus: 'accepted' | 'rejected' | 'pending';
-  rejectionReason?: string;
-};
-
-type Tribe = {
-    id: string;
-    members: MatchedUser[];
-    meetupDate: string;
-    meetupTime?: string;
-    location: string;
-}
 
 const getAge = (dob: string) => {
     if (!dob) return '';
@@ -59,7 +45,7 @@ const getAge = (dob: string) => {
 
 export default function TribePage() {
   const [tribeState, setTribeState] = useState<"loading" | "no-persona" | "not-interested" | "finding" | "found" | "no-matches">("loading");
-  const [tribe, setTribe] = useState<Tribe | null>(null);
+  const { tribe, setTribe, clearTribe } = useTribeStore();
   const { toast } = useToast();
   const [rejectionReason, setRejectionReason] = useState("");
   const [isDeclineDialogOpen, setIsDeclineDialogOpen] = useState(false);
@@ -68,6 +54,12 @@ export default function TribePage() {
     const findTribe = async () => {
         if (!currentUser || !currentUser.id) {
             setTribeState("loading");
+            return;
+        }
+        
+        // If a tribe is already in the store, the user joined from the discover page.
+        if (tribe) {
+            setTribeState("found");
             return;
         }
 
@@ -116,6 +108,11 @@ export default function TribePage() {
                 return;
             }
 
+            if (!matches) {
+                setTribeState("no-matches");
+                return;
+            }
+
             // Create a mock tribe with the current user and the matches
             const currentUserAsMatchedUser: MatchedUser = {
                 userId: currentUser.id,
@@ -156,7 +153,7 @@ export default function TribePage() {
     const timer = setTimeout(findTribe, 2000);
     return () => clearTimeout(timer);
     
-  }, []);
+  }, [tribe, setTribe]);
 
   const updateCalendarEvent = (tribe: Tribe, accepted: boolean) => {
     const summaryIndex = dailySummaries.findIndex(d => d.date === tribe.meetupDate);
@@ -242,7 +239,9 @@ export default function TribePage() {
   
   const rejectedMembers = tribe?.members.filter(m => m.rsvpStatus === 'rejected');
   const isTribeComplete = attendingMembers && attendingMembers.length >= 4;
-
+  
+  const showDiscoverButton = tribeState !== 'loading' && tribeState !== 'no-persona' && tribeState !== 'not-interested' && currentUserRsvp !== 'rejected';
+  
   return (
     <Card>
       <CardHeader>
@@ -265,12 +264,22 @@ export default function TribePage() {
                   We'll connect you with people who understand your Vibe
                 </CardDescription>
             </div>
-             <Button asChild variant="outline" size="sm" className="w-full sm:w-auto">
-                <Link href="/tribe/history">
-                    <History className="mr-2" />
-                    Meet-up History
-                </Link>
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                 {showDiscoverButton && (
+                  <Button asChild variant="outline" size="sm" className="w-full">
+                      <Link href="/tribe/discover">
+                          <Compass className="mr-2" />
+                          Discover
+                      </Link>
+                  </Button>
+                )}
+                <Button asChild variant="outline" size="sm" className="w-full">
+                    <Link href="/tribe/history">
+                        <History className="mr-2" />
+                        History
+                    </Link>
+                </Button>
+            </div>
         </div>
       </CardHeader>
       <CardContent className="min-h-[30rem] flex items-center justify-center p-2 sm:p-6">
