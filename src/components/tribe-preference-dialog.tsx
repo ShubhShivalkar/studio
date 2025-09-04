@@ -86,7 +86,7 @@ export function TribePreferenceDialog({ preferences, onSave, open, onOpenChange 
               max={80}
               step={1}
               value={ageRange}
-              onValueChange={(value) => setAgeRange(value)}
+              onValueChange={(value) => setAgeRange(value as [number, number])}
             />
           </div>
           <div className="space-y-2">
