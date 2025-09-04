@@ -40,7 +40,7 @@ export type Message = {
 }
 
 export type Reminder = {
-    id: string;
+    id?: string;
     date: string; // YYYY-MM-DD
     time: string;
     title: string;
@@ -48,10 +48,10 @@ export type Reminder = {
 }
 
 export type DailySummary = {
+    id?: string;
     date: string; // YYYY-MM-DD
     summary?: string;
     mood?: '😊' | '😢' | '😠' | '😮' | '😐';
-    hobbies?: { icon: LucideIcon, name: string }[];
     isAvailable?: boolean;
     hasMeetup?: boolean;
     meetupDetails?: {
@@ -68,7 +68,7 @@ export type ChecklistItem = {
 };
 
 export type Checklist = {
-  id:string;
+  id?:string;
   title: string;
   date: string; // YYYY-MM-DD
   items: ChecklistItem[];

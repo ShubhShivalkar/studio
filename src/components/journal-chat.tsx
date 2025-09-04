@@ -8,11 +8,14 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import type { Message } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { dailySummaries, currentUser, reminders, checklists } from "@/lib/mock-data";
 import { Bot, SendHorizonal, CheckCircle, RotateCcw } from "lucide-react";
 import { useEffect, useRef, useState, useMemo } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { format } from 'date-fns';
+import { useAuth } from "@/context/auth-context";
+import { getReminders } from "@/services/reminder-service";
+import { getChecklists } from "@/services/checklist-service";
+import { setJournalEntry, addJournalSummaryToUser } from "@/services/journal-service";
 
 const MAX_AI_QUESTIONS = 10;
 
@@ -55,6 +58,7 @@ const getInitialMessage = (name?: string) => {
 };
 
 export function JournalChat() {
+  const { profile } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -64,11 +68,11 @@ export function JournalChat() {
   const [isInitialized, setIsInitialized] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   
-  const userName = useMemo(() => currentUser.name.split(' ')[0], []);
-  const initialMessage = useMemo(() => getInitialMessage(currentUser.name), [currentUser.name]);
+  const userName = useMemo(() => profile?.name.split(' ')[0] || 'there', [profile]);
+  const initialMessage = useMemo(() => getInitialMessage(profile?.name), [profile]);
 
-  const STORAGE_KEY_MESSAGES = useMemo(() => `journalChatMessages_${currentUser.id}`, [currentUser.id]);
-  const STORAGE_KEY_DATE = useMemo(() => `journalChatDate_${currentUser.id}`, [currentUser.id]);
+  const STORAGE_KEY_MESSAGES = useMemo(() => `journalChatMessages_${profile?.id}`, [profile]);
+  const STORAGE_KEY_DATE = useMemo(() => `journalChatDate_${profile?.id}`, [profile]);
 
 
   const aiQuestionCount = useMemo(() => {
@@ -96,6 +100,7 @@ export function JournalChat() {
   };
 
   useEffect(() => {
+    if (!profile) return;
     const todayStr = format(new Date(), 'yyyy-MM-dd');
     const storedDate = localStorage.getItem(STORAGE_KEY_DATE);
     
@@ -121,15 +126,15 @@ export function JournalChat() {
         setMessages([initialMessage]);
     }
     setIsInitialized(true);
-  }, [initialMessage, STORAGE_KEY_DATE, STORAGE_KEY_MESSAGES]);
+  }, [initialMessage, STORAGE_KEY_DATE, STORAGE_KEY_MESSAGES, profile]);
 
   useEffect(() => {
-    if (isInitialized) {
+    if (isInitialized && profile) {
         localStorage.setItem(STORAGE_KEY_MESSAGES, JSON.stringify(messages));
         localStorage.setItem(STORAGE_KEY_DATE, format(new Date(), 'yyyy-MM-dd'));
         scrollToBottom();
     }
-  }, [messages, isInitialized, STORAGE_KEY_DATE, STORAGE_KEY_MESSAGES]);
+  }, [messages, isInitialized, STORAGE_KEY_DATE, STORAGE_KEY_MESSAGES, profile]);
 
   const handleInitialPrompt = (topic: string) => {
     if (isLoading || isComplete) return;
@@ -167,12 +172,15 @@ export function JournalChat() {
   };
 
   const getNewQuestion = async (topic: string) => {
+     if (!profile) return;
      setIsLoading(true);
      try {
-      const journalHistory = currentUser.journalEntries?.join("\n\n") || "";
+      const journalHistory = profile.journalEntries?.join("\n\n") || "";
       
+      const reminders = await getReminders(profile.id);
+      const checklists = await getChecklists(profile.id);
+
       const remindersText = reminders.map(r => `- ${r.title} on ${r.date} at ${r.time}`).join("\n");
-      
       const checklistsText = checklists.map(c => 
         `List: ${c.title}\n` + c.items.map(i => `  - [${i.completed ? 'x' : ' '}] ${i.text}`).join("\n")
       ).join("\n\n");
@@ -204,6 +212,7 @@ export function JournalChat() {
   }
 
   const handleSummarize = async (finalMessages: Message[]) => {
+    if (!profile) return;
     setIsLoading(true);
     setIsSummarizing(true);
     
@@ -224,28 +233,15 @@ export function JournalChat() {
         const today = new Date();
         const todayStr = format(today, 'yyyy-MM-dd');
         
-        const existingSummaryIndex = dailySummaries.findIndex(d => d.date === todayStr);
-        if (existingSummaryIndex > -1) {
-            dailySummaries[existingSummaryIndex] = {
-                ...dailySummaries[existingSummaryIndex],
-                summary,
-                mood
-            };
-        } else {
-            dailySummaries.push({
-                date: todayStr,
-                summary,
-                mood,
-                hobbies: [],
-                isAvailable: false,
-                hasMeetup: false
-            });
-        }
+        await setJournalEntry(profile.id, { date: todayStr, summary, mood });
+        await addJournalSummaryToUser(profile.id, summary);
         
-        if (!currentUser.journalEntries) {
-            currentUser.journalEntries = [];
+        // Also update profile in context optimistically
+        if(profile.journalEntries) {
+            profile.journalEntries.push(summary);
+        } else {
+            profile.journalEntries = [summary];
         }
-        currentUser.journalEntries.push(summary);
 
         setIsComplete(true);
 
@@ -264,6 +260,7 @@ export function JournalChat() {
   }
 
   const handleNewChat = () => {
+    if (!profile) return;
     localStorage.removeItem(STORAGE_KEY_MESSAGES);
     localStorage.removeItem(STORAGE_KEY_DATE);
     setMessages([initialMessage]);
@@ -273,7 +270,7 @@ export function JournalChat() {
     setSuggestions(shuffled.slice(0, 4));
   }
 
-  if (!isInitialized) {
+  if (!isInitialized || !profile) {
     return null;
   }
 

@@ -1,9 +1,8 @@
 
 import type { User, DailySummary, Reminder, Checklist, PastTribe, DiscoveredTribe } from './types';
-import { subYears, format } from 'date-fns';
 
 // The user who is currently logged in.
-// Initially, it's a new user. After "login" or onboarding, this object will be updated.
+// This object is updated with live data from Firestore upon login.
 export let currentUser: User = {
   id: 'user-0',
   name: 'New User',
@@ -28,13 +27,10 @@ export let currentUser: User = {
 // It will be populated as new users sign up.
 export const allUsers: User[] = [];
 
-// Reminders for the current user, initially empty.
+// DEPRECATED MOCK DATA - These are no longer the source of truth
+// and will be removed once all components are refactored.
 export let reminders: Reminder[] = [];
-
-// Checklists for the current user, initially empty.
 export let checklists: Checklist[] = [];
-
-// Daily summaries for the current user, initially empty.
 export const dailySummaries: DailySummary[] = [];
 
 // Past tribe meetups for the current user, initially empty.

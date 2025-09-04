@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -18,48 +18,82 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Bell, Plus, Trash2 } from "lucide-react";
-import { reminders } from "@/lib/mock-data";
 import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAuth } from "@/context/auth-context";
+import { getReminders, createReminder, deleteReminder } from "@/services/reminder-service";
+import type { Reminder } from "@/lib/types";
 
 export default function RemindersPage() {
+  const { user } = useAuth();
   const { toast } = useToast();
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [remindersList, setRemindersList] = useState(reminders);
+  const [remindersList, setRemindersList] = useState<Reminder[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  
+  useEffect(() => {
+    async function fetchReminders() {
+      if (!user) return;
+      setIsLoading(true);
+      try {
+        const reminders = await getReminders(user.uid);
+        setRemindersList(reminders);
+      } catch (error) {
+        console.error("Failed to fetch reminders:", error);
+        toast({ variant: "destructive", title: "Error", description: "Could not load your reminders." });
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchReminders();
+  }, [user, toast]);
 
-  const handleSetReminder = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSetReminder = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (!user) return;
+
     const formData = new FormData(event.currentTarget);
-    const newReminder = {
-        id: `rem-${Date.now()}`,
+    const newReminderData = {
         title: formData.get("title") as string,
         date: formData.get("date") as string,
         time: formData.get("time") as string,
         details: formData.get("details") as string,
     };
     
-    reminders.push(newReminder);
-    setRemindersList([...reminders]);
-
-    toast({
-      title: "Reminder Set!",
-      description: `We'll remind you about "${newReminder.title}".`,
-    });
+    try {
+      const newReminder = await createReminder(user.uid, newReminderData);
+      setRemindersList(prev => [...prev, newReminder]);
+      toast({
+        title: "Reminder Set!",
+        description: `We'll remind you about "${newReminder.title}".`,
+      });
+      setIsDialogOpen(false); // Close dialog on success
+    } catch (error) {
+      console.error("Failed to create reminder:", error);
+      toast({ variant: "destructive", title: "Error", description: "Could not save your reminder." });
+    }
   };
   
-  const handleDeleteReminder = (reminderId: string) => {
+  const handleDeleteReminder = async (reminderId: string) => {
+    if(!user) return;
+    const originalReminders = [...remindersList];
     const reminderToDelete = remindersList.find(r => r.id === reminderId);
-    if (!reminderToDelete) return;
+    
+    // Optimistic UI update
+    setRemindersList(prev => prev.filter(r => r.id !== reminderId));
 
-    const newReminders = remindersList.filter((reminder) => reminder.id !== reminderId);
-    reminders.splice(0, reminders.length, ...newReminders); 
-    setRemindersList(newReminders);
-
-    toast({
-        variant: "destructive",
-        title: "Reminder Deleted",
-        description: `"${reminderToDelete.title}" has been removed.`
-    });
+    try {
+      await deleteReminder(reminderId);
+      toast({
+          variant: "destructive",
+          title: "Reminder Deleted",
+          description: `"${reminderToDelete?.title}" has been removed.`
+      });
+    } catch(error) {
+       console.error("Failed to delete reminder:", error);
+       setRemindersList(originalReminders); // Revert on error
+       toast({ variant: 'destructive', title: 'Error', description: 'Could not delete reminder.' });
+    }
   }
 
   return (
@@ -67,7 +101,7 @@ export default function RemindersPage() {
       <CardHeader>
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <CardTitle>Your Reminders</CardTitle>
-            <Dialog>
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
                 <Button className="w-full sm:w-auto">
                 <Plus className="mr-2 h-4 w-4" />
@@ -93,7 +127,7 @@ export default function RemindersPage() {
                             <Label htmlFor="date" className="text-right">
                             Date
                             </Label>
-                            <Input id="date" name="date" type="date" className="col-span-3" defaultValue={date} required />
+                            <Input id="date" name="date" type="date" className="col-span-3" defaultValue={new Date().toISOString().split('T')[0]} required />
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="time" className="text-right">
@@ -109,9 +143,7 @@ export default function RemindersPage() {
                         </div>
                     </div>
                     <DialogFooter>
-                        <DialogClose asChild>
                         <Button type="submit">Set Reminder</Button>
-                        </DialogClose>
                     </DialogFooter>
                 </form>
             </DialogContent>
@@ -119,7 +151,9 @@ export default function RemindersPage() {
         </div>
       </CardHeader>
       <CardContent>
-        {remindersList.length > 0 ? (
+        {isLoading ? (
+            <div className="text-center text-muted-foreground py-16">Loading reminders...</div>
+        ) : remindersList.length > 0 ? (
             <div className="space-y-4">
                 {remindersList.map((reminder) => (
                     <div key={reminder.id} className="p-4 border rounded-lg flex items-start gap-4">
@@ -131,7 +165,7 @@ export default function RemindersPage() {
                             </p>
                             {reminder.details && <p className="text-sm mt-1">{reminder.details}</p>}
                         </div>
-                        <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive flex-shrink-0" onClick={() => handleDeleteReminder(reminder.id)}>
+                        <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive flex-shrink-0" onClick={() => handleDeleteReminder(reminder.id!)}>
                             <Trash2 className="h-4 w-4"/>
                         </Button>
                     </div>

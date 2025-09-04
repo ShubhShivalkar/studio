@@ -1,25 +1,47 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Check, ListTodo, Plus, Trash2, X } from "lucide-react";
-import { checklists } from "@/lib/mock-data";
 import { format, parseISO } from "date-fns";
 import type { Checklist, ChecklistItem } from "@/lib/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/context/auth-context";
+import { getChecklists, createChecklist, deleteChecklist, updateChecklist } from "@/services/checklist-service";
 
 export default function ChecklistPage() {
+  const { user } = useAuth();
   const { toast } = useToast();
-  const [checklistData, setChecklistData] = useState(checklists);
+  const [checklistData, setChecklistData] = useState<Checklist[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  
   const [newChecklistTitle, setNewChecklistTitle] = useState("");
   const [newChecklistDate, setNewChecklistDate] = useState(new Date().toISOString().split('T')[0]);
   const [newChecklistItems, setNewChecklistItems] = useState<Pick<ChecklistItem, 'text' | 'completed'>>([{ text: "", completed: false }]);
+
+  useEffect(() => {
+    async function fetchChecklists() {
+        if (!user) return;
+        setIsLoading(true);
+        try {
+            const checklists = await getChecklists(user.uid);
+            setChecklistData(checklists);
+        } catch (error) {
+            console.error("Failed to fetch checklists:", error);
+            toast({ variant: "destructive", title: "Error", description: "Could not load checklists." });
+        } finally {
+            setIsLoading(false);
+        }
+    }
+    fetchChecklists();
+  }, [user, toast]);
+
 
   const handleAddItem = () => {
     setNewChecklistItems([...newChecklistItems, { text: "", completed: false }]);
@@ -37,76 +59,92 @@ export default function ChecklistPage() {
     setNewChecklistItems(items);
   };
 
-  const handleCreateChecklist = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleCreateChecklist = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (!user) return;
     if (!newChecklistTitle.trim() || !newChecklistDate) {
-        toast({
-            variant: "destructive",
-            title: "Missing Information",
-            description: "Please provide a title and date for the checklist."
-        });
+        toast({ variant: "destructive", title: "Missing Information", description: "Please provide a title and date." });
         return;
     }
     const validItems = newChecklistItems.filter(item => item.text.trim() !== "");
     if(validItems.length === 0) {
-        toast({
-            variant: "destructive",
-            title: "No Items",
-            description: "Please add at least one item to the checklist."
-        });
+        toast({ variant: "destructive", title: "No Items", description: "Please add at least one item." });
         return;
     }
 
-    const newChecklist: Checklist = {
-      id: `cl-${Date.now()}`,
+    const newChecklistData: Omit<Checklist, 'id'> = {
       title: newChecklistTitle,
       date: newChecklistDate,
       items: validItems.map(item => ({...item, id: `item-${Date.now()}-${Math.random()}`})),
     };
     
-    checklists.push(newChecklist);
-    setChecklistData([...checklists]);
+    try {
+        const newChecklist = await createChecklist(user.uid, newChecklistData);
+        setChecklistData(prev => [...prev, newChecklist]);
+        toast({ title: "Checklist Created!", description: `"${newChecklist.title}" has been added.` });
 
-    toast({
-      title: "Checklist Created!",
-      description: `"${newChecklist.title}" has been added.`,
-    });
-
-    // Reset form
-    setNewChecklistTitle("");
-    setNewChecklistDate(new Date().toISOString().split('T')[0]);
-    setNewChecklistItems([{ text: "", completed: false }]);
+        // Reset form
+        setNewChecklistTitle("");
+        setNewChecklistDate(new Date().toISOString().split('T')[0]);
+        setNewChecklistItems([{ text: "", completed: false }]);
+    } catch (error) {
+        console.error("Failed to create checklist:", error);
+        toast({ variant: "destructive", title: "Error", description: "Could not save checklist." });
+    }
   };
   
-  const handleDeleteChecklist = (checklistId: string) => {
+  const handleDeleteChecklist = async (checklistId: string) => {
+    if(!user) return;
+    const originalChecklists = [...checklistData];
     const checklistToDelete = checklistData.find(c => c.id === checklistId);
-    if (!checklistToDelete) return;
 
-    const newChecklists = checklistData.filter((checklist) => checklist.id !== checklistId);
-    checklists.splice(0, checklists.length, ...newChecklists); 
-    setChecklistData(newChecklists);
+    // Optimistic UI update
+    setChecklistData(prev => prev.filter(c => c.id !== checklistId));
 
-    toast({
-        variant: "destructive",
-        title: "Checklist Deleted",
-        description: `"${checklistToDelete.title}" has been removed.`
-    });
+    try {
+        await deleteChecklist(checklistId);
+        toast({
+            variant: "destructive",
+            title: "Checklist Deleted",
+            description: `"${checklistToDelete?.title}" has been removed.`
+        });
+    } catch(error) {
+        console.error("Failed to delete checklist:", error);
+        setChecklistData(originalChecklists);
+        toast({ variant: "destructive", title: "Error", description: "Could not delete checklist." });
+    }
   }
 
-  const toggleItemCompletion = (checklistId: string, itemId: string) => {
+  const toggleItemCompletion = async (checklistId: string, itemId: string) => {
+    if(!user) return;
+    const originalChecklists = checklistData.map(c => ({...c, items: [...c.items]}));
+
+    let updatedChecklist: Checklist | undefined;
     const newChecklistData = checklistData.map(checklist => {
         if(checklist.id === checklistId) {
-            return {
+            updatedChecklist = {
                 ...checklist,
                 items: checklist.items.map(item => 
                     item.id === itemId ? {...item, completed: !item.completed} : item
                 )
-            }
+            };
+            return updatedChecklist;
         }
         return checklist;
     });
-    checklists.splice(0, checklists.length, ...newChecklistData);
+    
+    // Optimistic UI update
     setChecklistData(newChecklistData);
+
+    try {
+        if (updatedChecklist) {
+            await updateChecklist(checklistId, { items: updatedChecklist.items });
+        }
+    } catch(error) {
+        console.error("Failed to update checklist:", error);
+        setChecklistData(originalChecklists);
+        toast({ variant: "destructive", title: "Error", description: "Could not update item." });
+    }
   }
 
   return (
@@ -157,7 +195,9 @@ export default function ChecklistPage() {
         </Card>
       </div>
       <div className="md:col-span-1 space-y-4">
-         {checklistData.length > 0 ? (
+         {isLoading ? (
+            <div className="text-center text-muted-foreground py-16">Loading checklists...</div>
+         ) : checklistData.length > 0 ? (
             checklistData.map((checklist) => (
                 <Card key={checklist.id}>
                     <CardHeader>
@@ -166,7 +206,7 @@ export default function ChecklistPage() {
                             <CardTitle>{checklist.title}</CardTitle>
                             <CardDescription>{format(parseISO(checklist.date), 'MMMM d, yyyy')}</CardDescription>
                            </div>
-                            <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive flex-shrink-0" onClick={() => handleDeleteChecklist(checklist.id)}>
+                            <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive flex-shrink-0" onClick={() => handleDeleteChecklist(checklist.id!)}>
                                 <Trash2 className="h-4 w-4"/>
                             </Button>
                         </div>
@@ -178,7 +218,7 @@ export default function ChecklistPage() {
                                     <Checkbox 
                                         id={`${checklist.id}-${item.id}`} 
                                         checked={item.completed}
-                                        onCheckedChange={() => toggleItemCompletion(checklist.id, item.id)}
+                                        onCheckedChange={() => toggleItemCompletion(checklist.id!, item.id)}
                                     />
                                     <Label htmlFor={`${checklist.id}-${item.id}`} className={cn(item.completed && "line-through text-muted-foreground")}>{item.text}</Label>
                                 </div>
