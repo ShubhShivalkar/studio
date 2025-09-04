@@ -23,7 +23,17 @@ Before writing any code, you need a Firebase project with Firestore enabled.
     *   Under the "General" tab, scroll down to "Your apps".
     *   Click the web icon (`</>`) to register a new web app.
     *   Give your app a nickname and click "Register app".
-    *   Firebase will provide you with a `firebaseConfig` object. **Copy this object.**
+    *   Firebase will provide you with a `firebaseConfig` object. **Copy the values from this object.** It will look like this:
+        ```javascript
+        const firebaseConfig = {
+          apiKey: "AIzaSy...",
+          authDomain: "your-project-id.firebaseapp.com",
+          projectId: "your-project-id",
+          storageBucket: "your-project-id.appspot.com",
+          messagingSenderId: "1234567890",
+          appId: "1:1234567890:web:abcd..."
+        };
+        ```
 
 ---
 
