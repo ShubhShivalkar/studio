@@ -7,32 +7,49 @@ import { Button } from '@/components/ui/button';
 import { CheckCircle } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import useOnboardingStore from '@/store/onboarding';
-import { currentUser, allUsers } from '@/lib/mock-data';
 import type { User } from '@/lib/types';
+import { useAuth } from '@/context/auth-context';
+import { createUser } from '@/services/user-service';
+import { useToast } from '@/hooks/use-toast';
 
 export default function Step5Page() {
   const router = useRouter();
   const onboardingData = useOnboardingStore((state) => state);
+  const { user: authUser } = useAuth();
+  const { toast } = useToast();
 
-  const handleFinish = () => {
+  const handleFinish = async () => {
+    if (!authUser) {
+        toast({
+            variant: "destructive",
+            title: "Authentication Error",
+            description: "You must be logged in to create a profile.",
+        });
+        router.push('/onboarding/step-1');
+        return;
+    }
+    
     // Create the new user object
-    const newUser: User = {
-        id: `user-${Date.now()}`,
+    const newUser: Omit<User, 'id'> = {
         name: onboardingData.name,
         dob: onboardingData.dob,
         gender: onboardingData.gender as 'Male' | 'Female' | 'Other' | 'Prefer not to say',
         avatar: onboardingData.avatar,
-        phone: onboardingData.phone,
+        phone: authUser.phoneNumber || onboardingData.phone, // Prefer phone from auth
         journalEntries: [],
     };
     
-    // Add the new user to our mock "database"
-    allUsers.push(newUser);
-    // Set the new user as the currently logged-in user
-    Object.assign(currentUser, newUser);
-    
-    // In a real app, you would save this to a backend.
-    router.push('/journal');
+    try {
+        await createUser(authUser.uid, newUser);
+        router.push('/journal');
+    } catch (error) {
+        console.error("Failed to create user profile:", error);
+        toast({
+            variant: "destructive",
+            title: "Profile Creation Failed",
+            description: "We couldn't save your profile. Please try again.",
+        });
+    }
   };
 
   return (
