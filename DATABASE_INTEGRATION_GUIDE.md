@@ -122,18 +122,24 @@ service cloud.firestore {
     // Users can read their own profile and update it.
     match /users/{userId} {
       allow read, update: if request.auth.uid == userId;
+      allow create: if request.auth.uid != null;
     }
-    // Users can read public tribe data.
-    match /users/{userId} {
-       allow read: if request.auth != null;
+    
+    // Allow read/write for test connection documents for any authenticated user.
+    match /test_connection/{docId} {
+      allow read, write: if request.auth != null;
     }
+
     // Users can create, read, update, and delete their own journal entries.
     match /journalEntries/{entryId} {
       allow read, write: if request.auth.uid == resource.data.userId;
     }
+    
     // Add similar rules for reminders, checklists, and tribes.
+    
+    // Deny all other access by default.
     match /{document=**} {
-      allow read, write: if false; // Deny all other access
+      allow read, write: if false;
     }
   }
 }
