@@ -124,6 +124,10 @@ export function TribePreferenceDialog({ preferences, onSave, open, onOpenChange 
              title="Hobbies & Interests"
              description="Connect with people who share your passions."
           />
+           <DisabledFeature 
+             title="Religion"
+             description="Connect with people who share your beliefs."
+          />
 
         </div>
         <DialogFooter>
