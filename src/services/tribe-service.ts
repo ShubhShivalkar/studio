@@ -4,7 +4,7 @@
 import { collection, doc, writeBatch, query, where, getDocs, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Tribe } from '@/lib/types';
-import { getDay, nextMonday, format } from 'date-fns';
+import { getDay, nextMonday, format, set } from 'date-fns';
 
 /**
  * Gets information about the current tribe matching schedule.
@@ -12,12 +12,23 @@ import { getDay, nextMonday, format } from 'date-fns';
  */
 export async function getTribeScheduleInfo() {
   const today = new Date();
-  const isMatchDay = getDay(today) === 1; // 1 for Monday
-  const nextMatchDay = nextMonday(today);
+  // Match day is Monday, and matching runs at 12 PM.
+  const isMatchDay = getDay(today) === 1 && today.getHours() >= 12; 
+  
+  let nextMatchDay = getDay(today) > 1 ? nextMonday(today) : new Date(today);
+  
+  if (getDay(today) === 1 && today.getHours() >= 12) {
+    // If it's Monday past noon, the next match is next week
+    nextMatchDay = nextMonday(today);
+  }
+
+  nextMatchDay = set(nextMatchDay, { hours: 12, minutes: 0, seconds: 0, milliseconds: 0 });
+
   
   return {
     isMatchDay,
     nextMondayFormatted: format(nextMatchDay, 'MMMM d, yyyy'),
+    nextMatchDateTime: nextMatchDay.toISOString(),
   };
 }
 

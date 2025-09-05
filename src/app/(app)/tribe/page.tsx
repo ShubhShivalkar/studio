@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { User, MatchedUser, Tribe } from "@/lib/types";
-import { differenceInYears, parseISO, format, isWeekend } from "date-fns";
+import { differenceInYears, parseISO, format, isWeekend, differenceInSeconds } from "date-fns";
 import { matchUsersByTribePreferences } from "@/ai/flows/match-users-by-tribe-preferences";
 import { ProfileCard } from "@/components/profile-card";
 import {
@@ -54,6 +54,38 @@ export default function TribePage() {
   const [rejectionReason, setRejectionReason] = useState("");
   const [isDeclineDialogOpen, setIsDeclineDialogOpen] = useState(false);
   const [nextMondayFormatted, setNextMondayFormatted] = useState('');
+  const [nextMatchDateTime, setNextMatchDateTime] = useState<string | null>(null);
+
+  const calculateTimeLeft = () => {
+    if (!nextMatchDateTime) {
+      return { days: 0, hours: 0, minutes: 0, seconds: 0 };
+    }
+    const difference = differenceInSeconds(parseISO(nextMatchDateTime), new Date());
+    
+    if (difference <= 0) {
+      return { days: 0, hours: 0, minutes: 0, seconds: 0 };
+    }
+
+    const days = Math.floor(difference / (60 * 60 * 24));
+    const hours = Math.floor((difference % (60 * 60 * 24)) / (60 * 60));
+    const minutes = Math.floor((difference % (60 * 60)) / 60);
+    const seconds = Math.floor(difference % 60);
+    
+    return { days, hours, minutes, seconds };
+  };
+  
+  const [timeLeft, setTimeLeft] = useState(calculateTimeLeft());
+
+  useEffect(() => {
+    if (!nextMatchDateTime) return;
+    
+    const timer = setInterval(() => {
+      setTimeLeft(calculateTimeLeft());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [nextMatchDateTime]);
+
 
   useEffect(() => {
     const findTribe = async () => {
@@ -82,6 +114,7 @@ export default function TribePage() {
         // --- WEEKLY CYCLE LOGIC ---
         const scheduleInfo = await getTribeScheduleInfo();
         setNextMondayFormatted(scheduleInfo.nextMondayFormatted);
+        setNextMatchDateTime(scheduleInfo.nextMatchDateTime);
         if (!scheduleInfo.isMatchDay) {
             setTribeState("wait-for-monday");
             return;
@@ -216,6 +249,27 @@ export default function TribePage() {
   
   const rejectedMembers = tribe?.members.filter(m => m.rsvpStatus === 'rejected');
   const isTribeComplete = attendingMembers && attendingMembers.length >= 4;
+
+  const CountdownTimer = () => (
+    <div className="flex items-center justify-center gap-4">
+        <div>
+            <span className="font-mono text-3xl font-bold">{String(timeLeft.days).padStart(2, '0')}</span>
+            <span className="text-xs text-muted-foreground block">DAYS</span>
+        </div>
+        <div>
+            <span className="font-mono text-3xl font-bold">{String(timeLeft.hours).padStart(2, '0')}</span>
+            <span className="text-xs text-muted-foreground block">HOURS</span>
+        </div>
+        <div>
+            <span className="font-mono text-3xl font-bold">{String(timeLeft.minutes).padStart(2, '0')}</span>
+            <span className="text-xs text-muted-foreground block">MINUTES</span>
+        </div>
+        <div>
+            <span className="font-mono text-3xl font-bold">{String(timeLeft.seconds).padStart(2, '0')}</span>
+            <span className="text-xs text-muted-foreground block">SECONDS</span>
+        </div>
+    </div>
+  );
   
   return (
     <Card>
@@ -230,7 +284,7 @@ export default function TribePage() {
                                 <Info className="h-4 w-4 text-muted-foreground" />
                             </TooltipTrigger>
                             <TooltipContent>
-                                <p>New tribes are formed every Monday.</p>
+                                <p>New tribes are formed every Monday at 12 PM.</p>
                             </TooltipContent>
                         </Tooltip>
                     </TooltipProvider>
@@ -295,20 +349,26 @@ export default function TribePage() {
         )}
         
         {tribeState === "wait-for-monday" && (
-            <div className="text-center text-muted-foreground py-16 flex flex-col items-center">
-                <CalendarClock className="h-12 w-12 mb-4" />
-                <p className="font-semibold text-lg">Check back on Monday!</p>
-                <p className="text-sm max-w-sm">
-                    New tribes are formed at the start of each week. We'll run our matching algorithm again on {nextMondayFormatted}.
-                </p>
+            <div className="text-center text-muted-foreground py-16 flex flex-col items-center gap-6">
+                <CalendarClock className="h-12 w-12" />
+                <div>
+                  <p className="font-semibold text-lg">Next tribe matching begins in:</p>
+                  <p className="text-sm max-w-sm mb-4">
+                      We'll run our matching algorithm again on {nextMondayFormatted} at 12 PM.
+                  </p>
+                </div>
+                <CountdownTimer />
             </div>
         )}
         
         {tribeState === "no-matches" && (
-             <div className="text-center text-muted-foreground py-16 flex flex-col items-center">
-                <UserX className="h-12 w-12 mb-4" />
-                <p className="font-semibold text-lg">No suitable tribe found this week.</p>
-                <p className="text-sm max-w-sm">We couldn't find enough compatible members based on your preferences this time. Please check back next week!</p>
+             <div className="text-center text-muted-foreground py-16 flex flex-col items-center gap-6">
+                <UserX className="h-12 w-12" />
+                <div>
+                    <p className="font-semibold text-lg">No suitable tribe found this week.</p>
+                    <p className="text-sm max-w-sm mb-4">We couldn't find enough compatible members. Please check back next week!</p>
+                </div>
+                <CountdownTimer />
             </div>
         )}
 
