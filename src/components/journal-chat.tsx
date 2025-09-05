@@ -9,9 +9,9 @@ import { Textarea } from "@/components/ui/textarea";
 import type { DailySummary, Message } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Bot, SendHorizonal, CheckCircle, RotateCcw } from "lucide-react";
-import { useEffect, useRef, useState, useMemo, createContext, useContext } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { format, isSameDay, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import { useAuth } from "@/context/auth-context";
 import { getReminders } from "@/services/reminder-service";
 import { getChecklists } from "@/services/checklist-service";
@@ -46,14 +46,6 @@ const PROMPT_SUGGESTIONS = [
     "a difficult decision I'm facing", "my sleep patterns", "something I'm celebrating", "a memory with a friend",
     "my favorite holiday", "a scent that brings back memories", "a question I'm pondering", "a new recipe I tried"
 ];
-
-// Context to share chat state with the parent page
-const JournalChatContext = createContext({
-    clearChat: () => {},
-    hasStartedConversation: false,
-});
-
-export const useJournalChat = () => useContext(JournalChatContext);
 
 const getInitialMessage = (name?: string, todaysSummary?: DailySummary | null) => {
     const userName = name ? `, ${name.split(' ')[0]}` : '';
@@ -120,8 +112,6 @@ export function JournalChat() {
   const handleNewChat = () => {
     if (!profile) return;
     localStorage.removeItem(STORAGE_KEY_MESSAGES);
-    // We don't remove the date, so if they refresh, the old convo comes back for the same day.
-    // This allows multiple sessions in one day.
     const initialMessage = getInitialMessage(profile.name, todaysSummary);
     setMessages([initialMessage]);
     setIsComplete(false);
@@ -136,7 +126,6 @@ export function JournalChat() {
     const todayStr = format(today, 'yyyy-MM-dd');
     const storedDate = localStorage.getItem(STORAGE_KEY_DATE);
     
-    // Fetch today's summary regardless of local storage state
     getJournalEntries(profile.id).then(entries => {
         const summaryForToday = entries.find(e => e.date === todayStr) || null;
         setTodaysSummary(summaryForToday);
@@ -148,7 +137,6 @@ export function JournalChat() {
             if (storedMessages) {
                 try {
                     const parsedMessages = JSON.parse(storedMessages);
-                    // Use stored messages but ensure the first message is the latest initial message
                     parsedMessages[0] = initialMessage;
                     setMessages(parsedMessages);
                     const lastMessage = parsedMessages[parsedMessages.length - 1];
@@ -164,7 +152,7 @@ export function JournalChat() {
         } else {
             localStorage.removeItem(STORAGE_KEY_MESSAGES);
             localStorage.removeItem(STORAGE_KEY_DATE);
-            handleNewChat(); // Use handleNewChat to reset properly
+            handleNewChat();
         }
         setIsInitialized(true);
     });
@@ -283,7 +271,6 @@ export function JournalChat() {
         await setJournalEntry(profile.id, { date: todayStr, summary, mood });
         await addJournalSummaryToUser(profile.id, summary);
         
-        // Also update profile in context optimistically
         if(profile.journalEntries) {
             profile.journalEntries.push(summary);
         } else {
@@ -311,107 +298,105 @@ export function JournalChat() {
   }
 
   return (
-    <JournalChatContext.Provider value={{ clearChat: handleNewChat, hasStartedConversation }}>
-        <div className="flex flex-col h-full max-h-[calc(100vh-12rem)]">
-        <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
-            <div className="space-y-6">
-            {messages.map((message) => (
-                <div
-                key={message.id}
-                className={cn(
-                    "flex items-start gap-3",
-                    message.sender === "user" ? "justify-end" : "justify-start"
-                )}
-                >
-                {message.sender === "ai" && (
-                    <Avatar className="h-8 w-8">
-                    <AvatarImage src="https://storage.googleapis.com/aai-web-samples/nextjs/anu/anu.jpeg" alt="Anu" data-ai-hint="indian woman" />
-                    <AvatarFallback className="bg-primary text-primary-foreground">
-                        <Bot />
-                    </AvatarFallback>
-                    </Avatar>
-                )}
-                <div
-                    className={cn(
-                    "max-w-xs md:max-w-md lg:max-w-2xl rounded-lg p-3 text-sm whitespace-pre-wrap",
-                    message.sender === "user"
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-card border"
-                    )}
-                >
-                    <p>{message.text}</p>
-                </div>
-                </div>
-            ))}
-            {isLoading && (
-                <div className="flex items-start gap-3 justify-start">
+    <div className="flex flex-col h-full max-h-[calc(100vh-12rem)]">
+    <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
+        <div className="space-y-6">
+        {messages.map((message) => (
+            <div
+            key={message.id}
+            className={cn(
+                "flex items-start gap-3",
+                message.sender === "user" ? "justify-end" : "justify-start"
+            )}
+            >
+            {message.sender === "ai" && (
                 <Avatar className="h-8 w-8">
-                    <AvatarImage src="https://storage.googleapis.com/aai-web-samples/nextjs/anu/anu.jpeg" alt="Anu" data-ai-hint="indian woman" />
-                    <AvatarFallback className="bg-primary text-primary-foreground">
-                        <Bot />
-                    </AvatarFallback>
-                    </Avatar>
-                <div className="bg-card border rounded-lg p-3">
-                    <div className="flex items-center space-x-2">
-                    <span className="text-sm">{isSummarizing ? 'Creating summary...' : 'Thinking...'}</span>
-                    <div className="h-2 w-2 bg-muted-foreground rounded-full animate-pulse [animation-delay:-0.3s]"></div>
-                        <div className="h-2 w-2 bg-muted-foreground rounded-full animate-pulse [animation-delay:-0.15s]"></div>
-                        <div className="h-2 w-2 bg-muted-foreground rounded-full animate-pulse"></div>
-                    </div>
-                </div>
-                </div>
+                <AvatarImage src="https://storage.googleapis.com/aai-web-samples/nextjs/anu/anu.jpeg" alt="Anu" data-ai-hint="indian woman" />
+                <AvatarFallback className="bg-primary text-primary-foreground">
+                    <Bot />
+                </AvatarFallback>
+                </Avatar>
             )}
+            <div
+                className={cn(
+                "max-w-xs md:max-w-md lg:max-w-2xl rounded-lg p-3 text-sm whitespace-pre-wrap",
+                message.sender === "user"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-card border"
+                )}
+            >
+                <p>{message.text}</p>
             </div>
-        </ScrollArea>
-        <div className="p-4 bg-background border-t">
-            {isComplete ? (
-                <div className="flex flex-col sm:flex-row items-center justify-center text-center gap-2 p-4 bg-secondary rounded-lg">
-                    <CheckCircle className="h-5 w-5 text-green-500" />
-                    <p className="text-sm text-muted-foreground">Journal entry for today is complete.</p>
-                    <Button variant="ghost" size="sm" onClick={handleNewChat} className="ml-0 sm:ml-4">
-                        <RotateCcw className="h-4 w-4 mr-2" />
-                        New Chat
-                    </Button>
+            </div>
+        ))}
+        {isLoading && (
+            <div className="flex items-start gap-3 justify-start">
+            <Avatar className="h-8 w-8">
+                <AvatarImage src="https://storage.googleapis.com/aai-web-samples/nextjs/anu/anu.jpeg" alt="Anu" data-ai-hint="indian woman" />
+                <AvatarFallback className="bg-primary text-primary-foreground">
+                    <Bot />
+                </AvatarFallback>
+                </Avatar>
+            <div className="bg-card border rounded-lg p-3">
+                <div className="flex items-center space-x-2">
+                <span className="text-sm">{isSummarizing ? 'Creating summary...' : 'Thinking...'}</span>
+                <div className="h-2 w-2 bg-muted-foreground rounded-full animate-pulse [animation-delay:-0.3s]"></div>
+                    <div className="h-2 w-2 bg-muted-foreground rounded-full animate-pulse [animation-delay:-0.15s]"></div>
+                    <div className="h-2 w-2 bg-muted-foreground rounded-full animate-pulse"></div>
                 </div>
-            ) : (
-                <div className="space-y-4">
-                    {!hasStartedConversation && (
-                        <div className="flex flex-wrap items-center justify-center gap-2">
-                            {suggestions.map((prompt, index) => (
-                                <Button key={index} variant="outline" size="sm" onClick={() => handleInitialPrompt(prompt)}>
-                                    {prompt.charAt(0).toUpperCase() + prompt.slice(1)}
-                                </Button>
-                            ))}
-                        </div>
-                    )}
-                    <div className="relative">
-                        <form onSubmit={handleSendMessage} className="flex items-center gap-2">
-                        <Textarea
-                            placeholder="Type your thoughts here..."
-                            className="pr-12 min-h-[50px] resize-none flex-1"
-                            value={input}
-                            onChange={(e) => setInput(e.target.value)}
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter' && !e.shiftKey) {
-                                    handleSendMessage(e);
-                                }
-                            }}
-                        />
-                        <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex gap-1">
-                            <Button
-                                type="submit"
-                                size="icon"
-                                disabled={isLoading || !input.trim()}
-                            >
-                                <SendHorizonal className="h-5 w-5" />
+            </div>
+            </div>
+        )}
+        </div>
+    </ScrollArea>
+    <div className="p-4 bg-background border-t">
+        {isComplete ? (
+            <div className="flex flex-col sm:flex-row items-center justify-center text-center gap-2 p-4 bg-secondary rounded-lg">
+                <CheckCircle className="h-5 w-5 text-green-500" />
+                <p className="text-sm text-muted-foreground">Journal entry for today is complete.</p>
+                <Button variant="ghost" size="sm" onClick={handleNewChat} className="ml-0 sm:ml-4">
+                    <RotateCcw className="h-4 w-4 mr-2" />
+                    New Chat
+                </Button>
+            </div>
+        ) : (
+            <div className="space-y-4">
+                {!hasStartedConversation && (
+                    <div className="flex flex-wrap items-center justify-center gap-2">
+                        {suggestions.map((prompt, index) => (
+                            <Button key={index} variant="outline" size="sm" onClick={() => handleInitialPrompt(prompt)}>
+                                {prompt.charAt(0).toUpperCase() + prompt.slice(1)}
                             </Button>
-                        </div>
-                        </form>
+                        ))}
                     </div>
+                )}
+                <div className="relative">
+                    <form onSubmit={handleSendMessage} className="flex items-center gap-2">
+                    <Textarea
+                        placeholder="Type your thoughts here..."
+                        className="pr-12 min-h-[50px] resize-none flex-1"
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                                handleSendMessage(e);
+                            }
+                        }}
+                    />
+                    <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex gap-1">
+                        <Button
+                            type="submit"
+                            size="icon"
+                            disabled={isLoading || !input.trim()}
+                        >
+                            <SendHorizonal className="h-5 w-5" />
+                        </Button>
+                    </div>
+                    </form>
                 </div>
-            )}
-        </div>
-        </div>
-    </JournalChatContext.Provider>
+            </div>
+        )}
+    </div>
+    </div>
   );
 }
