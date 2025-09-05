@@ -248,9 +248,6 @@ export default function ProfilePage() {
                     </span>
                   )}
               </CardDescription>
-               {userData.mbti && (
-                  <Badge variant="secondary" className="mt-2">{userData.mbti}</Badge>
-              )}
             </CardHeader>
             <CardContent className="space-y-4">
                 {(userData.profession || userData.religion || userData.phone) && (
@@ -349,6 +346,13 @@ export default function ProfilePage() {
               ) : persona ? (
                   <div className="space-y-4">
                       <p className="italic text-foreground/80">{persona.persona}</p>
+                      
+                      {persona.mbti && (
+                        <div>
+                            <h3 className="font-semibold mb-2">Personality Type</h3>
+                            <Badge variant="secondary">{persona.mbti}</Badge>
+                        </div>
+                      )}
                       
                       {persona.personalityTraits.length > 0 && (
                           <div>
