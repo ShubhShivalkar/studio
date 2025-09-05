@@ -198,6 +198,8 @@ export default function ProfilePage() {
     }
   };
 
+  const isPersonaValid = persona && !persona.persona.includes("Could not generate") && !persona.persona.includes("unexpected error");
+
   if (authLoading || !userData) {
     return (
        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -282,7 +284,7 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
 
-          {persona && (
+          {isPersonaValid && (
             <Card className="bg-accent text-accent-foreground">
                   <CardHeader>
                       <CardTitle className="flex items-center gap-2">
