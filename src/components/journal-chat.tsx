@@ -374,7 +374,7 @@ export function JournalChat() {
                     <form onSubmit={handleSendMessage} className="flex items-center gap-2">
                     <Textarea
                         placeholder="Type your thoughts here..."
-                        className="pr-12 min-h-[50px] resize-none flex-1"
+                        className="pr-24 min-h-[50px] resize-none flex-1"
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         onKeyDown={(e) => {
@@ -384,6 +384,15 @@ export function JournalChat() {
                         }}
                     />
                     <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex gap-1">
+                        <Button
+                            type="button"
+                            size="icon"
+                            variant="ghost"
+                            onClick={handleNewChat}
+                            disabled={isLoading}
+                        >
+                            <RotateCcw className="h-5 w-5" />
+                        </Button>
                         <Button
                             type="submit"
                             size="icon"
