@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 import { Bot, SendHorizonal, CheckCircle, RotateCcw } from "lucide-react";
 import { useEffect, useRef, useState, useMemo } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { format, isSameDay, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import { useAuth } from "@/context/auth-context";
 import { getReminders } from "@/services/reminder-service";
 import { getChecklists } from "@/services/checklist-service";
@@ -46,7 +46,6 @@ const PROMPT_SUGGESTIONS = [
     "a difficult decision I'm facing", "my sleep patterns", "something I'm celebrating", "a memory with a friend",
     "my favorite holiday", "a scent that brings back memories", "a question I'm pondering", "a new recipe I tried"
 ];
-
 
 const getInitialMessage = (name?: string, todaysSummary?: DailySummary | null) => {
     const userName = name ? `, ${name.split(' ')[0]}` : '';
@@ -110,13 +109,23 @@ export function JournalChat() {
     }
   };
 
+  const handleNewChat = () => {
+    if (!profile) return;
+    localStorage.removeItem(STORAGE_KEY_MESSAGES);
+    const initialMessage = getInitialMessage(profile.name, todaysSummary);
+    setMessages([initialMessage]);
+    setIsComplete(false);
+    setInput("");
+    const shuffled = [...PROMPT_SUGGESTIONS].sort(() => 0.5 - Math.random());
+    setSuggestions(shuffled.slice(0, 4));
+  }
+
   useEffect(() => {
     if (!profile) return;
     const today = new Date();
     const todayStr = format(today, 'yyyy-MM-dd');
     const storedDate = localStorage.getItem(STORAGE_KEY_DATE);
     
-    // Fetch today's summary regardless of local storage state
     getJournalEntries(profile.id).then(entries => {
         const summaryForToday = entries.find(e => e.date === todayStr) || null;
         setTodaysSummary(summaryForToday);
@@ -128,7 +137,6 @@ export function JournalChat() {
             if (storedMessages) {
                 try {
                     const parsedMessages = JSON.parse(storedMessages);
-                    // Use stored messages but ensure the first message is the latest initial message
                     parsedMessages[0] = initialMessage;
                     setMessages(parsedMessages);
                     const lastMessage = parsedMessages[parsedMessages.length - 1];
@@ -144,7 +152,7 @@ export function JournalChat() {
         } else {
             localStorage.removeItem(STORAGE_KEY_MESSAGES);
             localStorage.removeItem(STORAGE_KEY_DATE);
-            setMessages([initialMessage]);
+            handleNewChat();
         }
         setIsInitialized(true);
     });
@@ -263,7 +271,6 @@ export function JournalChat() {
         await setJournalEntry(profile.id, { date: todayStr, summary, mood });
         await addJournalSummaryToUser(profile.id, summary);
         
-        // Also update profile in context optimistically
         if(profile.journalEntries) {
             profile.journalEntries.push(summary);
         } else {
@@ -286,93 +293,80 @@ export function JournalChat() {
     }
   }
 
-  const handleNewChat = () => {
-    if (!profile) return;
-    localStorage.removeItem(STORAGE_KEY_MESSAGES);
-    // We don't remove the date, so if they refresh, the old convo comes back for the same day.
-    // This allows multiple sessions in one day.
-    const initialMessage = getInitialMessage(profile.name, todaysSummary);
-    setMessages([initialMessage]);
-    setIsComplete(false);
-    setInput("");
-    const shuffled = [...PROMPT_SUGGESTIONS].sort(() => 0.5 - Math.random());
-    setSuggestions(shuffled.slice(0, 4));
-  }
-
   if (!isInitialized || !profile) {
     return null;
   }
 
   return (
     <div className="flex flex-col h-full max-h-[calc(100vh-12rem)]">
-      <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
+    <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
         <div className="space-y-6">
-          {messages.map((message) => (
+        {messages.map((message) => (
             <div
-              key={message.id}
-              className={cn(
+            key={message.id}
+            className={cn(
                 "flex items-start gap-3",
                 message.sender === "user" ? "justify-end" : "justify-start"
-              )}
+            )}
             >
-              {message.sender === "ai" && (
+            {message.sender === "ai" && (
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src="https://storage.googleapis.com/aai-web-samples/nextjs/anu/anu.jpeg" alt="Anu" data-ai-hint="indian woman" />
-                  <AvatarFallback className="bg-primary text-primary-foreground">
+                <AvatarImage src="https://storage.googleapis.com/aai-web-samples/nextjs/anu/anu.jpeg" alt="Anu" data-ai-hint="indian woman" />
+                <AvatarFallback className="bg-primary text-primary-foreground">
                     <Bot />
-                  </AvatarFallback>
+                </AvatarFallback>
                 </Avatar>
-              )}
-              <div
+            )}
+            <div
                 className={cn(
-                  "max-w-xs md:max-w-md lg:max-w-2xl rounded-lg p-3 text-sm whitespace-pre-wrap",
-                  message.sender === "user"
+                "max-w-xs md:max-w-md lg:max-w-2xl rounded-lg p-3 text-sm whitespace-pre-wrap",
+                message.sender === "user"
                     ? "bg-primary text-primary-foreground"
                     : "bg-card border"
                 )}
-              >
+            >
                 <p>{message.text}</p>
-              </div>
             </div>
-          ))}
-          {isLoading && (
+            </div>
+        ))}
+        {isLoading && (
             <div className="flex items-start gap-3 justify-start">
-               <Avatar className="h-8 w-8">
-                  <AvatarImage src="https://storage.googleapis.com/aai-web-samples/nextjs/anu/anu.jpeg" alt="Anu" data-ai-hint="indian woman" />
-                  <AvatarFallback className="bg-primary text-primary-foreground">
+            <Avatar className="h-8 w-8">
+                <AvatarImage src="https://storage.googleapis.com/aai-web-samples/nextjs/anu/anu.jpeg" alt="Anu" data-ai-hint="indian woman" />
+                <AvatarFallback className="bg-primary text-primary-foreground">
                     <Bot />
-                  </AvatarFallback>
+                </AvatarFallback>
                 </Avatar>
-              <div className="bg-card border rounded-lg p-3">
+            <div className="bg-card border rounded-lg p-3">
                 <div className="flex items-center space-x-2">
-                  <span className="text-sm">{isSummarizing ? 'Creating summary...' : 'Thinking...'}</span>
-                   <div className="h-2 w-2 bg-muted-foreground rounded-full animate-pulse [animation-delay:-0.3s]"></div>
+                <span className="text-sm">{isSummarizing ? 'Creating summary...' : 'Thinking...'}</span>
+                <div className="h-2 w-2 bg-muted-foreground rounded-full animate-pulse [animation-delay:-0.3s]"></div>
                     <div className="h-2 w-2 bg-muted-foreground rounded-full animate-pulse [animation-delay:-0.15s]"></div>
                     <div className="h-2 w-2 bg-muted-foreground rounded-full animate-pulse"></div>
                 </div>
-              </div>
             </div>
-          )}
+            </div>
+        )}
         </div>
-      </ScrollArea>
-      <div className="p-4 bg-background border-t">
+    </ScrollArea>
+    <div className="p-4 bg-background border-t">
         {isComplete ? (
             <div className="flex flex-col sm:flex-row items-center justify-center text-center gap-2 p-4 bg-secondary rounded-lg">
                 <CheckCircle className="h-5 w-5 text-green-500" />
                 <p className="text-sm text-muted-foreground">Journal entry for today is complete.</p>
-                 <Button variant="ghost" size="sm" onClick={handleNewChat} className="ml-0 sm:ml-4">
+                <Button variant="ghost" size="sm" onClick={handleNewChat} className="ml-0 sm:ml-4">
                     <RotateCcw className="h-4 w-4 mr-2" />
                     New Chat
-                 </Button>
+                </Button>
             </div>
         ) : (
             <div className="space-y-4">
                 {!hasStartedConversation && (
                     <div className="flex flex-wrap items-center justify-center gap-2">
                         {suggestions.map((prompt, index) => (
-                             <Button key={index} variant="outline" size="sm" onClick={() => handleInitialPrompt(prompt)}>
+                            <Button key={index} variant="outline" size="sm" onClick={() => handleInitialPrompt(prompt)}>
                                 {prompt.charAt(0).toUpperCase() + prompt.slice(1)}
-                             </Button>
+                            </Button>
                         ))}
                     </div>
                 )}
@@ -380,7 +374,7 @@ export function JournalChat() {
                     <form onSubmit={handleSendMessage} className="flex items-center gap-2">
                     <Textarea
                         placeholder="Type your thoughts here..."
-                        className="pr-24 min-h-[50px] resize-none flex-1"
+                        className="pr-12 min-h-[50px] resize-none flex-1"
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         onKeyDown={(e) => {
@@ -397,15 +391,12 @@ export function JournalChat() {
                         >
                             <SendHorizonal className="h-5 w-5" />
                         </Button>
-                        <Button type="button" variant="outline" size="icon" onClick={handleNewChat} title="Start New Chat">
-                            <RotateCcw className="h-5 w-5" />
-                        </Button>
                     </div>
                     </form>
                 </div>
             </div>
         )}
-      </div>
+    </div>
     </div>
   );
 }
