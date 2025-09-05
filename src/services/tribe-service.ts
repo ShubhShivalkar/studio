@@ -7,24 +7,20 @@ import type { Tribe } from '@/lib/types';
 import { getDay, nextMonday, format } from 'date-fns';
 
 /**
- * A class to manage the weekly tribe lifecycle.
+ * Gets information about the current tribe matching schedule.
+ * @returns An object indicating if today is Match Day (Monday) and the date of the next Monday.
  */
-export class TribeSchedule {
-  /**
-   * Gets information about the current tribe matching schedule.
-   * @returns An object indicating if today is Match Day (Monday) and the date of the next Monday.
-   */
-  static getScheduleInfo() {
-    const today = new Date();
-    const isMatchDay = getDay(today) === 1; // 1 for Monday
-    const nextMatchDay = nextMonday(today);
-    
-    return {
-      isMatchDay,
-      nextMondayFormatted: format(nextMatchDay, 'MMMM d, yyyy'),
-    };
-  }
+export async function getTribeScheduleInfo() {
+  const today = new Date();
+  const isMatchDay = getDay(today) === 1; // 1 for Monday
+  const nextMatchDay = nextMonday(today);
+  
+  return {
+    isMatchDay,
+    nextMondayFormatted: format(nextMatchDay, 'MMMM d, yyyy'),
+  };
 }
+
 
 /**
  * Retrieves all active tribes from Firestore.

@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { User, MatchedUser, Tribe } from "@/lib/types";
-import { differenceInYears, parseISO, format, addDays, getDay, isSameDay } from "date-fns";
+import { differenceInYears, parseISO, format, isWeekend } from "date-fns";
 import { matchUsersByTribePreferences } from "@/ai/flows/match-users-by-tribe-preferences";
 import { ProfileCard } from "@/components/profile-card";
 import {
@@ -32,13 +32,13 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
-import { Tooltip, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import useTribeStore from "@/store/tribe";
 import { useAuth } from "@/context/auth-context";
 import { getJournalEntries } from "@/services/journal-service";
 import { getAllUsers } from "@/services/user-service";
-import { TribeSchedule } from "@/services/tribe-service";
+import { getTribeScheduleInfo } from "@/services/tribe-service";
 
 
 const getAge = (dob: string) => {
@@ -53,6 +53,7 @@ export default function TribePage() {
   const { toast } = useToast();
   const [rejectionReason, setRejectionReason] = useState("");
   const [isDeclineDialogOpen, setIsDeclineDialogOpen] = useState(false);
+  const [nextMondayFormatted, setNextMondayFormatted] = useState('');
 
   useEffect(() => {
     const findTribe = async () => {
@@ -79,8 +80,9 @@ export default function TribePage() {
         }
         
         // --- WEEKLY CYCLE LOGIC ---
-        const { isMatchDay, nextMondayFormatted } = TribeSchedule.getScheduleInfo();
-        if (!isMatchDay) {
+        const scheduleInfo = await getTribeScheduleInfo();
+        setNextMondayFormatted(scheduleInfo.nextMondayFormatted);
+        if (!scheduleInfo.isMatchDay) {
             setTribeState("wait-for-monday");
             return;
         }
@@ -214,8 +216,6 @@ export default function TribePage() {
   
   const rejectedMembers = tribe?.members.filter(m => m.rsvpStatus === 'rejected');
   const isTribeComplete = attendingMembers && attendingMembers.length >= 4;
-  
-  const { nextMondayFormatted } = TribeSchedule.getScheduleInfo();
   
   return (
     <Card>
