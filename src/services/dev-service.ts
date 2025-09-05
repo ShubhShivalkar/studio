@@ -1,7 +1,7 @@
 
 'use server';
 
-import { collection, writeBatch, query, where, getDocs, Timestamp } from 'firebase/firestore';
+import { collection, writeBatch, query, where, getDocs, Timestamp, doc, updateDoc, deleteField } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { DailySummary, Reminder, Checklist } from '@/lib/types';
 import { subDays, format } from 'date-fns';
@@ -115,24 +115,32 @@ export async function addSampleEntries(userId: string): Promise<void> {
 }
 
 /**
- * Deletes all sample entries for a user.
- * @param userId The UID of the user.
+ * Deletes all data for a specific user, including journal entries, reminders,
+ * checklists, and resets persona-related fields on the user profile.
+ * @param userId The UID of the user whose data will be deleted.
  */
-export async function deleteSampleEntries(userId: string): Promise<void> {
+export async function deleteAllUserData(userId: string): Promise<void> {
     const batch = writeBatch(db);
-    const collections: (keyof typeof sampleDataIdentifier)[] = ['journalEntries', 'reminders', 'checklists'];
 
-    for (const collectionName of collections) {
-        const q = query(
-            collection(db, collectionName as string), 
-            where('userId', '==', userId), 
-            where('isSample', '==', true)
-        );
+    // 1. Delete all documents from related collections
+    const collectionsToDelete: string[] = ['journalEntries', 'reminders', 'checklists'];
+    for (const collectionName of collectionsToDelete) {
+        const q = query(collection(db, collectionName), where('userId', '==', userId));
         const querySnapshot = await getDocs(q);
         querySnapshot.forEach(doc => {
             batch.delete(doc.ref);
         });
     }
 
+    // 2. Reset user profile fields
+    const userRef = doc(db, 'users', userId);
+    batch.update(userRef, {
+        persona: deleteField(),
+        hobbies: deleteField(),
+        interests: deleteField(),
+        personaLastGenerated: deleteField(),
+        journalEntries: [], // Reset to an empty array
+    });
+    
     await batch.commit();
 }
