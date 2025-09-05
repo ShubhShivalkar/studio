@@ -38,7 +38,7 @@ import useTribeStore from "@/store/tribe";
 import { useAuth } from "@/context/auth-context";
 import { getJournalEntries } from "@/services/journal-service";
 import { getAllUsers } from "@/services/user-service";
-import { getTribeScheduleInfo } from "@/services/tribe-service";
+import { getTribeScheduleInfo, getActiveTribes } from "@/services/tribe-service";
 
 
 const getAge = (dob: string) => {
@@ -124,6 +124,8 @@ export default function TribePage() {
         
         try {
             const allUsers = await getAllUsers();
+            const activeTribes = await getActiveTribes();
+            const activeTribeMemberIds = activeTribes.flatMap(t => t.members.map(m => m.userId));
             
             // TODO: Logic to fill partial tribes first would go here.
             
@@ -141,7 +143,8 @@ export default function TribePage() {
                     journalEntries: profile.journalEntries,
                 },
                 otherUsers: allUsers,
-                preferences: profile.tribePreferences || { ageRange: [18, 60], gender: 'No Preference' }
+                preferences: profile.tribePreferences || { ageRange: [18, 60], gender: 'No Preference' },
+                activeTribeMemberIds,
             });
 
             const nextAvailableWeekendDay = journalEntries

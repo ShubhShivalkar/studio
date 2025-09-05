@@ -33,6 +33,7 @@ const MatchUsersByTribePreferencesInputSchema = z.object({
     ageRange: z.tuple([z.number(), z.number()]),
     gender: z.enum(['No Preference', 'Same Gender', 'Mixed Gender']),
   }),
+  activeTribeMemberIds: z.array(z.string()),
 });
 export type MatchUsersByTribePreferencesInput = z.infer<typeof MatchUsersByTribePreferencesInputSchema>;
 
@@ -50,7 +51,7 @@ export type MatchUsersByTribePreferencesOutput = z.infer<typeof MatchUsersByTrib
 export async function matchUsersByTribePreferences(
   input: MatchUsersByTribePreferencesInput
 ): Promise<MatchUsersByTribePreferencesOutput> {
-  const { currentUser, otherUsers, preferences } = input;
+  const { currentUser, otherUsers, preferences, activeTribeMemberIds } = input;
   const now = new Date();
 
   const scoredAndFilteredUsers = otherUsers
@@ -60,6 +61,11 @@ export async function matchUsersByTribePreferences(
         return null;
       }
       
+      // Hard filter: Exclude users already in a tribe
+      if (activeTribeMemberIds.includes(user.id)) {
+        return null;
+      }
+
       // Hard filter: Basic preferences
       if (user.id === currentUser.id) return null;
       if (!user.interestedInMeetups) return null;
