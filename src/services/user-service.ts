@@ -1,5 +1,7 @@
 
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+'use server';
+
+import { doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { User } from '@/lib/types';
 
@@ -35,4 +37,19 @@ export async function createUser(userId: string, data: Omit<User, 'id'>): Promis
 export async function updateUser(userId: string, data: Partial<User>): Promise<void> {
   const userDocRef = doc(db, 'users', userId);
   await updateDoc(userDocRef, data);
+}
+
+/**
+ * Deletes all user profiles that have been marked as sample data.
+ */
+export async function deleteSampleUsers(): Promise<void> {
+    const batch = writeBatch(db);
+    const q = query(collection(db, 'users'), where('isSampleUser', '==', true));
+    
+    const querySnapshot = await getDocs(q);
+    querySnapshot.forEach(doc => {
+        batch.delete(doc.ref);
+    });
+
+    await batch.commit();
 }
