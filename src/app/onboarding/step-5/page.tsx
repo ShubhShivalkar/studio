@@ -36,8 +36,7 @@ export default function Step5Page() {
     }
 
     try {
-        const newUser: User = {
-            id: user.uid,
+        const newUser: Omit<User, 'id'> = {
             name: onboardingData.name,
             dob: onboardingData.dob,
             gender: onboardingData.gender as 'Male' | 'Female' | 'Other' | 'Prefer not to say',
@@ -51,10 +50,11 @@ export default function Step5Page() {
         await saveUser(user.uid, newUser);
         
         // Add to mock data for immediate use in the app session
-        allUsers.push(newUser);
+        const fullUser = { id: user.uid, ...newUser };
+        allUsers.push(fullUser);
 
         // Update the global currentUser object for the current session
-        Object.assign(currentUser, newUser);
+        Object.assign(currentUser, fullUser);
 
         toast({
             title: "Profile Created!",

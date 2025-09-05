@@ -10,19 +10,28 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { Bot, LogOut, Users, BookOpen, Flame, Briefcase, HandHeart, MapPin, Phone } from "lucide-react";
+import { Bot, LogOut, Users, BookOpen, Flame, Briefcase, HandHeart, MapPin, Phone, Info } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { differenceInDays, parseISO, format } from 'date-fns';
 import { EditProfileDialog } from "@/components/edit-profile-dialog";
-import type { User, TribePreferences } from "@/lib/types";
+import type { User, TribePreferences, DailySummary } from "@/lib/types";
 import { TribePreferenceDialog } from "@/components/tribe-preference-dialog";
 import { useAuth } from "@/context/auth-context";
 import { updateUser } from "@/services/user-service";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
+import { getJournalEntries } from "@/services/journal-service";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 export default function ProfilePage() {
   const { profile, loading: authLoading } = useAuth();
@@ -33,6 +42,7 @@ export default function ProfilePage() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isPreferenceDialogOpen, setIsPreferenceDialogOpen] = useState(false);
   const [userData, setUserData] = useState<User | null>(profile);
+  const [journalEntries, setJournalEntries] = useState<DailySummary[]>([]);
   
   const { toast } = useToast();
   const router = useRouter();
@@ -41,13 +51,16 @@ export default function ProfilePage() {
     if (profile) {
       setUserData(profile);
       setIsInterested(profile.interestedInMeetups || false);
+      
+      // Fetch the journal entries to get the correct count of days
+      getJournalEntries(profile.id).then(setJournalEntries);
     }
   }, [profile]);
 
-  const journalEntriesCount = userData?.journalEntries?.length || 0;
+  const journalEntriesCount = journalEntries.length;
   const progress = Math.min((journalEntriesCount / 15) * 100, 100);
   const canGenerate = journalEntriesCount >= 15;
-  const streakDays = userData?.journalEntries ? Math.min(userData.journalEntries.length, 15) : 0;
+  const streakDays = journalEntriesCount;
   
   useEffect(() => {
     if (userData && !userData.location && "geolocation" in navigator) {
@@ -78,7 +91,7 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (userData?.persona) {
-        setPersona({ persona: userData.persona, hobbies: [], interests: [], personalityTraits: [] });
+        setPersona({ persona: userData.persona, hobbies: userData.hobbies || [], interests: userData.interests || [], personalityTraits: [] });
     }
 
     if (userData?.personaLastGenerated) {
@@ -123,12 +136,14 @@ export default function ProfilePage() {
           return;
       }
       
-      const entriesText = userData.journalEntries!.join("\n\n");
+      const entriesText = journalEntries.map(e => e.summary).join("\n\n");
       const result = await generatePersonalityPersona({ journalEntries: entriesText });
       setPersona(result);
       
       const updatedUserData = {
         persona: result.persona,
+        hobbies: result.hobbies,
+        interests: result.interests,
         personaLastGenerated: new Date().toISOString()
       };
       
@@ -366,17 +381,44 @@ export default function ProfilePage() {
                   </div>
               ) : (
                   <div className="text-center text-muted-foreground py-8 flex flex-col items-center justify-center gap-4">
-                      { !canGenerate ? (
-                          <>
-                              <p className="text-sm">You need at least 15 journal entries to generate a persona.</p>
-                              <div className="w-full max-w-sm space-y-2">
-                                  <Progress value={progress} />
-                                  <p className="text-xs">{journalEntriesCount} of 15 entries completed.</p>
-                              </div>
-                          </>
-                      ) : (
-                          <p>Click "Generate Persona" to discover your personality insights.</p>
-                      )}
+                    <div className="w-full max-w-sm space-y-2">
+                        <p className="text-sm">Complete 15 journal entries to generate your persona.</p>
+                        <Progress value={progress} />
+                        <p className="text-xs">{journalEntriesCount} of 15 entries completed.</p>
+                         <Dialog>
+                            <DialogTrigger asChild>
+                                <Button variant="link" className="text-sm text-yellow-600 hover:text-yellow-700 dark:text-yellow-400 dark:hover:text-yellow-500">
+                                    Why do I need this?
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-md">
+                                <DialogHeader>
+                                    <DialogTitle>What is a Persona?</DialogTitle>
+                                </DialogHeader>
+                                <div className="space-y-4 pt-2">
+                                    <p className="text-sm text-muted-foreground">
+                                        Your Persona is an AI-generated reflection of you, created by Anu based on your journal entries. It helps us understand your personality, interests, and what makes you unique, so we can connect you with the most compatible people.
+                                    </p>
+                                    <h3 className="font-semibold">Why 15 entries?</h3>
+                                    <p className="text-sm text-muted-foreground">
+                                        To create a rich and accurate persona, Anu needs enough information to understand your recurring themes, moods, and interests. Fifteen entries provide a solid foundation for a meaningful analysis.
+                                    </p>
+                                    <h3 className="font-semibold">Example Persona:</h3>
+                                    <div className="p-4 border rounded-lg space-y-3 bg-muted/50 text-sm">
+                                        <p className="italic">"A thoughtful and creative individual who finds joy in quiet moments and artistic expression. They have a deep appreciation for nature and enjoy spending their weekends hiking and capturing landscapes through photography."</p>
+                                        <div>
+                                            <h4 className="font-medium mb-1">Hobbies</h4>
+                                            <div className="flex flex-wrap gap-1">
+                                                <Badge variant="secondary">Photography</Badge>
+                                                <Badge variant="secondary">Hiking</Badge>
+                                                <Badge variant="secondary">Reading</Badge>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </DialogContent>
+                        </Dialog>
+                    </div>
                   </div>
               )}
             </CardContent>
@@ -422,5 +464,3 @@ export default function ProfilePage() {
     </>
   );
 }
-
-    

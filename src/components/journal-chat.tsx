@@ -6,16 +6,16 @@ import { summarizeJournalConversation } from "@/ai/flows/summarize-journal-conve
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
-import type { Message } from "@/lib/types";
+import type { DailySummary, Message } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Bot, SendHorizonal, CheckCircle, RotateCcw } from "lucide-react";
 import { useEffect, useRef, useState, useMemo } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { format } from 'date-fns';
+import { format, isSameDay, parseISO } from 'date-fns';
 import { useAuth } from "@/context/auth-context";
 import { getReminders } from "@/services/reminder-service";
 import { getChecklists } from "@/services/checklist-service";
-import { setJournalEntry, addJournalSummaryToUser } from "@/services/journal-service";
+import { setJournalEntry, addJournalSummaryToUser, getJournalEntries } from "@/services/journal-service";
 
 const MAX_AI_QUESTIONS = 10;
 
@@ -48,12 +48,18 @@ const PROMPT_SUGGESTIONS = [
 ];
 
 
-const getInitialMessage = (name?: string) => {
+const getInitialMessage = (name?: string, todaysSummary?: DailySummary | null) => {
     const userName = name ? `, ${name.split(' ')[0]}` : '';
+    let text = `Hi${userName}, I'm Anu, your journaling companion. What's on your mind today?`;
+
+    if (todaysSummary?.summary) {
+        text = `Hi${userName}! I see you've already written a bit today about:\n\n*"${todaysSummary.summary}"*\n\nWould you like to reflect more on that, or is there something new on your mind?`;
+    }
+    
     return {
         id: '0',
         sender: 'ai' as const,
-        text: `Hi${userName}, I'm Anu, your journaling companion. What's on your mind today?`
+        text: text
     };
 };
 
@@ -67,13 +73,18 @@ export function JournalChat() {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [timezone, setTimezone] = useState('');
+  const [todaysSummary, setTodaysSummary] = useState<DailySummary | null>(null);
   
   const userName = useMemo(() => profile?.name.split(' ')[0] || 'there', [profile]);
-  const initialMessage = useMemo(() => getInitialMessage(profile?.name), [profile]);
-
+  
   const STORAGE_KEY_MESSAGES = useMemo(() => `journalChatMessages_${profile?.id}`, [profile]);
   const STORAGE_KEY_DATE = useMemo(() => `journalChatDate_${profile?.id}`, [profile]);
 
+  useEffect(() => {
+    // Get client's timezone once the component mounts
+    setTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone);
+  }, []);
 
   const aiQuestionCount = useMemo(() => {
     return messages.filter(m => m.sender === 'ai').length - 1;
@@ -101,32 +112,44 @@ export function JournalChat() {
 
   useEffect(() => {
     if (!profile) return;
-    const todayStr = format(new Date(), 'yyyy-MM-dd');
+    const today = new Date();
+    const todayStr = format(today, 'yyyy-MM-dd');
     const storedDate = localStorage.getItem(STORAGE_KEY_DATE);
     
-    if (storedDate === todayStr) {
-        const storedMessages = localStorage.getItem(STORAGE_KEY_MESSAGES);
-        if (storedMessages) {
-            try {
-                const parsedMessages = JSON.parse(storedMessages);
-                setMessages(parsedMessages);
-                const lastMessage = parsedMessages[parsedMessages.length - 1];
-                if (lastMessage && lastMessage.text.includes("I've saved this as your journal entry.")) {
-                    setIsComplete(true);
+    // Fetch today's summary regardless of local storage state
+    getJournalEntries(profile.id).then(entries => {
+        const summaryForToday = entries.find(e => e.date === todayStr) || null;
+        setTodaysSummary(summaryForToday);
+
+        const initialMessage = getInitialMessage(profile?.name, summaryForToday);
+        
+        if (storedDate === todayStr) {
+            const storedMessages = localStorage.getItem(STORAGE_KEY_MESSAGES);
+            if (storedMessages) {
+                try {
+                    const parsedMessages = JSON.parse(storedMessages);
+                    // Use stored messages but ensure the first message is the latest initial message
+                    parsedMessages[0] = initialMessage;
+                    setMessages(parsedMessages);
+                    const lastMessage = parsedMessages[parsedMessages.length - 1];
+                    if (lastMessage && lastMessage.text.includes("I've saved this as your journal entry.")) {
+                        setIsComplete(true);
+                    }
+                } catch (e) {
+                    setMessages([initialMessage]);
                 }
-            } catch (e) {
-                setMessages([initialMessage]);
+            } else {
+                 setMessages([initialMessage]);
             }
         } else {
-             setMessages([initialMessage]);
+            localStorage.removeItem(STORAGE_KEY_MESSAGES);
+            localStorage.removeItem(STORAGE_KEY_DATE);
+            setMessages([initialMessage]);
         }
-    } else {
-        localStorage.removeItem(STORAGE_KEY_MESSAGES);
-        localStorage.removeItem(STORAGE_KEY_DATE);
-        setMessages([initialMessage]);
-    }
-    setIsInitialized(true);
-  }, [initialMessage, STORAGE_KEY_DATE, STORAGE_KEY_MESSAGES, profile]);
+        setIsInitialized(true);
+    });
+    
+  }, [STORAGE_KEY_DATE, STORAGE_KEY_MESSAGES, profile]);
 
   useEffect(() => {
     if (isInitialized && profile) {
@@ -190,7 +213,11 @@ export function JournalChat() {
           userName, 
           journalHistory,
           reminders: remindersText,
-          checklists: checklistsText
+          checklists: checklistsText,
+          timezone,
+          dob: profile.dob,
+          profession: profile.profession,
+          todaysSummary: todaysSummary?.summary,
       });
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -262,7 +289,9 @@ export function JournalChat() {
   const handleNewChat = () => {
     if (!profile) return;
     localStorage.removeItem(STORAGE_KEY_MESSAGES);
-    localStorage.removeItem(STORAGE_KEY_DATE);
+    // We don't remove the date, so if they refresh, the old convo comes back for the same day.
+    // This allows multiple sessions in one day.
+    const initialMessage = getInitialMessage(profile.name, todaysSummary);
     setMessages([initialMessage]);
     setIsComplete(false);
     setInput("");
