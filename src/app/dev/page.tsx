@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/auth-context";
-import { addSampleEntries, deleteSampleEntries } from "@/services/dev-service";
+import { addSampleEntries, deleteAllUserData } from "@/services/dev-service";
 import { deleteSampleUsers } from "@/services/user-service";
 import { AlertTriangle, DatabaseZap, Trash2, Users } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -28,6 +28,7 @@ export default function DevPage() {
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
     const [isDeletingUsers, setIsDeletingUsers] = useState(false);
+    const [isDeletingAllData, setIsDeletingAllData] = useState(false);
 
     const handleAddData = async () => {
         if (!user) {
@@ -46,20 +47,20 @@ export default function DevPage() {
         }
     };
 
-    const handleRemoveData = async () => {
+    const handleDeleteAllUserData = async () => {
         if (!user) {
-            toast({ variant: "destructive", title: "Error", description: "You must be logged in to remove data." });
+            toast({ variant: "destructive", title: "Error", description: "You must be logged in to delete your data." });
             return;
         }
-        setIsLoading(true);
+        setIsDeletingAllData(true);
         try {
-            await deleteSampleEntries(user.uid);
-            toast({ variant: "destructive", title: "Success", description: "All sample data has been removed." });
+            await deleteAllUserData(user.uid);
+            toast({ variant: "destructive", title: "Success", description: "All your data has been deleted and your profile has been reset." });
         } catch (error) {
-            console.error("Failed to remove sample data:", error);
-            toast({ variant: "destructive", title: "Error", description: "Could not remove sample data." });
+            console.error("Failed to delete user data:", error);
+            toast({ variant: "destructive", title: "Error", description: "Could not delete your data." });
         } finally {
-            setIsLoading(false);
+            setIsDeletingAllData(false);
         }
     };
     
@@ -97,28 +98,46 @@ export default function DevPage() {
                             <DatabaseZap /> Add Sample Data
                         </CardTitle>
                         <CardDescription>
-                            Populate the current user's account with sample journal entries, reminders, and checklists. This is useful for testing features.
+                            Populate your account with 15 sample journal entries, reminders, and checklists for testing.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
                         <Button onClick={handleAddData} disabled={isLoading || !user} className="w-full">
-                            {isLoading ? "Adding Data..." : "Add Sample Data"}
+                            {isLoading ? "Adding Data..." : "Add Sample Data to My Account"}
                         </Button>
                     </CardContent>
                 </Card>
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
-                            <Trash2 /> Remove Sample Data
+                            <Trash2 /> Delete All My Data
                         </CardTitle>
                         <CardDescription>
-                           Delete all sample data (journals, reminders, checklists) associated with the currently logged-in user.
+                           Delete all your journal entries, reminders, and checklists. This will also reset your generated persona.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                         <Button onClick={handleRemoveData} disabled={isLoading || !user} variant="destructive" className="w-full">
-                            {isLoading ? "Removing Data..." : "Remove Sample Data"}
-                        </Button>
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button disabled={isDeletingAllData || !user} variant="destructive" className="w-full">
+                                    {isDeletingAllData ? "Deleting Data..." : "Delete All My Data"}
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        This action cannot be undone. This will permanently delete all data associated with your account, including your persona.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={handleDeleteAllUserData} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                        Yes, delete my data
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
                     </CardContent>
                 </Card>
                 <Card>
