@@ -320,42 +320,6 @@ export default function ProfilePage() {
                   <div className="flex-grow">
                       <CardTitle className="flex items-center gap-2">
                           <Bot className="text-primary"/> Your Persona by Anu
-                           <Dialog>
-                                <DialogTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-6 w-6">
-                                        <Info className="h-4 w-4 text-muted-foreground" />
-                                    </Button>
-                                </DialogTrigger>
-                                <DialogContent className="sm:max-w-md">
-                                    <DialogHeader>
-                                        <DialogTitle>What is a Persona?</DialogTitle>
-                                        <DialogDescription>
-                                            Your Persona is an AI-generated reflection of you, created by Anu based on your journal entries. It helps us understand your personality, interests, and what makes you unique, so we can connect you with the most compatible people.
-                                        </DialogDescription>
-                                    </DialogHeader>
-                                    <div className="space-y-4 pt-4">
-                                        <h3 className="font-semibold">Example Persona:</h3>
-                                        <div className="p-4 border rounded-lg space-y-3 bg-muted/50 text-sm">
-                                            <p className="italic">"A thoughtful and creative individual who finds joy in quiet moments and artistic expression. They have a deep appreciation for nature and enjoy spending their weekends hiking and capturing landscapes through photography."</p>
-                                            <div>
-                                                <h4 className="font-medium mb-1">Hobbies</h4>
-                                                <div className="flex flex-wrap gap-1">
-                                                    <Badge variant="secondary">Photography</Badge>
-                                                    <Badge variant="secondary">Hiking</Badge>
-                                                    <Badge variant="secondary">Reading</Badge>
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <h4 className="font-medium mb-1">Interests</h4>
-                                                <div className="flex flex-wrap gap-1">
-                                                    <Badge variant="secondary">Art Galleries</Badge>
-                                                    <Badge variant="secondary">Documentaries</Badge>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </DialogContent>
-                            </Dialog>
                       </CardTitle>
                       <CardDescription>
                           Based on your journal entries, this is how Anu understands your personality.
@@ -417,17 +381,44 @@ export default function ProfilePage() {
                   </div>
               ) : (
                   <div className="text-center text-muted-foreground py-8 flex flex-col items-center justify-center gap-4">
-                      { !canGenerate ? (
-                          <>
-                              <p className="text-sm">You need at least 15 journal entries to generate a persona.</p>
-                              <div className="w-full max-w-sm space-y-2">
-                                  <Progress value={progress} />
-                                  <p className="text-xs">{journalEntriesCount} of 15 entries completed.</p>
-                              </div>
-                          </>
-                      ) : (
-                          <p>Click "Generate Persona" to discover your personality insights.</p>
-                      )}
+                    <div className="w-full max-w-sm space-y-2">
+                        <p className="text-sm">Complete 15 journal entries to generate your persona.</p>
+                        <Progress value={progress} />
+                        <p className="text-xs">{journalEntriesCount} of 15 entries completed.</p>
+                         <Dialog>
+                            <DialogTrigger asChild>
+                                <Button variant="link" className="text-sm text-yellow-600 hover:text-yellow-700 dark:text-yellow-400 dark:hover:text-yellow-500">
+                                    Why do I need this?
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-md">
+                                <DialogHeader>
+                                    <DialogTitle>What is a Persona?</DialogTitle>
+                                </DialogHeader>
+                                <div className="space-y-4 pt-2">
+                                    <p className="text-sm text-muted-foreground">
+                                        Your Persona is an AI-generated reflection of you, created by Anu based on your journal entries. It helps us understand your personality, interests, and what makes you unique, so we can connect you with the most compatible people.
+                                    </p>
+                                    <h3 className="font-semibold">Why 15 entries?</h3>
+                                    <p className="text-sm text-muted-foreground">
+                                        To create a rich and accurate persona, Anu needs enough information to understand your recurring themes, moods, and interests. Fifteen entries provide a solid foundation for a meaningful analysis.
+                                    </p>
+                                    <h3 className="font-semibold">Example Persona:</h3>
+                                    <div className="p-4 border rounded-lg space-y-3 bg-muted/50 text-sm">
+                                        <p className="italic">"A thoughtful and creative individual who finds joy in quiet moments and artistic expression. They have a deep appreciation for nature and enjoy spending their weekends hiking and capturing landscapes through photography."</p>
+                                        <div>
+                                            <h4 className="font-medium mb-1">Hobbies</h4>
+                                            <div className="flex flex-wrap gap-1">
+                                                <Badge variant="secondary">Photography</Badge>
+                                                <Badge variant="secondary">Hiking</Badge>
+                                                <Badge variant="secondary">Reading</Badge>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </DialogContent>
+                        </Dialog>
+                    </div>
                   </div>
               )}
             </CardContent>
@@ -473,5 +464,3 @@ export default function ProfilePage() {
     </>
   );
 }
-
-    
