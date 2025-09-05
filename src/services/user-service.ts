@@ -1,7 +1,7 @@
 
 'use server';
 
-import { doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, writeBatch, Timestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, collection, query, getDocs, writeBatch, Timestamp, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { User } from '@/lib/types';
 import { format, parseISO } from 'date-fns';
@@ -62,7 +62,7 @@ export async function updateUser(userId: string, data: Partial<User>): Promise<v
   };
 
   // Only convert dates if they are provided as new strings
-  if (typeof data.dob === 'string') {
+  if (typeof data.dob === 'string' && data.dob.match(/^\d{4}-\d{2}-\d{2}$/)) {
     dataToUpdate.dob = Timestamp.fromDate(parseISO(data.dob));
   }
   if (typeof data.personaLastGenerated === 'string') {
@@ -74,15 +74,18 @@ export async function updateUser(userId: string, data: Partial<User>): Promise<v
 
 
 /**
- * Deletes all user profiles that have been marked as sample data.
+ * Deletes all sample user profiles from the database.
+ * Sample users are identified by their document ID starting with "seed_user_".
  */
 export async function deleteSampleUsers(): Promise<void> {
     const batch = writeBatch(db);
-    const q = query(collection(db, 'users'), where('isSampleUser', '==', true));
-    
-    const querySnapshot = await getDocs(q);
-    querySnapshot.forEach(doc => {
-        batch.delete(doc.ref);
+    const usersCollection = collection(db, 'users');
+    const allUsersSnapshot = await getDocs(usersCollection);
+
+    allUsersSnapshot.forEach(doc => {
+        if (doc.id.startsWith('seed_user_')) {
+            batch.delete(doc.ref);
+        }
     });
 
     await batch.commit();
