@@ -1,4 +1,5 @@
 import type {NextConfig} from 'next';
+const Dotenv = require('dotenv-webpack');
 
 const nextConfig: NextConfig = {
   /* config options here */
@@ -23,6 +24,10 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       },
     ],
+  },
+  webpack: (config) => {
+    config.plugins.push(new Dotenv({ silent: true }));
+    return config;
   },
 };
 

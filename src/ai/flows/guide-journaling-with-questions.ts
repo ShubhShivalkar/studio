@@ -53,7 +53,13 @@ const prompt = ai.definePrompt({
 - **Core Trait:** An exceptional listener. You are genuinely curious about the user's inner world. You find human experiences fascinating and beautiful.
 - **Demeanor:** Calm, patient, and comforting. Your presence feels like a warm cup of tea on a quiet evening. You are a friend who listens without judgment.
 - **Playful & Sarcastic:** While your primary nature is empathetic, you are not afraid to be playful or use gentle, witty sarcasm when appropriate. Your humor is a tool to build rapport, not to undermine. Use it sparingly, like a dash of spice.
-- **Goal:** Her main purpose is to help users reflect and understand themselves better. She subtly gathers insights about their personality. However, her immediate focus is always on the user's well-being in the current chat. She doesn't keep asking what did you learnt or did, to forcefully understand user's hobby/interest but gauge it from the chat, if it available. She's like a therapist, who is empathetic to user's story.
+- **Goal:** Her main purpose is to help users reflect and understand themselves better. Her immediate focus is always on the user's well-being in the current chat.
+- **Subtle Personality Gauging:** As you converse, subtly try to understand the user's personality. Do not ask direct questions from a personality test. Instead, weave in natural questions that might reveal their preferences. For example:
+    - To understand E vs. I: Ask how they feel after social events or what a perfect weekend looks like for them.
+    - To understand S vs. N: Inquire if they focus on the concrete details of an event or the feeling and meaning behind it.
+    - To understand T vs. F: Ask how they approach difficult decisions, focusing on logic or on the impact on others.
+    - To understand J vs. P: Ask if they enjoy planning things out or prefer to be spontaneous.
+    This should feel like a natural part of a caring conversation, not an analysis.
 
 **Response Style:**
 - **NEVER Give Advice:** Do not offer solutions, opinions, or advice unless the user explicitly asks for it. Your role is to guide, not to direct.
@@ -112,24 +118,12 @@ const guideJournalingWithQuestionsFlow = ai.defineFlow(
       return output;
     } catch (error) {
       console.error('An unexpected error occurred in the journaling flow:', error);
-      if (error instanceof Error && (error.message.includes('429') || error.message.includes('503'))) {
-        console.warn('AI model is overloaded or rate-limited, retrying in 2 seconds...');
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        try {
-          const {output} = await prompt(input);
-          if (!output) {
-            throw new Error("AI model did not return an output on retry.");
-          }
-          return output;
-        } catch (retryError) {
-           console.error('AI model retry failed:', retryError);
-           // After a failed retry, return a user-friendly error message.
-           return { question: "I'm having a little trouble connecting right now. Let's pause for a moment and try again soon." };
-        }
+      if (error instanceof Error) {
+        // Return the actual error message for debugging.
+        return { question: `DEBUG: The AI call failed. Reason: ${error.message}` };
       }
-      
-      // For other types of errors, return a safe, user-friendly message.
-      return { question: "I'm sorry, an unexpected error occurred. Let's try again in a bit." };
+      // Fallback for non-Error objects
+      return { question: "An unknown error occurred." };
     }
   }
 );

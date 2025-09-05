@@ -32,6 +32,12 @@ import {
   DialogDescription,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export default function ProfilePage() {
   const { profile, loading: authLoading } = useAuth();
@@ -91,7 +97,7 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (userData?.persona) {
-        setPersona({ persona: userData.persona, hobbies: userData.hobbies || [], interests: userData.interests || [], personalityTraits: [] });
+        setPersona({ persona: userData.persona, hobbies: userData.hobbies || [], interests: userData.interests || [], personalityTraits: [], mbti: userData.mbti || "N/A" });
     }
 
     if (userData?.personaLastGenerated) {
@@ -144,6 +150,7 @@ export default function ProfilePage() {
         persona: result.persona,
         hobbies: result.hobbies,
         interests: result.interests,
+        mbti: result.mbti,
         personaLastGenerated: new Date().toISOString()
       };
       
@@ -196,6 +203,8 @@ export default function ProfilePage() {
       });
     }
   };
+
+  const isPersonaValid = persona && persona.persona && !persona.persona.includes("Could not generate") && !persona.persona.includes("unexpected error");
 
   if (authLoading || !userData) {
     return (
@@ -281,7 +290,7 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
 
-          {persona && (
+          {isPersonaValid && (
             <Card className="bg-accent text-accent-foreground">
                   <CardHeader>
                       <CardTitle className="flex items-center gap-2">
@@ -325,9 +334,22 @@ export default function ProfilePage() {
                           Based on your journal entries, this is how Anu understands your personality.
                       </CardDescription>
                   </div>
-                  <Button onClick={handleGeneratePersona} disabled={isLoading || !canGenerate || !canRegenerate} className="w-full sm:w-auto">
-                      {isLoading ? "Generating..." : persona ? "Regenerate Persona" : "Generate Persona"}
-                  </Button>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span tabIndex={0}>
+                           <Button onClick={handleGeneratePersona} disabled={isLoading || !canGenerate || !canRegenerate} className="w-full sm:w-auto">
+                              {isLoading ? "Generating..." : persona ? "Regenerate Persona" : "Generate Persona"}
+                          </Button>
+                        </span>
+                      </TooltipTrigger>
+                      {!canRegenerate && (
+                        <TooltipContent>
+                          <p>You can regenerate your persona once every 7 days.</p>
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  </TooltipProvider>
               </div>
             </CardHeader>
             <CardContent className="min-h-[12rem]">
@@ -342,9 +364,16 @@ export default function ProfilePage() {
                           <Skeleton className="h-6 w-16" />
                       </div>
                   </div>
-              ) : persona ? (
+              ) : isPersonaValid ? (
                   <div className="space-y-4">
                       <p className="italic text-foreground/80">{persona.persona}</p>
+                      
+                      {persona.mbti && (
+                        <div>
+                            <h3 className="font-semibold mb-2">Personality Type</h3>
+                            <Badge variant="secondary">{persona.mbti}</Badge>
+                        </div>
+                      )}
                       
                       {persona.personalityTraits.length > 0 && (
                           <div>

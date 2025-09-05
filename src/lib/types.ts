@@ -21,6 +21,7 @@ export type User = {
   personaLastGenerated?: string; // ISO date string
   hobbies?: string[];
   interests?: string[];
+  mbti?: string;
   profession?: string;
   religion?: string;
   location?: string;
