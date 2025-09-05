@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { Bot, LogOut, Users, BookOpen, Flame, Briefcase, HandHeart, MapPin, Phone } from "lucide-react";
+import { Bot, LogOut, Users, BookOpen, Flame, Briefcase, HandHeart, MapPin, Phone, Info } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { Switch } from "@/components/ui/switch";
@@ -24,6 +24,14 @@ import { updateUser } from "@/services/user-service";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { getJournalEntries } from "@/services/journal-service";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 export default function ProfilePage() {
   const { profile, loading: authLoading } = useAuth();
@@ -312,6 +320,42 @@ export default function ProfilePage() {
                   <div className="flex-grow">
                       <CardTitle className="flex items-center gap-2">
                           <Bot className="text-primary"/> Your Persona by Anu
+                           <Dialog>
+                                <DialogTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-6 w-6">
+                                        <Info className="h-4 w-4 text-muted-foreground" />
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent className="sm:max-w-md">
+                                    <DialogHeader>
+                                        <DialogTitle>What is a Persona?</DialogTitle>
+                                        <DialogDescription>
+                                            Your Persona is an AI-generated reflection of you, created by Anu based on your journal entries. It helps us understand your personality, interests, and what makes you unique, so we can connect you with the most compatible people.
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                    <div className="space-y-4 pt-4">
+                                        <h3 className="font-semibold">Example Persona:</h3>
+                                        <div className="p-4 border rounded-lg space-y-3 bg-muted/50 text-sm">
+                                            <p className="italic">"A thoughtful and creative individual who finds joy in quiet moments and artistic expression. They have a deep appreciation for nature and enjoy spending their weekends hiking and capturing landscapes through photography."</p>
+                                            <div>
+                                                <h4 className="font-medium mb-1">Hobbies</h4>
+                                                <div className="flex flex-wrap gap-1">
+                                                    <Badge variant="secondary">Photography</Badge>
+                                                    <Badge variant="secondary">Hiking</Badge>
+                                                    <Badge variant="secondary">Reading</Badge>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <h4 className="font-medium mb-1">Interests</h4>
+                                                <div className="flex flex-wrap gap-1">
+                                                    <Badge variant="secondary">Art Galleries</Badge>
+                                                    <Badge variant="secondary">Documentaries</Badge>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </DialogContent>
+                            </Dialog>
                       </CardTitle>
                       <CardDescription>
                           Based on your journal entries, this is how Anu understands your personality.
@@ -429,3 +473,5 @@ export default function ProfilePage() {
     </>
   );
 }
+
+    
