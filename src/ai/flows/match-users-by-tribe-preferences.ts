@@ -19,6 +19,7 @@ const UserSchema = z.object({
   dob: z.string(),
   gender: z.enum(['Male', 'Female', 'Other', 'Prefer not to say']),
   interestedInMeetups: z.boolean().optional(),
+  location: z.string().optional(),
 });
 
 const MatchUsersByTribePreferencesInputSchema = z.object({
@@ -67,13 +68,18 @@ export async function matchUsersByTribePreferences(
         return false;
     }
 
+    // Filter by location - only match with users in the same location for simplicity
+    if (currentUser.location && user.location !== currentUser.location) {
+        return false;
+    }
+
     return true;
   });
   
-  const otherUserPersonas = filteredUsers.map(user => `${user.id}::${user.persona || 'No persona available.'}`);
+  const otherUserPersonas = filteredUsers.map(user => `${user.id}::${user.persona || 'No persona available.'}::${user.location || 'Unknown location'}`);
 
   const modelInput = {
-    userPersona: `${currentUser.id}::${currentUser.persona}`,
+    userPersona: `${currentUser.id}::${currentUser.persona}::${currentUser.location}`,
     otherUserPersonas,
     genderPreference: preferences.gender,
   };
@@ -93,13 +99,13 @@ const matchUsersByTribePreferencesPrompt = ai.definePrompt({
   input: {schema: flowInputSchema },
   output: {schema: MatchUsersByTribePreferencesOutputSchema},
   prompt: `You are an AI matchmaker specializing in forming small, compatible groups (tribes) of 4 people.
-Given the current user's persona, compare it against a list of other user personas to find the 3 best matches.
-Each persona in the list is prefixed with "userId::". Ensure you extract the userId correctly.
+Given the current user's persona and location, compare it against a list of other user personas to find the 3 best matches.
+Each persona in the list is prefixed with "userId::persona::location". Ensure you extract the userId correctly.
 
 Current User Persona:
 {{userPersona}}
 
-Available User Personas (Format: "userId::persona"):
+Available User Personas (Format: "userId::persona::location"):
 {{#each otherUserPersonas}}
 - {{{this}}}
 {{/each}}
@@ -107,11 +113,12 @@ Available User Personas (Format: "userId::persona"):
 User's Gender Preference: {{genderPreference}}
 
 CRITERIA FOR MATCHING:
-1.  **Compatibility First:** Find the 3 most compatible users based on their personas. Aim for a mix of similarities for comfort and differences for interesting conversations.
-2.  **Gender Preference:**
+1.  **Location First:** Strongly prioritize matching users who are in the same location. This is critical for the meetup to be practical.
+2.  **Compatibility Second:** After location, find the 3 most compatible users based on their personas. Aim for a mix of similarities for comfort and differences for interesting conversations.
+3.  **Gender Preference:**
     - If the preference is 'Mixed Gender', you MUST select a group that results in a 1:1 gender ratio (2 men, 2 women). Do your best to meet this. If not possible, create the most balanced group you can.
     - If the preference is 'Same Gender' or 'No Preference', gender balance is not a primary concern; focus on the best personality matches.
-3.  **Output:** Return a list of the top 3 matched users, including their userId, a compatibility score (0-100), their persona, and a brief, insightful reason for why they are a good match for the current user.`,
+4.  **Output:** Return a list of the top 3 matched users, including their userId, a compatibility score (0-100), their persona, and a brief, insightful reason for why they are a good match for the current user.`,
 });
 
 const matchUsersByTribePreferencesFlow = ai.defineFlow(

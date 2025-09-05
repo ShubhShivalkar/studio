@@ -31,6 +31,28 @@ export async function getUser(userId: string): Promise<User | null> {
 }
 
 /**
+ * Retrieves all user profiles from Firestore.
+ * @returns An array of all users.
+ */
+export async function getAllUsers(): Promise<User[]> {
+  const usersCollection = collection(db, 'users');
+  const userSnapshot = await getDocs(usersCollection);
+  return userSnapshot.docs.map(doc => {
+    const data = doc.data();
+    if (data.dob && data.dob instanceof Timestamp) {
+        data.dob = format(data.dob.toDate(), 'yyyy-MM-dd');
+    }
+    if (data.lastActive && data.lastActive instanceof Timestamp) {
+        data.lastActive = data.lastActive.toDate().toISOString();
+    }
+    if (data.personaLastGenerated && data.personaLastGenerated instanceof Timestamp) {
+        data.personaLastGenerated = data.personaLastGenerated.toDate().toISOString();
+    }
+    return { id: doc.id, ...data } as User;
+  });
+}
+
+/**
  * Creates a new user profile in Firestore.
  * @param userId The UID of the user from Firebase Auth.
  * @param data The user profile data to save.
