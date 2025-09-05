@@ -91,7 +91,7 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (userData?.persona) {
-        setPersona({ persona: userData.persona, hobbies: userData.hobbies || [], interests: userData.interests || [], personalityTraits: [] });
+        setPersona({ persona: userData.persona, hobbies: userData.hobbies || [], interests: userData.interests || [], personalityTraits: [], mbti: userData.mbti || "N/A" });
     }
 
     if (userData?.personaLastGenerated) {
@@ -144,6 +144,7 @@ export default function ProfilePage() {
         persona: result.persona,
         hobbies: result.hobbies,
         interests: result.interests,
+        mbti: result.mbti,
         personaLastGenerated: new Date().toISOString()
       };
       
@@ -247,6 +248,9 @@ export default function ProfilePage() {
                     </span>
                   )}
               </CardDescription>
+               {userData.mbti && (
+                  <Badge variant="secondary" className="mt-2">{userData.mbti}</Badge>
+              )}
             </CardHeader>
             <CardContent className="space-y-4">
                 {(userData.profession || userData.religion || userData.phone) && (

@@ -24,6 +24,7 @@ const GeneratePersonalityPersonaOutputSchema = z.object({
   hobbies: z.array(z.string()).describe("A list of the user's hobbies."),
   interests: z.array(z.string()).describe("A list of the user's interests."),
   personalityTraits: z.array(z.string()).describe("A list of the user's personality traits."),
+  mbti: z.string().describe("The user's estimated MBTI personality type (e.g., INFP, ESTJ)."),
 });
 export type GeneratePersonalityPersonaOutput = z.infer<typeof GeneratePersonalityPersonaOutputSchema>;
 
@@ -35,7 +36,7 @@ const prompt = ai.definePrompt({
   name: 'generatePersonalityPersonaPrompt',
   input: {schema: GeneratePersonalityPersonaInputSchema},
   output: {schema: GeneratePersonalityPersonaOutputSchema},
-  prompt: `You are an AI personality generator. You will generate a personality persona based on the user's journal entries. Analyze the entries to identify hobbies, interests, and key personality traits, in addition to a summary persona.
+  prompt: `You are an AI personality generator. You will generate a personality persona based on the user's journal entries. Analyze the entries to identify hobbies, interests, and key personality traits, in addition to a summary persona. Also, based on the text, make an educated guess about the user's MBTI personality type.
 
 Journal Entries: {{{journalEntries}}}`,
 });
@@ -61,13 +62,13 @@ const generatePersonalityPersonaFlow = ai.defineFlow(
         } catch (retryError) {
           console.error('AI model retry failed:', retryError);
           // After a failed retry, return a default empty state instead of throwing.
-          return { persona: "Could not generate persona at this time.", hobbies: [], interests: [], personalityTraits: [] };
+          return { persona: "Could not generate persona at this time.", hobbies: [], interests: [], personalityTraits: [], mbti: "N/A" };
         }
       }
       // For other types of errors, or if the retry fails, re-throw.
       console.error('An unexpected error occurred in the persona generation flow:', error);
       // Also return a default state for other unexpected errors.
-      return { persona: "An unexpected error occurred. Please try again later.", hobbies: [], interests: [], personalityTraits: [] };
+      return { persona: "An unexpected error occurred. Please try again later.", hobbies: [], interests: [], personalityTraits: [], mbti: "N/A" };
     }
   }
 );
