@@ -56,6 +56,37 @@ export default function TribePage() {
   const [nextMondayFormatted, setNextMondayFormatted] = useState('');
   const [nextMatchDateTime, setNextMatchDateTime] = useState<string | null>(null);
 
+  const [stats, setStats] = useState<{ activeTribes: number; membersInTribes: number; eligibleUsers: number; } | null>(null);
+
+  useEffect(() => {
+    async function fetchStats() {
+      try {
+        const allUsers = await getAllUsers();
+        const activeTribes = await getActiveTribes();
+
+        const activeTribeMemberIds = new Set(activeTribes.flatMap(t => t.members.map(m => m.userId)));
+
+        // An eligible user has a persona, is interested, and is not in a tribe already.
+        // We can't check availability here without fetching all journal entries for all users,
+        // so we'll base eligibility on the main criteria.
+        const eligibleUsers = allUsers.filter(u =>
+          u.persona && u.interestedInMeetups && !activeTribeMemberIds.has(u.id)
+        );
+
+        setStats({
+          activeTribes: activeTribes.length,
+          membersInTribes: activeTribeMemberIds.size,
+          eligibleUsers: eligibleUsers.length,
+        });
+
+      } catch (error) {
+        console.error("Failed to fetch tribe stats:", error);
+      }
+    }
+    fetchStats();
+  }, [tribeState]); // Refetch stats when tribe state changes
+
+
   const calculateTimeLeft = () => {
     if (!nextMatchDateTime) {
       return { days: 0, hours: 0, minutes: 0, seconds: 0 };
@@ -318,6 +349,22 @@ export default function TribePage() {
                 </Button>
             </div>
         </div>
+        {stats && (
+           <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground border-t pt-4 mt-4">
+                <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4 text-green-500" />
+                    <span><span className="font-bold text-foreground">{stats.activeTribes}</span> Active Tribes</span>
+                </div>
+                 <div className="flex items-center gap-2">
+                    <UserCheck className="h-4 w-4 text-blue-500" />
+                    <span><span className="font-bold text-foreground">{stats.membersInTribes}</span> Members in Tribes</span>
+                </div>
+                 <div className="flex items-center gap-2">
+                    <CalendarClock className="h-4 w-4 text-orange-500" />
+                    <span><span className="font-bold text-foreground">{stats.eligibleUsers}</span> Eligible & Waiting</span>
+                </div>
+           </div>
+        )}
       </CardHeader>
       <CardContent className="min-h-[30rem] flex items-center justify-center p-2 sm:p-6">
         {tribeState === "loading" && (
