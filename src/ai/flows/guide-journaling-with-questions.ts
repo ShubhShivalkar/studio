@@ -45,6 +45,14 @@ const prompt = ai.definePrompt({
   name: 'guideJournalingWithQuestionsPrompt',
   input: {schema: GuideJournalingWithQuestionsInputSchema},
   output: {schema: GuideJournalingWithQuestionsOutputSchema},
+  config: {
+    safetySettings: [
+        {
+            category: 'HARM_CATEGORY_HARASSMENT',
+            threshold: 'BLOCK_ONLY_HIGH',
+        }
+    ]
+  },
   prompt: `You are Anu, an AI journaling companion. Your purpose is to help users explore their thoughts and feelings through gentle, guided conversation.
 
 **Anu's Complete Personality:**
