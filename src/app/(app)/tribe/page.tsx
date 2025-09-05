@@ -10,7 +10,7 @@ import {
   CardTitle,
   CardFooter,
 } from "@/components/ui/card";
-import { Bot, Users, ShieldAlert, CheckCircle, XCircle, MessageSquare, Info, UserX, UserCheck, Heart, History, AlertTriangle, CalendarClock } from "lucide-react";
+import { Bot, Users, ShieldAlert, CheckCircle, XCircle, MessageSquare, Info, UserX, UserCheck, Heart, History, AlertTriangle, CalendarClock, Compass } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -256,6 +256,8 @@ export default function TribePage() {
   const rejectedMembers = tribe?.members.filter(m => m.rsvpStatus === 'rejected');
   const isTribeComplete = attendingMembers && attendingMembers.length >= 4;
 
+  const canDiscover = profile?.persona && profile?.interestedInMeetups && currentUserRsvp !== 'rejected';
+
   const CountdownTimer = () => (
     <div className="flex items-center justify-center gap-4">
         <div>
@@ -300,6 +302,14 @@ export default function TribePage() {
                 </CardDescription>
             </div>
             <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                {canDiscover && (
+                     <Button asChild variant="default" size="sm" className="w-full">
+                        <Link href="/tribe/discover">
+                            <Compass className="mr-2" />
+                            Discover
+                        </Link>
+                    </Button>
+                )}
                 <Button asChild variant="outline" size="sm" className="w-full">
                     <Link href="/tribe/history">
                         <History className="mr-2" />
