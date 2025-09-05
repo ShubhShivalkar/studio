@@ -17,12 +17,13 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { differenceInDays, parseISO, format } from 'date-fns';
 import { EditProfileDialog } from "@/components/edit-profile-dialog";
-import type { User, TribePreferences } from "@/lib/types";
+import type { User, TribePreferences, DailySummary } from "@/lib/types";
 import { TribePreferenceDialog } from "@/components/tribe-preference-dialog";
 import { useAuth } from "@/context/auth-context";
 import { updateUser } from "@/services/user-service";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
+import { getJournalEntries } from "@/services/journal-service";
 
 export default function ProfilePage() {
   const { profile, loading: authLoading } = useAuth();
@@ -33,6 +34,7 @@ export default function ProfilePage() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isPreferenceDialogOpen, setIsPreferenceDialogOpen] = useState(false);
   const [userData, setUserData] = useState<User | null>(profile);
+  const [journalEntries, setJournalEntries] = useState<DailySummary[]>([]);
   
   const { toast } = useToast();
   const router = useRouter();
@@ -41,13 +43,16 @@ export default function ProfilePage() {
     if (profile) {
       setUserData(profile);
       setIsInterested(profile.interestedInMeetups || false);
+      
+      // Fetch the journal entries to get the correct count of days
+      getJournalEntries(profile.id).then(setJournalEntries);
     }
   }, [profile]);
 
-  const journalEntriesCount = userData?.journalEntries?.length || 0;
+  const journalEntriesCount = journalEntries.length;
   const progress = Math.min((journalEntriesCount / 15) * 100, 100);
   const canGenerate = journalEntriesCount >= 15;
-  const streakDays = userData?.journalEntries ? Math.min(userData.journalEntries.length, 15) : 0;
+  const streakDays = journalEntriesCount;
   
   useEffect(() => {
     if (userData && !userData.location && "geolocation" in navigator) {
@@ -78,7 +83,7 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (userData?.persona) {
-        setPersona({ persona: userData.persona, hobbies: [], interests: [], personalityTraits: [] });
+        setPersona({ persona: userData.persona, hobbies: userData.hobbies || [], interests: userData.interests || [], personalityTraits: [] });
     }
 
     if (userData?.personaLastGenerated) {
@@ -123,12 +128,14 @@ export default function ProfilePage() {
           return;
       }
       
-      const entriesText = userData.journalEntries!.join("\n\n");
+      const entriesText = journalEntries.map(e => e.summary).join("\n\n");
       const result = await generatePersonalityPersona({ journalEntries: entriesText });
       setPersona(result);
       
       const updatedUserData = {
         persona: result.persona,
+        hobbies: result.hobbies,
+        interests: result.interests,
         personaLastGenerated: new Date().toISOString()
       };
       
@@ -422,5 +429,3 @@ export default function ProfilePage() {
     </>
   );
 }
-
-    
