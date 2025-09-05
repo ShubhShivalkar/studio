@@ -12,21 +12,21 @@ const sampleDataIdentifier = { isSample: true };
 
 const createSampleJournalEntries = (userId: string): (Omit<DailySummary, 'id'> & { isSample: boolean })[] => {
     const entries = [
-        { daysAgo: 1, summary: "Had a wonderful time hiking today. The weather was perfect.", mood: '😊' },
-        { daysAgo: 2, summary: "Feeling a bit overwhelmed with work, but I managed to finish a big project.", mood: '😐' },
-        { daysAgo: 3, summary: "Tried a new recipe for dinner and it was a disaster. At least it was a funny story.", mood: '😮' },
-        { daysAgo: 5, summary: "Spent the afternoon reading in the park. It was so peaceful.", mood: '😊' },
-        { daysAgo: 7, summary: "A difficult conversation with a friend left me feeling sad.", mood: '😢' },
-        { daysAgo: 8, summary: "Finally fixed that leaky faucet. I feel so accomplished!", mood: '😊' },
-        { daysAgo: 10, summary: "Started planning a weekend trip. Very excited about it.", mood: '😊' },
-        { daysAgo: 12, summary: "Work was frustrating today. Nothing seemed to go right.", mood: '😠' },
-        { daysAgo: 14, summary: "Watched a great movie tonight. It really made me think.", mood: '😮' },
-        { daysAgo: 15, summary: "Feeling grateful for my family and their support.", mood: '😊' },
-        { daysAgo: 16, summary: "Lazy Sunday. Didn't do much and it was glorious.", mood: '😐' },
-        { daysAgo: 18, summary: "Hit a new personal best at the gym. All the hard work is paying off.", mood: '😊' },
-        { daysAgo: 20, summary: "A sudden rainstorm ruined my plans, which was a bit of a downer.", mood: '😢' },
-        { daysAgo: 22, summary: "Reconnected with an old friend over the phone. It was so good to catch up.", mood: '😊' },
-        { daysAgo: 25, summary: "Finished a book that I've been reading for weeks. The ending was a surprise!", mood: '😮' },
+      { daysAgo: 1, summary: "Spent the afternoon walking through the city, discovered a new coffee shop. The latte was incredible.", mood: '😊' },
+      { daysAgo: 2, summary: "Feeling a bit stressed with a work deadline approaching, but I've mapped out a plan to get it done.", mood: '😐' },
+      { daysAgo: 3, summary: "Had a surprise video call with an old friend from college. It was so good to catch up and laugh about old times.", mood: '😊' },
+      { daysAgo: 5, summary: "Read a few chapters of a captivating novel in the park. It felt like a mini-vacation.", mood: '😊' },
+      { daysAgo: 7, summary: "Was feeling a bit down today, so I listened to my favorite uplifting music. It helped a little.", mood: '😢' },
+      { daysAgo: 8, summary: "Organized my closet and donated a bag of clothes. It feels so good to declutter and simplify.", mood: '😊' },
+      { daysAgo: 10, summary: "Started looking into pottery classes. I'm excited to try something new and creative.", mood: '😮' },
+      { daysAgo: 12, summary: "A project at work isn't going as planned. Feeling frustrated but determined to find a solution.", mood: '😠' },
+      { daysAgo: 14, summary: "Watched a documentary about space exploration. It was mind-blowing and left me feeling inspired.", mood: '😮' },
+      { daysAgo: 15, summary: "I'm grateful for my family's support. Had a lovely dinner with them tonight.", mood: '😊' },
+      { daysAgo: 16, summary: "A quiet Sunday spent at home, sketching and relaxing. It was just what I needed.", mood: '😐' },
+      { daysAgo: 18, summary: "Pushed myself to go for a run even though I didn't feel like it. Felt amazing afterward.", mood: '😊' },
+      { daysAgo: 20, summary: "Disappointed that a concert I was looking forward to got postponed.", mood: '😢' },
+      { daysAgo: 22, summary: "Had a deep conversation with a friend about our goals and dreams. Feeling very connected.", mood: '😊' },
+      { daysAgo: 25, summary: "Finished a challenging puzzle I've been working on for days. The sense of accomplishment is great!", mood: '😊' },
     ];
     return entries.map(e => ({
         userId,
@@ -48,7 +48,7 @@ const createSampleReminders = (userId: string): (Omit<Reminder, 'id'> & { isSamp
         date: format(subDays(new Date(), r.daysAgo), 'yyyy-MM-dd'),
         time: r.time,
         title: r.title,
-        details: r.details,
+        details: r.details || null,
         ...sampleDataIdentifier,
     }));
 };
@@ -138,6 +138,7 @@ export async function deleteAllUserData(userId: string): Promise<void> {
         persona: deleteField(),
         hobbies: deleteField(),
         interests: deleteField(),
+        personalityTraits: deleteField(),
         personaLastGenerated: deleteField(),
         journalEntries: [], // Reset to an empty array
     });
