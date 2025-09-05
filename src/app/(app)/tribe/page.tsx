@@ -136,6 +136,9 @@ export default function TribePage() {
                     gender: profile.gender,
                     location: profile.location,
                     interestedInMeetups: true,
+                    lastActive: profile.lastActive,
+                    lastTribeDate: profile.lastTribeDate,
+                    journalEntries: profile.journalEntries,
                 },
                 otherUsers: allUsers,
                 preferences: profile.tribePreferences || { ageRange: [18, 60], gender: 'No Preference' }

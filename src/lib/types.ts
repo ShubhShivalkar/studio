@@ -25,6 +25,8 @@ export type User = {
   religion?: string;
   location?: string;
   tribePreferences?: TribePreferences;
+  lastActive?: string; // ISO date string
+  lastTribeDate?: string; // ISO date string
 };
 
 export type Connection = {
