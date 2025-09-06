@@ -37,7 +37,7 @@ export default function Home() {
                 Translating experiences into real meaningful connections
               </p>
             </div>
-            <div className="mt-8 flex justify-center">
+            <div className="mt-8 flex flex-col items-center justify-center">
               {loading ? (
                 <Skeleton className="h-11 w-48 rounded-md" />
               ) : user ? (
@@ -45,9 +45,17 @@ export default function Home() {
                   <Link href="/journal">Open Application</Link>
                 </Button>
               ) : (
-                <Button asChild size="lg">
-                  <Link href="/onboarding/step-1">Begin Your Journey</Link>
-                </Button>
+                <>
+                  <Button asChild size="lg">
+                    <Link href="/onboarding/step-1?action=signup">Begin Your Journey</Link>
+                  </Button>
+                  <p className="mt-4 text-sm">
+                    Already a part?{' '}
+                    <Link href="/onboarding/step-1?action=login" className="underline">
+                      Sign in
+                    </Link>
+                  </p>
+                </>
               )}
             </div>
           </div>

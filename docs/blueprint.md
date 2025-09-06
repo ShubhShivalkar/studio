@@ -1,4 +1,4 @@
-# **App Name**: Soulful Sync
+# **App Name**: anuvaad
 
 ## Core Features:
 
