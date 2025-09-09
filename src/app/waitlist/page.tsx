@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Feather, Users, BrainCircuit, Check, Loader2 } from 'lucide-react';
 import Image from "next/image";
-import JournalingIllustration from "@/assets/images/journaling-illustration.svg";
+import JournalingIllustration from "@/assets/images/new-journaling-illustration.svg";
 import TribeIllustration from "@/assets/images/tribe-illustration.svg";
 import AnuIllustration from "@/assets/images/anu-illustration.svg";
 import { useState } from "react";
@@ -196,7 +196,7 @@ export default function WaitlistPage() {
         {/* Features */}
         <section className="mb-16">
            <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div className="flex justify-center md:order-last">
+            <div className="flex justify-center">
                <Image src={TribeIllustration} alt="Illustration of people talking and laughing" className="rounded-lg w-full max-w-md" />
             </div>
             <div>
@@ -253,7 +253,7 @@ export default function WaitlistPage() {
                     </p>
                 </div>
                 <div className="flex justify-center">
-                    <Image src={AnuIllustration} alt="Illustration of Anu" className="rounded-lg w-full max-w-xs"/>
+                    <Image src={AnuIllustration} alt="Illustration of Anu" className="rounded-lg w-full max-w-md"/>
                 </div>
             </div>
         </section>
@@ -314,7 +314,7 @@ export default function WaitlistPage() {
                 <CardContent>
                   <p className="text-muted-foreground">
                     Report any behavior that violates these guidelines. Help us create a safe and supportive community.
-                  </p>
+                  </p>_
                 </CardContent>
               </Card>
             </div>
@@ -386,7 +386,7 @@ export default function WaitlistPage() {
                                     <div className="space-y-2">
                                         <Label htmlFor="email">Email</Label>
                                         <Input id="email" type="email" value={email} onChange={handleEmailChange} required />
-                                        {emailError && <p className="text-sm text-red-500">{emailError}</p>}
+                                        {emailError && <p className="text-sm text-red-500-">{emailError}</p>}
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="phone">Phone (Optional)</Label>
