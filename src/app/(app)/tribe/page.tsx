@@ -146,6 +146,7 @@ export default function TribePage() {
         const scheduleInfo = await getTribeScheduleInfo();
         setNextMondayFormatted(scheduleInfo.nextMondayFormatted);
         setNextMatchDateTime(scheduleInfo.nextMatchDateTime);
+
         if (!scheduleInfo.isMatchDay) {
             setTribeState("wait-for-monday");
             return;

@@ -14,12 +14,14 @@ interface AuthContextType {
   profile: User | null;
   loading: boolean;
   error?: Error;
+  setProfile: (profile: User | null) => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   profile: null,
   loading: true,
+  setProfile: () => {},
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -56,7 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loading = authLoading || profileLoading;
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, error }}>
+    <AuthContext.Provider value={{ user, profile, loading, error, setProfile }}>
       {children}
     </AuthContext.Provider>
   );
