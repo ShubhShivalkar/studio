@@ -14,6 +14,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Feather, Users, BrainCircuit, Check, Loader2 } from 'lucide-react';
+import Image from "next/image";
+import JournalingIllustration from "@/assets/images/journaling-illustration.svg";
+import TribeIllustration from "@/assets/images/tribe-illustration.svg";
+import AnuIllustration from "@/assets/images/anu-illustration.svg";
 import { useState } from "react";
 
 export default function WaitlistPage() {
@@ -182,7 +186,7 @@ export default function WaitlistPage() {
               </div>
             </div>
              <div className="flex justify-center">
-               <img src="https://storage.googleapis.com/anubhav-anuvaad.appspot.com/nextjs/anu/journaling-illustration-yellow.svg" alt="Journaling illustration" className="rounded-lg w-full max-w-md" />
+               <Image src={JournalingIllustration} alt="Journaling illustration" className="rounded-lg w-full max-w-md" />
             </div>
           </div>
         </section>
@@ -193,7 +197,7 @@ export default function WaitlistPage() {
         <section className="mb-16">
            <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="flex justify-center md:order-last">
-               <img src="https://storage.googleapis.com/anubhav-anuvaad.appspot.com/nextjs/anu/tribe-illustration.svg" alt="Illustration of people talking and laughing" className="rounded-lg w-full max-w-md" />
+               <Image src={TribeIllustration} alt="Illustration of people talking and laughing" className="rounded-lg w-full max-w-md" />
             </div>
             <div>
                 <h2 className="text-3xl font-bold mb-8">Features</h2>
@@ -249,7 +253,7 @@ export default function WaitlistPage() {
                     </p>
                 </div>
                 <div className="flex justify-center">
-                    <img src="https://storage.googleapis.com/anubhav-anuvaad.appspot.com/nextjs/anu/anu-illustration-woman.svg" alt="Illustration of Anu" className="rounded-lg w-full max-w-xs"/>
+                    <Image src={AnuIllustration} alt="Illustration of Anu" className="rounded-lg w-full max-w-xs"/>
                 </div>
             </div>
         </section>
@@ -389,9 +393,9 @@ export default function WaitlistPage() {
                                         <div className="flex items-center">
                                             <span className="inline-flex items-center px-3 text-sm text-muted-foreground rounded-l-md border border-r-0 border-input bg-secondary h-10">+91</span>
                                             <Input 
-                                                id="phone" 
-                                                type="tel" 
-                                                value={phone} 
+                                                id="phone"
+                                                type="tel"
+                                                value={phone}
                                                 onChange={handlePhoneChange}
                                                 placeholder="9876543210"
                                                 className="rounded-l-none"
