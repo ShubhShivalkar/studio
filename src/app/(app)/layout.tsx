@@ -31,16 +31,10 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const { user, profile, loading } = useAuth();
   
   useEffect(() => {
-    if (!loading) {
-      if (!user) {
-        // If not loading and no user, redirect to login
-        router.push('/onboarding/step-1');
-      } else if (!profile) {
-        // If there's a user but no profile, they likely abandoned onboarding
-        router.push('/onboarding/step-2');
-      }
+    if (!loading && !user) {
+      router.push('/onboarding/step-1');
     }
-  }, [user, profile, loading, router]);
+  }, [user, loading, router]);
 
 
   if (loading) {
@@ -57,7 +51,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       )
   }
   
-  if (!profile) {
+  if (!user) {
     // This will show briefly before the redirect kicks in
     return null;
   }

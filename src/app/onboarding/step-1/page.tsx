@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -9,18 +9,28 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import useOnboardingStore from '@/store/onboarding';
 import { useToast } from '@/hooks/use-toast';
-import { useState } from 'react';
-import { currentUser } from '@/lib/mock-data';
+import { useEffect, useState } from 'react';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { getUser } from '@/services/user-service';
+import { currentUser } from '@/lib/mock-data';
 
 export default function Step1Page() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { email, password, setData } = useOnboardingStore();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
+
+  useEffect(() => {
+    const action = searchParams.get('action');
+    if (action === 'signup') {
+      setIsLogin(false);
+    } else {
+      setIsLogin(true);
+    }
+  }, [searchParams]);
 
   const handleAuth = async () => {
     if (!email || !password) {
@@ -34,10 +44,8 @@ export default function Step1Page() {
     setIsLoading(true);
 
     try {
-      let userCredential;
       if (isLogin) {
-        // Sign in existing user
-        userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
         const userProfile = await getUser(user.uid);
         if (userProfile) {
@@ -48,15 +56,11 @@ export default function Step1Page() {
             });
             router.push('/journal');
         } else {
-             // This case is unlikely if auth and db are in sync, but good to handle.
-             // It means they have an auth record but no db profile.
             setData({ email, password });
             router.push('/onboarding/step-2');
         }
-
       } else {
-        // Sign up new user
-        userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        await createUserWithEmailAndPassword(auth, email, password);
         setData({ email, password });
         router.push('/onboarding/step-2');
       }
@@ -67,6 +71,7 @@ export default function Step1Page() {
           description = 'Invalid email or password. Please try again.';
       } else if (error.code === 'auth/email-already-in-use') {
           description = 'This email is already registered. Please log in instead.';
+          setIsLogin(true); 
       } else if (error.code === 'auth/weak-password') {
           description = 'Password should be at least 6 characters long.';
       }
