@@ -1,10 +1,20 @@
 
 'use server';
 
-import { doc, getDoc, setDoc, updateDoc, collection, query, getDocs, writeBatch, Timestamp, where } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, collection, query, getDocs, writeBatch, Timestamp, where, addDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { User } from '@/lib/types';
 import { format, parseISO } from 'date-fns';
+
+export interface WaitlistUser {
+  name: string;
+  dob: string;
+  email: string;
+  phone?: string;
+  suggestions?: string;
+  signupInterest: boolean;
+  communicationInterest: boolean;
+}
 
 /**
  * Retrieves a user's profile from Firestore.
@@ -111,4 +121,19 @@ export async function deleteSampleUsers(): Promise<void> {
     });
 
     await batch.commit();
+}
+
+/**
+ * Adds a new user to the waitlist collection in Firestore.
+ * @param data The waitlist user data to save.
+ */
+export async function addToWaitlist(data: WaitlistUser): Promise<string> {
+  const waitlistCollection = collection(db, 'waitlist');
+  const dataToSave = {
+    ...data,
+    dob: Timestamp.fromDate(parseISO(data.dob)),
+    submittedAt: Timestamp.now(),
+  };
+  const docRef = await addDoc(waitlistCollection, dataToSave);
+  return docRef.id;
 }

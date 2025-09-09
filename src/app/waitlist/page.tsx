@@ -13,16 +13,20 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Feather, Users, BrainCircuit, Check } from 'lucide-react';
+import { Feather, Users, BrainCircuit, Check, Loader2 } from 'lucide-react';
 import { useState } from "react";
 
 export default function WaitlistPage() {
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [dob, setDob] = useState("");
   const [ageError, setAgeError] = useState<string | null>(null);
   const [email, setEmail] = useState("");
+  const [emailError, setEmailError] = useState<string | null>(null);
   const [phone, setPhone] = useState("");
+  const [phoneError, setPhoneError] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState("");
   const [signupInterest, setSignupInterest] = useState(false);
   const [communicationInterest, setCommunicationInterest] = useState(false);
@@ -49,13 +53,67 @@ export default function WaitlistPage() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (ageError) {
-      return;
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newEmail = e.target.value;
+    setEmail(newEmail);
+    if (newEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)) {
+      setEmailError("Please enter a valid email address.");
+    } else {
+      setEmailError(null);
     }
-    console.log("Waitlist submission:", { name, dob, email, phone, suggestions, signupInterest, communicationInterest });
-    setSubmitted(true);
+  };
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newPhone = e.target.value.replace(/\D/g, '');
+    if (newPhone.length <= 10) {
+      setPhone(newPhone);
+      if (newPhone && newPhone.length !== 10) {
+        setPhoneError("Please enter a valid 10-digit phone number.");
+      } else {
+        setPhoneError(null);
+      }
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (ageError || emailError || phoneError) return;
+    
+    setSubmitting(true);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/waitlist', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          name, 
+          dob, 
+          email, 
+          phone: phone ? `+91${phone}` : "",
+          suggestions, 
+          signupInterest, 
+          communicationInterest 
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Something went wrong');
+      }
+
+      setSubmitted(true);
+    } catch (err) {
+        if (err instanceof Error) {
+            setError(err.message);
+        } else {
+            setError('An unexpected error occurred. Please try again.');
+        }
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -285,29 +343,47 @@ export default function WaitlistPage() {
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="email">Email</Label>
-                                        <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                                        <Input id="email" type="email" value={email} onChange={handleEmailChange} required />
+                                        {emailError && <p className="text-sm text-red-500">{emailError}</p>}
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="phone">Phone (Optional)</Label>
-                                        <Input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
+                                        <div className="flex items-center">
+                                            <span className="inline-flex items-center px-3 text-sm text-muted-foreground rounded-l-md border border-r-0 border-input bg-secondary h-10">+91</span>
+                                            <Input 
+                                                id="phone" 
+                                                type="tel" 
+                                                value={phone} 
+                                                onChange={handlePhoneChange}
+                                                placeholder="9876543210"
+                                                className="rounded-l-none"
+                                            />
+                                        </div>
+                                        {phoneError && <p className="text-sm text-red-500">{phoneError}</p>}
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="suggestions">Suggestions (if any)</Label>
                                         <Textarea id="suggestions" value={suggestions} onChange={(e) => setSuggestions(e.target.value)} />
                                     </div>
                                     <div className="flex items-center space-x-2">
-                                        <Checkbox id="signup" checked={signupInterest} onCheckedChange={setSignupInterest} />
+                                        <Checkbox id="signup" checked={signupInterest} onCheckedChange={setSignupInterest as (checked: boolean) => void} />
                                         <Label htmlFor="signup" className="text-sm font-normal">Sign me up directly when available.</Label>
                                     </div>
                                     <div className="items-top flex space-x-2">
-                                        <Checkbox id="communication" checked={communicationInterest} onCheckedChange={setCommunicationInterest} />
+                                        <Checkbox id="communication" checked={communicationInterest} onCheckedChange={setCommunicationInterest as (checked: boolean) => void} />
                                         <div className="grid gap-1.5 leading-none">
                                             <Label htmlFor="communication" className="text-sm font-normal">I want to receive communications, news, and alerts.</Label>
                                             <p className="text-sm text-muted-foreground">Don't worry, we won't spam you.</p>
                                         </div>
                                     </div>
+                                    
+                                    {error && <p className="text-sm text-red-500 pt-2">{error}</p>}
+
                                     <div className="flex flex-col sm:flex-row gap-2 pt-4">
-                                        <Button type="submit" className="w-full" disabled={!!ageError}>Submit</Button>
+                                        <Button type="submit" className="w-full" disabled={!!ageError || !!emailError || !!phoneError || submitting}>
+                                            {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} 
+                                            {submitting ? 'Submitting...' : 'Submit'}
+                                        </Button>
                                         <Button variant="outline" className="w-full" asChild>
                                             <a href="https://wa.me/918879154181" target="_blank" rel="noopener noreferrer">Talk with us</a>
                                         </Button>
