@@ -124,6 +124,18 @@ export async function deleteSampleUsers(): Promise<void> {
 }
 
 /**
+ * Checks if a user with the given email already exists in the waitlist.
+ * @param email The email to check.
+ * @returns True if the user exists, false otherwise.
+ */
+export async function checkIfWaitlistUserExists(email: string): Promise<boolean> {
+  const waitlistCollection = collection(db, 'waitlist');
+  const q = query(waitlistCollection, where("email", "==", email));
+  const querySnapshot = await getDocs(q);
+  return !querySnapshot.empty;
+}
+
+/**
  * Adds a new user to the waitlist collection in Firestore.
  * @param data The waitlist user data to save.
  */

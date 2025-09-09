@@ -18,6 +18,7 @@ import { useState } from "react";
 
 export default function WaitlistPage() {
   const [submitted, setSubmitted] = useState(false);
+  const [alreadyExists, setAlreadyExists] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [name, setName] = useState("");
@@ -81,6 +82,7 @@ export default function WaitlistPage() {
     
     setSubmitting(true);
     setError(null);
+    setAlreadyExists(false);
 
     try {
       const response = await fetch('/api/waitlist', {
@@ -98,6 +100,11 @@ export default function WaitlistPage() {
           communicationInterest 
         }),
       });
+
+      if (response.status === 409) {
+        setAlreadyExists(true);
+        return;
+      }
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -324,7 +331,30 @@ export default function WaitlistPage() {
                     </p>
                 </div>
                 <div>
-                    {!submitted ? (
+                    {alreadyExists ? (
+                        <Card>
+                            <CardContent className="text-center p-16">
+                                <CardTitle className="text-2xl">You're already on the waitlist!</CardTitle>
+                                <CardDescription className="mt-4">
+                                    Connect over WhatsApp for more information or to provide feedback.
+                                </CardDescription>
+                                <Button variant="outline" className="mt-6 w-full max-w-xs" asChild>
+                                    <a href="https://wa.me/918879154181" target="_blank" rel="noopener noreferrer">
+                                        Connect over WhatsApp
+                                    </a>
+                                </Button>
+                            </CardContent>
+                        </Card>
+                    ) : submitted ? (
+                        <Card>
+                            <CardContent className="text-center p-16">
+                                <CardTitle className="text-2xl">Thank You!</CardTitle>
+                                <CardDescription className="mt-2">
+                                    You've been added to our inner circle. We'll be in touch soon!
+                                </CardDescription>
+                            </CardContent>
+                        </Card>
+                    ) : (
                         <Card>
                             <CardHeader>
                                 <CardTitle className="text-2xl font-bold">Join Our Inner Circle</CardTitle>
@@ -389,15 +419,6 @@ export default function WaitlistPage() {
                                         </Button>
                                     </div>
                                 </form>
-                            </CardContent>
-                        </Card>
-                    ) : (
-                        <Card>
-                            <CardContent className="text-center p-16">
-                                <CardTitle className="text-2xl">Thank You!</CardTitle>
-                                <CardDescription className="mt-2">
-                                    You've been added to our inner circle. We'll be in touch soon!
-                                </CardDescription>
                             </CardContent>
                         </Card>
                     )}

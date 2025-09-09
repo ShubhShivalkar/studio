@@ -1,6 +1,6 @@
 
 import { NextResponse } from 'next/server';
-import { addToWaitlist, WaitlistUser } from '@/services/user-service';
+import { addToWaitlist, checkIfWaitlistUserExists, WaitlistUser } from '@/services/user-service';
 import { sendWaitlistConfirmationEmail } from '@/services/email-service';
 
 export async function POST(request: Request) {
@@ -9,6 +9,11 @@ export async function POST(request: Request) {
 
     if (!body.name || !body.email || !body.dob) {
       return NextResponse.json({ message: 'Missing required fields' }, { status: 400 });
+    }
+
+    const userExists = await checkIfWaitlistUserExists(body.email);
+    if (userExists) {
+      return NextResponse.json({ message: "You're already on the waitlist." }, { status: 409 });
     }
 
     const waitlistId = await addToWaitlist(body);
