@@ -182,7 +182,7 @@ export default function WaitlistPage() {
               </div>
             </div>
              <div className="flex justify-center">
-               <img src="https://storage.googleapis.com/aai-web-samples/nextjs/anu/journaling-illustration-yellow.svg" alt="Journaling illustration" className="rounded-lg w-full max-w-md" />
+               <img src="https://storage.googleapis.com/anubhav-anuvaad.appspot.com/nextjs/anu/journaling-illustration-yellow.svg" alt="Journaling illustration" className="rounded-lg w-full max-w-md" />
             </div>
           </div>
         </section>
@@ -193,7 +193,7 @@ export default function WaitlistPage() {
         <section className="mb-16">
            <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="flex justify-center md:order-last">
-               <img src="https://storage.googleapis.com/aai-web-samples/nextjs/anu/tribe-illustration.svg" alt="Illustration of people talking and laughing" className="rounded-lg w-full max-w-md" />
+               <img src="https://storage.googleapis.com/anubhav-anuvaad.appspot.com/nextjs/anu/tribe-illustration.svg" alt="Illustration of people talking and laughing" className="rounded-lg w-full max-w-md" />
             </div>
             <div>
                 <h2 className="text-3xl font-bold mb-8">Features</h2>
@@ -249,7 +249,7 @@ export default function WaitlistPage() {
                     </p>
                 </div>
                 <div className="flex justify-center">
-                    <img src="https://storage.googleapis.com/aai-web-samples/nextjs/anu/anu-illustration-woman.svg" alt="Illustration of Anu" className="rounded-lg w-full max-w-xs"/>
+                    <img src="https://storage.googleapis.com/anubhav-anuvaad.appspot.com/nextjs/anu/anu-illustration-woman.svg" alt="Illustration of Anu" className="rounded-lg w-full max-w-xs"/>
                 </div>
             </div>
         </section>
@@ -260,7 +260,7 @@ export default function WaitlistPage() {
         <section className="mb-16">
           <div className="text-center">
             <h2 className="text-3xl font-bold mb-8">Community Guidelines</h2>
-            <div className="max-w-2xl mx-auto grid sm:grid-cols-2 gap-6">
+            <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               <Card>
                 <CardHeader>
                   <div className="flex items-center gap-4">
@@ -352,6 +352,14 @@ export default function WaitlistPage() {
                                 <CardDescription className="mt-2">
                                     You've been added to our inner circle. We'll be in touch soon!
                                 </CardDescription>
+                                <CardDescription className="mt-4">
+                                    Meanwhile, connect with us on Instagram.
+                                </CardDescription>
+                                <Button variant="outline" className="mt-6 w-full max-w-xs" asChild>
+                                    <a href="https://www.instagram.com/anubhav.social/" target="_blank" rel="noopener noreferrer">
+                                        Connect on Instagram
+                                    </a>
+                                </Button>
                             </CardContent>
                         </Card>
                     ) : (
