@@ -1,9 +1,9 @@
 
 'use server';
 
-import { collection, doc, getDoc, getDocs, query, where } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, query, where, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import type { Tribe, User, TribeHistory } from '@/lib/types';
+import type { Tribe, User, PastTribe as TribeHistory, MatchedUser } from '@/lib/types';
 import { getAllUsers, getUser } from './user-service';
 import { getNextMatchTime } from '@/lib/utils';
 
@@ -23,6 +23,21 @@ export async function getTribeScheduleInfo(): Promise<{ day: string; time: strin
     isMatchDay,
   };
 }
+
+/**
+ * Retrieves all tribes from the 'tribes' collection.
+ * @returns A list of all tribes.
+ */
+export async function getAllTribes(): Promise<Tribe[]> {
+    const tribesRef = collection(db, 'tribes');
+    const querySnapshot = await getDocs(tribesRef);
+    const tribes: Tribe[] = [];
+    querySnapshot.forEach((doc) => {
+        tribes.push({ id: doc.id, ...doc.data() } as Tribe);
+    });
+    return tribes;
+}
+
 
 /**
  * Retrieves all active tribes.
@@ -105,4 +120,108 @@ export async function getTribeHistory(userId: string): Promise<TribeHistory[]> {
       reason: 'The tribe completed its 4-week cycle.',
     },
   ];
+}
+
+export async function createTribe(tribeData: Omit<Tribe, 'id'>): Promise<Tribe> {
+    const batch = writeBatch(db);
+    const newTribeRef = doc(collection(db, 'tribes'));
+
+    const newTribe = {
+        ...tribeData,
+        id: newTribeRef.id,
+        formedDate: new Date().toISOString(),
+    };
+
+    // Ensure is_active is set, defaulting to false.
+    if (newTribe.is_active === undefined) {
+        newTribe.is_active = false;
+    }
+    
+    batch.set(newTribeRef, newTribe);
+
+    for (const member of tribeData.members as MatchedUser[]) {
+        const userRef = doc(db, 'users', member.userId);
+        batch.update(userRef, { currentTribeId: newTribe.id });
+    }
+
+    await batch.commit();
+
+    return newTribe as Tribe;
+}
+
+/**
+ * Updates a tribe's data in Firestore.
+ * @param tribeId The ID of the tribe to update.
+ * @param updates An object containing the fields to update.
+ * @returns A promise that resolves when the update is complete.
+ */
+export async function updateTribe(tribeId: string, updates: Partial<Tribe>): Promise<void> {
+  const tribeRef = doc(db, 'tribes', tribeId);
+  await updateDoc(tribeRef, updates);
+}
+
+/**
+ * Deletes a tribe and updates its members.
+ * @param tribeId The ID of the tribe to delete.
+ * @param members The members of the tribe.
+ */
+export async function deleteTribe(tribeId: string, members: MatchedUser[]): Promise<void> {
+  const batch = writeBatch(db);
+
+  // 1. Delete the tribe document
+  const tribeRef = doc(db, 'tribes', tribeId);
+  batch.delete(tribeRef);
+
+  // 2. Update all members to remove them from the tribe
+  for (const member of members) {
+    const userRef = doc(db, 'users', member.userId);
+    batch.update(userRef, { currentTribeId: null });
+  }
+
+  // 3. Commit the batch
+  await batch.commit();
+}
+
+/**
+ * Updates the status of all tribes.
+ * @param tribeIds The IDs of the tribes to update.
+ * @param is_active The new active status.
+ */
+export async function updateAllTribesStatus(tribeIds: string[], is_active: boolean): Promise<void> {
+  const batch = writeBatch(db);
+  tribeIds.forEach(tribeId => {
+    const tribeRef = doc(db, 'tribes', tribeId);
+    batch.update(tribeRef, { is_active });
+  });
+  await batch.commit();
+}
+
+/**
+ * Deletes inactive tribes and archives active ones.
+ * @param tribes A list of all tribes to process.
+ */
+export async function deleteInactiveAndArchiveActiveTribes(tribes: Tribe[]): Promise<void> {
+  const batch = writeBatch(db);
+
+  for (const tribe of tribes) {
+    const originalTribeRef = doc(db, 'tribes', tribe.id);
+
+    // Release all members of the tribe regardless of its status
+    for (const member of tribe.members as MatchedUser[]) {
+      const userRef = doc(db, 'users', member.userId);
+      batch.update(userRef, { currentTribeId: null });
+    }
+
+    if (tribe.is_active) {
+      // For active tribes, move them to the 'archived_tribes' collection
+      const archivedTribeRef = doc(collection(db, 'archived_tribes'), tribe.id);
+      batch.set(archivedTribeRef, { ...tribe, is_active: false }); // Mark as inactive upon archival
+      batch.delete(originalTribeRef); // Delete from the main 'tribes' collection
+    } else {
+      // For inactive tribes, just delete them
+      batch.delete(originalTribeRef);
+    }
+  }
+
+  await batch.commit();
 }

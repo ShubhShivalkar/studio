@@ -26,6 +26,15 @@ export async function getUser(userId: string): Promise<User | null> {
   const userDoc = await getDoc(userDocRef);
   if (userDoc.exists()) {
     const data = userDoc.data();
+    // Re-fetch journal entries to ensure availability is up-to-date
+    const journalQuery = query(
+        collection(db, "journalEntries"), 
+        where("userId", "==", userId),
+        where("isAvailable", "==", true)
+    );
+    const journalSnapshot = await getDocs(journalQuery);
+    data.availableDates = journalSnapshot.docs.map(doc => format(doc.data().date.toDate(), 'yyyy-MM-dd'));
+
     if (data.dob && data.dob instanceof Timestamp) {
         data.dob = format(data.dob.toDate(), 'yyyy-MM-dd');
     }
@@ -45,22 +54,53 @@ export async function getUser(userId: string): Promise<User | null> {
  * @returns An array of all users.
  */
 export async function getAllUsers(): Promise<User[]> {
-  const usersCollection = collection(db, 'users');
-  const userSnapshot = await getDocs(usersCollection);
-  return userSnapshot.docs.map(doc => {
-    const data = doc.data();
-    if (data.dob && data.dob instanceof Timestamp) {
-        data.dob = format(data.dob.toDate(), 'yyyy-MM-dd');
-    }
-    if (data.lastActive && data.lastActive instanceof Timestamp) {
-        data.lastActive = data.lastActive.toDate().toISOString();
-    }
-    if (data.personaLastGenerated && data.personaLastGenerated instanceof Timestamp) {
-        data.personaLastGenerated = data.personaLastGenerated.toDate().toISOString();
-    }
-    return { id: doc.id, ...data } as User;
-  });
+    const usersCollection = collection(db, 'users');
+    const userSnapshot = await getDocs(usersCollection);
+    const users = userSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as User[];
+
+    // Create a map to hold the promises for fetching journal entries for each user
+    const availabilityPromises = users.map(user => {
+        const journalQuery = query(
+            collection(db, "journalEntries"), 
+            where("userId", "==", user.id),
+            where("isAvailable", "==", true)
+        );
+        return getDocs(journalQuery).then(journalSnapshot => {
+            return {
+                userId: user.id,
+                availableDates: journalSnapshot.docs.map(doc => format(doc.data().date.toDate(), 'yyyy-MM-dd'))
+            };
+        });
+    });
+
+    // Wait for all the promises to resolve
+    const usersAvailability = await Promise.all(availabilityPromises);
+
+    // Create a map for quick lookup of availability by userId
+    const availabilityMap = new Map(usersAvailability.map(ua => [ua.userId, ua.availableDates]));
+
+    // Merge the availability data with the user data
+    const usersWithAvailability = users.map(user => {
+        const data: any = { 
+            ...user, 
+            availableDates: availabilityMap.get(user.id) || [] 
+        };
+        
+        if (data.dob && data.dob instanceof Timestamp) {
+            data.dob = format(data.dob.toDate(), 'yyyy-MM-dd');
+        }
+        if (data.lastActive && data.lastActive instanceof Timestamp) {
+            data.lastActive = data.lastActive.toDate().toISOString();
+        }
+        if (data.personaLastGenerated && data.personaLastGenerated instanceof Timestamp) {
+            data.personaLastGenerated = data.personaLastGenerated.toDate().toISOString();
+        }
+        return data as User;
+    });
+
+    return usersWithAvailability;
 }
+
 
 /**
  * Creates a new user profile in Firestore.
@@ -71,6 +111,8 @@ export async function createUser(userId: string, data: Omit<User, 'id'>): Promis
   const userDocRef = doc(db, 'users', userId);
   const dataToSave: any = { 
     ...data,
+    is_admin: false,
+    is_sample_user: false, // Default to false for new users
     lastActive: Timestamp.now(), // Set initial activity
   };
 
@@ -106,22 +148,36 @@ export async function updateUser(userId: string, data: Partial<User>): Promise<v
 
 
 /**
- * Deletes all sample user profiles from the database.
- * Sample users are identified by their document ID starting with "seed_user_".
+ * Deletes all sample user profiles from the database and Firebase Authentication.
+ * Sample users are identified by the `is_sample_user` flag.
  */
 export async function deleteSampleUsers(): Promise<void> {
-    const batch = writeBatch(db);
+    // First, get all the sample user IDs from Firestore
     const usersCollection = collection(db, 'users');
-    const allUsersSnapshot = await getDocs(usersCollection);
+    const q = query(usersCollection, where('is_sample_user', '==', true));
+    const sampleUsersSnapshot = await getDocs(q);
+    const userIds = sampleUsersSnapshot.docs.map(doc => doc.id);
 
-    allUsersSnapshot.forEach(doc => {
-        if (doc.id.startsWith('seed_user_')) {
-            batch.delete(doc.ref);
-        }
+    if (userIds.length === 0) {
+        console.log("No sample users to delete.");
+        return;
+    }
+
+    // Now, call the API route to delete these users from Firebase Auth and Firestore
+    const response = await fetch('/api/delete-sample-users', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userIds }),
     });
 
-    await batch.commit();
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to delete sample users.');
+    }
 }
+
 
 /**
  * Checks if a user with the given email already exists in the waitlist.
