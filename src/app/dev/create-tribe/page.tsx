@@ -41,11 +41,12 @@ export default function CreateTribePage() {
     const [allHobbies, setAllHobbies] = useState<string[]>([]);
     const [allLocations, setAllLocations] = useState<string[]>([]);
 
+    const fetchUsers = async () => {
+        const users = await getAllUsers();
+        setAllUsers(users);
+    };
+
     useEffect(() => {
-        const fetchUsers = async () => {
-            const users = await getAllUsers();
-            setAllUsers(users);
-        };
         fetchUsers();
     }, []);
 
@@ -145,7 +146,14 @@ export default function CreateTribePage() {
             });
 
             toast({ title: "Success", description: "Tribe created successfully." });
-            router.push("/dev");
+            
+            // Reset form and refetch users
+            setSelectedUsers([]);
+            setMeetupDate("");
+            setMeetupTime("");
+            setLocation("");
+            fetchUsers();
+
         } catch (error) {
             console.error("Failed to create tribe:", error);
             toast({ variant: "destructive", title: "Error", description: "Could not create tribe." });
