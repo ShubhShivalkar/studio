@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 export default function CreateTribePage() {
     const { toast } = useToast();
@@ -26,19 +27,36 @@ export default function CreateTribePage() {
     const [location, setLocation] = useState("");
     const [isLoading, setIsLoading] = useState(false);
 
+    // Filter states
+    const [genderFilter, setGenderFilter] = useState<string[]>([]);
+    const [mbtiFilter, setMbtiFilter] = useState<string[]>([]);
+    const [minAgeFilter, setMinAgeFilter] = useState('');
+    const [maxAgeFilter, setMaxAgeFilter] = useState('');
+    const [hobbiesFilter, setHobbiesFilter] = useState<string[]>([]);
+
+    // Unique options for filters
+    const [genders, setGenders] = useState<string[]>([]);
+    const [mbtiTypes, setMbtiTypes] = useState<string[]>([]);
+    const [allHobbies, setAllHobbies] = useState<string[]>([]);
+
     useEffect(() => {
         const fetchUsers = async () => {
             const users = await getAllUsers();
             setAllUsers(users);
-            const eligible = users.filter(user => 
-                user.persona && 
-                user.interestedInMeetups && 
-                !user.currentTribeId
-            );
-            setEligibleUsers(eligible);
         };
         fetchUsers();
     }, []);
+
+    useEffect(() => {
+        if (allUsers.length > 0) {
+            const uniqueGenders = [...new Set(allUsers.map(user => user.gender).filter(Boolean))] as string[];
+            const uniqueMbti = [...new Set(allUsers.map(user => user.mbti).filter(Boolean))] as string[];
+            const uniqueHobbies = [...new Set(allUsers.flatMap(user => user.hobbies || []).filter(Boolean))].sort();
+            setGenders(uniqueGenders);
+            setMbtiTypes(uniqueMbti);
+            setAllHobbies(uniqueHobbies);
+        }
+    }, [allUsers]);
 
     const calculateAge = (dob: string): number => {
         const birthDate = new Date(dob);
@@ -50,6 +68,37 @@ export default function CreateTribePage() {
         }
         return age;
     };
+
+    useEffect(() => {
+        let filtered = allUsers.filter(user =>
+            user.persona &&
+            user.interestedInMeetups &&
+            !user.currentTribeId
+        );
+
+        if (genderFilter.length > 0) {
+            filtered = filtered.filter(user => user.gender && genderFilter.includes(user.gender));
+        }
+
+        if (mbtiFilter.length > 0) {
+            filtered = filtered.filter(user => user.mbti && mbtiFilter.includes(user.mbti));
+        }
+
+        if (minAgeFilter) {
+            filtered = filtered.filter(user => calculateAge(user.dob) >= parseInt(minAgeFilter, 10));
+        }
+
+        if (maxAgeFilter) {
+            filtered = filtered.filter(user => calculateAge(user.dob) <= parseInt(maxAgeFilter, 10));
+        }
+
+        if (hobbiesFilter.length > 0) {
+            filtered = filtered.filter(user => user.hobbies && user.hobbies.some(hobby => hobbiesFilter.includes(hobby)));
+        }
+
+        setEligibleUsers(filtered);
+    }, [allUsers, genderFilter, mbtiFilter, minAgeFilter, maxAgeFilter, hobbiesFilter]);
+
 
     const handleUserSelection = (userId: string) => {
         setSelectedUsers(prev =>
@@ -97,6 +146,10 @@ export default function CreateTribePage() {
         }
     };
 
+    const toggleFilter = (filter: string[], setFilter: (value: string[]) => void, value: string) => {
+        setFilter(filter.includes(value) ? filter.filter(v => v !== value) : [...filter, value]);
+    };
+    
     return (
         <div className="container mx-auto py-10 flex space-x-8">
             <div className="w-2/3">
@@ -105,7 +158,64 @@ export default function CreateTribePage() {
                         <CardTitle>Eligible Users for Tribe Creation</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="border rounded-lg overflow-auto max-h-[70vh]">
+                        <div className="flex items-center space-x-4 mb-6 p-4 border rounded-lg">
+                            {/* Gender Filter */}
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline">Gender {genderFilter.length > 0 && `(${genderFilter.length})`}</Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent>
+                                    <DropdownMenuLabel>Filter by Gender</DropdownMenuLabel>
+                                    <DropdownMenuSeparator />
+                                    {genders.map(gender => (
+                                        <DropdownMenuCheckboxItem key={gender} checked={genderFilter.includes(gender)} onCheckedChange={() => toggleFilter(genderFilter, setGenderFilter, gender)}>
+                                            {gender}
+                                        </DropdownMenuCheckboxItem>
+                                    ))}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+
+                            {/* MBTI Filter */}
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline">MBTI {mbtiFilter.length > 0 && `(${mbtiFilter.length})`}</Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent>
+                                    <DropdownMenuLabel>Filter by MBTI</DropdownMenuLabel>
+                                    <DropdownMenuSeparator />
+                                    {mbtiTypes.map(type => (
+                                        <DropdownMenuCheckboxItem key={type} checked={mbtiFilter.includes(type)} onCheckedChange={() => toggleFilter(mbtiFilter, setMbtiFilter, type)}>
+                                            {type}
+                                        </DropdownMenuCheckboxItem>
+                                    ))}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+
+                             {/* Hobbies Filter */}
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline">Hobbies {hobbiesFilter.length > 0 && `(${hobbiesFilter.length})`}</Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent className="max-h-80 overflow-y-auto">
+                                    <DropdownMenuLabel>Filter by Hobbies</DropdownMenuLabel>
+                                    <DropdownMenuSeparator />
+                                    {allHobbies.map(hobby => (
+                                        <DropdownMenuCheckboxItem key={hobby} checked={hobbiesFilter.includes(hobby)} onCheckedChange={() => toggleFilter(hobbiesFilter, setHobbiesFilter, hobby)}>
+                                            {hobby}
+                                        </DropdownMenuCheckboxItem>
+                                    ))}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+
+                            {/* Age Range Filter */}
+                           <div className="flex items-center space-x-2">
+                               <Label>Age:</Label>
+                                <Input className="w-20" id="min-age-filter" type="number" placeholder="Min" value={minAgeFilter} onChange={e => setMinAgeFilter(e.target.value)} />
+                                <Input className="w-20" id="max-age-filter" type="number" placeholder="Max" value={maxAgeFilter} onChange={e => setMaxAgeFilter(e.target.value)} />
+                            </div>
+                        </div>
+
+                        <div className="border rounded-lg overflow-auto max-h-[60vh]">
                             <Table>
                                 <TableHeader>
                                     <TableRow>
