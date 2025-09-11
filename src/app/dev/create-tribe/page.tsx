@@ -18,6 +18,11 @@ import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMe
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Switch } from "@/components/ui/switch";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { format, parseISO } from "date-fns";
+import { CalendarIcon } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 
 export default function CreateTribePage() {
     const { toast } = useToast();
@@ -38,6 +43,7 @@ export default function CreateTribePage() {
     const [maxAgeFilter, setMaxAgeFilter] = useState('');
     const [hobbiesFilter, setHobbiesFilter] = useState<string[]>([]);
     const [locationFilter, setLocationFilter] = useState<string[]>([]);
+    const [dateFilter, setDateFilter] = useState<Date | undefined>();
 
     // Unique options for filters
     const [genders, setGenders] = useState<string[]>([]);
@@ -115,8 +121,15 @@ export default function CreateTribePage() {
             filtered = filtered.filter(user => user.location && locationFilter.includes(user.location));
         }
 
+        if (dateFilter) {
+            const formattedDateFilter = format(dateFilter, 'yyyy-MM-dd');
+            filtered = filtered.filter(user =>
+                user.availableDates?.includes(formattedDateFilter)
+            );
+        }
+
         setEligibleUsers(filtered);
-    }, [allUsers, genderFilter, mbtiFilter, minAgeFilter, maxAgeFilter, hobbiesFilter, locationFilter]);
+    }, [allUsers, genderFilter, mbtiFilter, minAgeFilter, maxAgeFilter, hobbiesFilter, locationFilter, dateFilter]);
 
     const handleUserSelection = (userId: string) => {
         setSelectedUsers(prev =>
@@ -151,10 +164,10 @@ export default function CreateTribePage() {
                 meetupDate,
                 meetupTime,
                 location,
-                is_active: true,
+                is_active: false, // Tribes are inactive by default
             });
 
-            toast({ title: "Success", description: "Tribe created successfully." });
+            toast({ title: "Success", description: "Tribe created successfully and is set to inactive." });
             
             setSelectedUsers([]);
             setMeetupDate("");
@@ -198,15 +211,19 @@ export default function CreateTribePage() {
         }
     };
 
-    const handleMakeAllActive = async () => {
+    const handleActivateTribes = async () => {
         try {
-            const tribeIds = allTribes.map(t => t.id);
-            await updateAllTribesStatus(tribeIds, true);
-            toast({ title: "Success", description: "All tribes set to active." });
+            const inactiveTribeIds = allTribes.filter(t => !t.is_active).map(t => t.id);
+            if (inactiveTribeIds.length === 0) {
+                toast({ title: "No Inactive Tribes", description: "There are no inactive tribes to activate." });
+                return;
+            }
+            await updateAllTribesStatus(inactiveTribeIds, true);
+            toast({ title: "Success", description: "All inactive tribes have been activated." });
             fetchAllTribes();
         } catch (error) {
-            console.error("Failed to set all tribes to active:", error);
-            toast({ variant: "destructive", title: "Error", description: "Could not set all tribes to active." });
+            console.error("Failed to activate tribes:", error);
+            toast({ variant: "destructive", title: "Error", description: "Could not activate tribes." });
         }
     };
 
@@ -221,6 +238,23 @@ export default function CreateTribePage() {
             toast({ variant: "destructive", title: "Error", description: "Could not complete tribe cleanup." });
         }
     };
+
+    const formatAvailableDates = (dates: string[] | undefined) => {
+        if (!dates || dates.length === 0) return "N/A";
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const upcomingDates = dates
+            .map(date => parseISO(date))
+            .filter(date => date >= today)
+            .sort((a, b) => a.getTime() - b.getTime());
+
+        if (upcomingDates.length === 0) return "None Upcoming";
+
+        return upcomingDates
+            .slice(0, 2)
+            .map(date => format(date, "MMM d"))
+            .join(", ");
+    };
     
     return (
         <div className="container mx-auto py-10 space-y-8">
@@ -231,7 +265,7 @@ export default function CreateTribePage() {
                             <CardTitle>Eligible Users for Tribe Creation</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="flex items-center space-x-4 mb-6 p-4 border rounded-lg">
+                            <div className="flex flex-wrap items-center gap-4 mb-6 p-4 border rounded-lg">
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
                                         <Button variant="outline">Gender {genderFilter.length > 0 && `(${genderFilter.length})`}</Button>
@@ -297,6 +331,32 @@ export default function CreateTribePage() {
                                     <Input className="w-20" id="min-age-filter" type="number" placeholder="Min" value={minAgeFilter} onChange={e => setMinAgeFilter(e.target.value)} />
                                     <Input className="w-20" id="max-age-filter" type="number" placeholder="Max" value={maxAgeFilter} onChange={e => setMaxAgeFilter(e.target.value)} />
                                 </div>
+
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            variant={"outline"}
+                                            className={cn(
+                                                "w-[240px] justify-start text-left font-normal",
+                                                !dateFilter && "text-muted-foreground"
+                                            )}
+                                            >
+                                            <CalendarIcon className="mr-2 h-4 w-4" />
+                                            {dateFilter ? format(dateFilter, "PPP") : <span>Pick a date</span>}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="start">
+                                        <Calendar
+                                            mode="single"
+                                            selected={dateFilter}
+                                            onSelect={setDateFilter}
+                                            initialFocus
+                                        />
+                                    </PopoverContent>
+                                </Popover>
+                                {dateFilter && (
+                                    <Button variant="ghost" onClick={() => setDateFilter(undefined)}>Clear</Button>
+                                )}
                             </div>
 
                             <div className="border rounded-lg overflow-auto max-h-[60vh]">
@@ -306,6 +366,7 @@ export default function CreateTribePage() {
                                             <TableHead className="w-[50px]">Select</TableHead>
                                             <TableHead>Name</TableHead>
                                             <TableHead>Hobbies</TableHead>
+                                            <TableHead>Available</TableHead>
                                             <TableHead>Persona</TableHead>
                                             <TableHead>MBTI</TableHead>
                                             <TableHead>Location</TableHead>
@@ -326,6 +387,7 @@ export default function CreateTribePage() {
                                                 </TableCell>
                                                 <TableCell className="font-medium">{user.name}</TableCell>
                                                 <TableCell>{user.hobbies?.slice(0, 2).join(', ')}</TableCell>
+                                                <TableCell>{formatAvailableDates(user.availableDates)}</TableCell>
                                                 <TableCell className="max-w-[200px] truncate" title={user.persona}>{user.persona}</TableCell>
                                                 <TableCell>{user.mbti}</TableCell>
                                                 <TableCell>{user.location}</TableCell>
@@ -382,18 +444,18 @@ export default function CreateTribePage() {
                     <div className="flex space-x-2">
                         <AlertDialog>
                             <AlertDialogTrigger asChild>
-                                <Button variant="outline">Send Invitations</Button>
+                                <Button variant="outline">Activate Tribes</Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
                                 <AlertDialogHeader>
                                     <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                                     <AlertDialogDescription>
-                                        This will mark all tribes as active and send invitations to the members.
+                                        This will mark all inactive tribes as active and send invitations to the members.
                                     </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
                                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction onClick={handleMakeAllActive}>
+                                    <AlertDialogAction onClick={handleActivateTribes}>
                                         Yes, proceed
                                     </AlertDialogAction>
                                 </AlertDialogFooter>

@@ -123,14 +123,30 @@ export async function getTribeHistory(userId: string): Promise<TribeHistory[]> {
 }
 
 export async function createTribe(tribeData: Omit<Tribe, 'id'>): Promise<Tribe> {
-  const newTribeRef = doc(collection(db, 'tribes'));
-  const newTribe: Tribe = {
-    id: newTribeRef.id,
-    ...tribeData,
-    is_active: true,
-  };
-  await setDoc(newTribeRef, newTribe);
-  return newTribe;
+    const batch = writeBatch(db);
+    const newTribeRef = doc(collection(db, 'tribes'));
+
+    const newTribe = {
+        ...tribeData,
+        id: newTribeRef.id,
+        formedDate: new Date().toISOString(),
+    };
+
+    // Ensure is_active is set, defaulting to false.
+    if (newTribe.is_active === undefined) {
+        newTribe.is_active = false;
+    }
+    
+    batch.set(newTribeRef, newTribe);
+
+    for (const member of tribeData.members as MatchedUser[]) {
+        const userRef = doc(db, 'users', member.userId);
+        batch.update(userRef, { currentTribeId: newTribe.id });
+    }
+
+    await batch.commit();
+
+    return newTribe as Tribe;
 }
 
 /**

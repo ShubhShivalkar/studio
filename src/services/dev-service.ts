@@ -12,27 +12,28 @@ const sampleDataIdentifier = { isSample: true };
 
 const createSampleJournalEntries = (userId: string): (Omit<DailySummary, 'id'> & { isSample: boolean; userId: string })[] => {
     const entries = [
-      { daysAgo: 1, summary: "Spent the afternoon walking through the city, discovered a new coffee shop. The latte was incredible.", mood: '😊' },
-      { daysAgo: 2, summary: "Feeling a bit stressed with a work deadline approaching, but I've mapped out a plan to get it done.", mood: '😐' },
-      { daysAgo: 3, summary: "Had a surprise video call with an old friend from college. It was so good to catch up and laugh about old times.", mood: '😊' },
-      { daysAgo: 4, summary: "Tried a new recipe for dinner. It was a bit of a disaster, but a funny story to tell.", mood: '😂' },
-      { daysAgo: 5, summary: "Read a few chapters of a captivating novel in the park. It felt like a mini-vacation.", mood: '😊' },
-      { daysAgo: 6, summary: "Productive day at work. Closed a major deal and got praise from the team.", mood: '🥳' },
-      { daysAgo: 7, summary: "Was feeling a bit down today, so I listened to my favorite uplifting music. It helped a little.", mood: '😢' },
-      { daysAgo: 8, summary: "Went for a long run this morning. The sunrise was beautiful and it cleared my head.", mood: '😌' },
-      { daysAgo: 9, summary: "Binge-watched a new series all evening. Sometimes you just need to switch off.", mood: '📺' },
-      { daysAgo: 10, summary: "Deep cleaned the entire apartment. It's so satisfying to have a tidy space.", mood: '😎' },
-      { daysAgo: 11, summary: "Feeling a little uninspired. Tried to brainstorm some new ideas but nothing clicked.", mood: '😕' },
-      { daysAgo: 12, summary: "Met up with some friends for a game night. Laughed so much my sides hurt.", mood: '😂' },
-      { daysAgo: 13, summary: "Started planning a weekend getaway. The anticipation is half the fun!", mood: '✈️' },
-      { daysAgo: 14, summary: "Volunteered at the local animal shelter. The puppies were adorable.", mood: '❤️' },
-      { daysAgo: 15, summary: "Reflecting on the past two weeks. It's been a mix of highs and lows, but that's life.", mood: '🤔' },
+      { daysAgo: 1, summary: "Spent the afternoon walking through the city, discovered a new coffee shop. The latte was incredible.", mood: '😊', isAvailable: Math.random() > 0.5 },
+      { daysAgo: 2, summary: "Feeling a bit stressed with a work deadline approaching, but I've mapped out a plan to get it done.", mood: '😐', isAvailable: Math.random() > 0.5 },
+      { daysAgo: 3, summary: "Had a surprise video call with an old friend from college. It was so good to catch up and laugh about old times.", mood: '😊', isAvailable: Math.random() > 0.5 },
+      { daysAgo: 4, summary: "Tried a new recipe for dinner. It was a bit of a disaster, but a funny story to tell.", mood: '😂', isAvailable: Math.random() > 0.5 },
+      { daysAgo: 5, summary: "Read a few chapters of a captivating novel in the park. It felt like a mini-vacation.", mood: '😊', isAvailable: Math.random() > 0.5 },
+      { daysAgo: 6, summary: "Productive day at work. Closed a major deal and got praise from the team.", mood: '🥳', isAvailable: Math.random() > 0.5 },
+      { daysAgo: 7, summary: "Was feeling a bit down today, so I listened to my favorite uplifting music. It helped a little.", mood: '😢', isAvailable: Math.random() > 0.5 },
+      { daysAgo: 8, summary: "Went for a long run this morning. The sunrise was beautiful and it cleared my head.", mood: '😌', isAvailable: Math.random() > 0.5 },
+      { daysAgo: 9, summary: "Binge-watched a new series all evening. Sometimes you just need to switch off.", mood: '📺', isAvailable: Math.random() > 0.5 },
+      { daysAgo: 10, summary: "Deep cleaned the entire apartment. It's so satisfying to have a tidy space.", mood: '😎', isAvailable: Math.random() > 0.5 },
+      { daysAgo: 11, summary: "Feeling a little uninspired. Tried to brainstorm some new ideas but nothing clicked.", mood: '😕', isAvailable: Math.random() > 0.5 },
+      { daysAgo: 12, summary: "Met up with some friends for a game night. Laughed so much my sides hurt.", mood: '😂', isAvailable: Math.random() > 0.5 },
+      { daysAgo: 13, summary: "Started planning a weekend getaway. The anticipation is half the fun!", mood: '✈️', isAvailable: Math.random() > 0.5 },
+      { daysAgo: 14, summary: "Volunteered at the local animal shelter. The puppies were adorable.", mood: '❤️', isAvailable: Math.random() > 0.5 },
+      { daysAgo: 15, summary: "Reflecting on the past two weeks. It's been a mix of highs and lows, but that's life.", mood: '🤔', isAvailable: Math.random() > 0.5 },
     ];
     return entries.map(e => ({
         userId,
         date: format(subDays(new Date(), e.daysAgo), 'yyyy-MM-dd'),
         summary: e.summary,
         mood: e.mood as any,
+        isAvailable: e.isAvailable,
         ...sampleDataIdentifier,
     }));
 };
@@ -86,10 +87,18 @@ export async function addSampleEntries(userId: string): Promise<void> {
     const reminders = createSampleReminders(userId);
     const checklists = createSampleChecklists(userId);
 
+    const availableDates: string[] = [];
     journalEntries.forEach(entry => {
         const docRef = doc(collection(db, 'journalEntries'));
+        if (entry.isAvailable) {
+            availableDates.push(entry.date);
+        }
         batch.set(docRef, { ...entry, date: Timestamp.fromDate(parseISO(entry.date)) });
     });
+
+    // Update the user document with the denormalized available dates
+    const userRef = doc(db, 'users', userId);
+    batch.update(userRef, { availableDates });
 
     reminders.forEach(reminder => {
         const docRef = doc(collection(db, 'reminders'));
@@ -131,6 +140,7 @@ export async function deleteAllUserData(userId: string): Promise<void> {
         mbti: deleteField(),
         personaLastGenerated: deleteField(),
         journalEntries: [],
+        availableDates: deleteField(), // Clear the available dates
     });
     
     await batch.commit();
