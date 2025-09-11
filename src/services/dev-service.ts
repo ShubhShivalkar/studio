@@ -15,8 +15,18 @@ const createSampleJournalEntries = (userId: string): (Omit<DailySummary, 'id'> &
       { daysAgo: 1, summary: "Spent the afternoon walking through the city, discovered a new coffee shop. The latte was incredible.", mood: '😊' },
       { daysAgo: 2, summary: "Feeling a bit stressed with a work deadline approaching, but I've mapped out a plan to get it done.", mood: '😐' },
       { daysAgo: 3, summary: "Had a surprise video call with an old friend from college. It was so good to catch up and laugh about old times.", mood: '😊' },
+      { daysAgo: 4, summary: "Tried a new recipe for dinner. It was a bit of a disaster, but a funny story to tell.", mood: '😂' },
       { daysAgo: 5, summary: "Read a few chapters of a captivating novel in the park. It felt like a mini-vacation.", mood: '😊' },
+      { daysAgo: 6, summary: "Productive day at work. Closed a major deal and got praise from the team.", mood: '🥳' },
       { daysAgo: 7, summary: "Was feeling a bit down today, so I listened to my favorite uplifting music. It helped a little.", mood: '😢' },
+      { daysAgo: 8, summary: "Went for a long run this morning. The sunrise was beautiful and it cleared my head.", mood: '😌' },
+      { daysAgo: 9, summary: "Binge-watched a new series all evening. Sometimes you just need to switch off.", mood: '📺' },
+      { daysAgo: 10, summary: "Deep cleaned the entire apartment. It's so satisfying to have a tidy space.", mood: '😎' },
+      { daysAgo: 11, summary: "Feeling a little uninspired. Tried to brainstorm some new ideas but nothing clicked.", mood: '😕' },
+      { daysAgo: 12, summary: "Met up with some friends for a game night. Laughed so much my sides hurt.", mood: '😂' },
+      { daysAgo: 13, summary: "Started planning a weekend getaway. The anticipation is half the fun!", mood: '✈️' },
+      { daysAgo: 14, summary: "Volunteered at the local animal shelter. The puppies were adorable.", mood: '❤️' },
+      { daysAgo: 15, summary: "Reflecting on the past two weeks. It's been a mix of highs and lows, but that's life.", mood: '🤔' },
     ];
     return entries.map(e => ({
         userId,
@@ -37,7 +47,7 @@ const createSampleReminders = (userId: string): (Omit<Reminder, 'id'> & { isSamp
         date: format(subDays(new Date(), r.daysAgo), 'yyyy-MM-dd'),
         time: r.time,
         title: r.title,
-        details: r.details || undefined,
+        details: r.details || null,
         ...sampleDataIdentifier,
     }));
 };
