@@ -33,11 +33,13 @@ export default function CreateTribePage() {
     const [minAgeFilter, setMinAgeFilter] = useState('');
     const [maxAgeFilter, setMaxAgeFilter] = useState('');
     const [hobbiesFilter, setHobbiesFilter] = useState<string[]>([]);
+    const [locationFilter, setLocationFilter] = useState<string[]>([]);
 
     // Unique options for filters
     const [genders, setGenders] = useState<string[]>([]);
     const [mbtiTypes, setMbtiTypes] = useState<string[]>([]);
     const [allHobbies, setAllHobbies] = useState<string[]>([]);
+    const [allLocations, setAllLocations] = useState<string[]>([]);
 
     useEffect(() => {
         const fetchUsers = async () => {
@@ -52,9 +54,11 @@ export default function CreateTribePage() {
             const uniqueGenders = [...new Set(allUsers.map(user => user.gender).filter(Boolean))] as string[];
             const uniqueMbti = [...new Set(allUsers.map(user => user.mbti).filter(Boolean))] as string[];
             const uniqueHobbies = [...new Set(allUsers.flatMap(user => user.hobbies || []).filter(Boolean))].sort();
+            const uniqueLocations = [...new Set(allUsers.map(user => user.location).filter(Boolean))] as string[];
             setGenders(uniqueGenders);
             setMbtiTypes(uniqueMbti);
             setAllHobbies(uniqueHobbies);
+            setAllLocations(uniqueLocations);
         }
     }, [allUsers]);
 
@@ -96,8 +100,12 @@ export default function CreateTribePage() {
             filtered = filtered.filter(user => user.hobbies && user.hobbies.some(hobby => hobbiesFilter.includes(hobby)));
         }
 
+        if (locationFilter.length > 0) {
+            filtered = filtered.filter(user => user.location && locationFilter.includes(user.location));
+        }
+
         setEligibleUsers(filtered);
-    }, [allUsers, genderFilter, mbtiFilter, minAgeFilter, maxAgeFilter, hobbiesFilter]);
+    }, [allUsers, genderFilter, mbtiFilter, minAgeFilter, maxAgeFilter, hobbiesFilter, locationFilter]);
 
 
     const handleUserSelection = (userId: string) => {
@@ -202,6 +210,22 @@ export default function CreateTribePage() {
                                     {allHobbies.map(hobby => (
                                         <DropdownMenuCheckboxItem key={hobby} checked={hobbiesFilter.includes(hobby)} onCheckedChange={() => toggleFilter(hobbiesFilter, setHobbiesFilter, hobby)}>
                                             {hobby}
+                                        </DropdownMenuCheckboxItem>
+                                    ))}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+
+                            {/* Location Filter */}
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline">Location {locationFilter.length > 0 && `(${locationFilter.length})`}</Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent className="max-h-80 overflow-y-auto">
+                                    <DropdownMenuLabel>Filter by Location</DropdownMenuLabel>
+                                    <DropdownMenuSeparator />
+                                    {allLocations.map(location => (
+                                        <DropdownMenuCheckboxItem key={location} checked={locationFilter.includes(location)} onCheckedChange={() => toggleFilter(locationFilter, setLocationFilter, location)}>
+                                            {location}
                                         </DropdownMenuCheckboxItem>
                                     ))}
                                 </DropdownMenuContent>
