@@ -1,14 +1,16 @@
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/auth-context";
-import { addSampleEntries, deleteAllUserData } from "@/services/dev-service";
+import { addSampleEntries, deleteAllUserData, seedSampleUsers } from "@/services/dev-service";
 import { deleteSampleUsers } from "@/services/user-service";
-import { AlertTriangle, DatabaseZap, Trash2, Users } from "lucide-react";
+import { AlertTriangle, DatabaseZap, Trash2, Users, PlusCircle, UserPlus } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   AlertDialog,
@@ -22,13 +24,22 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-
 export default function DevPage() {
-    const { user } = useAuth();
+    const { user, profile, loading } = useAuth();
     const { toast } = useToast();
+    const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
     const [isDeletingUsers, setIsDeletingUsers] = useState(false);
+    const [isSeedingUsers, setIsSeedingUsers] = useState(false);
     const [isDeletingAllData, setIsDeletingAllData] = useState(false);
+
+    useEffect(() => {
+        if (!loading && !profile?.is_admin) {
+            setTimeout(() => {
+                router.push('/');
+            }, 3000);
+        }
+    }, [loading, profile, router]);
 
     const handleAddData = async () => {
         if (!user) {
@@ -77,6 +88,38 @@ export default function DevPage() {
         }
     }
 
+    const handleSeedUsers = async () => {
+        setIsSeedingUsers(true);
+        try {
+            await seedSampleUsers();
+            toast({ title: "Success", description: "100 sample users have been created." });
+        } catch (error) {
+             console.error("Failed to seed sample users:", error);
+            toast({ variant: "destructive", title: "Error", description: "Could not create sample users." });
+        } finally {
+            setIsSeedingUsers(false);
+        }
+    }
+
+    if (loading) {
+        return (
+            <div className="container mx-auto py-10 text-center">
+                <p>Loading...</p>
+            </div>
+        );
+    }
+
+    if (!profile?.is_admin) {
+        return (
+            <div className="container mx-auto py-10 text-center">
+                <h1 className="text-3xl font-bold text-destructive">Not Authorized</h1>
+                <p className="text-muted-foreground">
+                    You do not have permission to access this page. You will be redirected to the homepage shortly.
+                </p>
+            </div>
+        );
+    }
+
     return (
         <div className="container mx-auto py-10 space-y-8">
             <div className="text-center">
@@ -84,14 +127,14 @@ export default function DevPage() {
                 <p className="text-muted-foreground">Manage sample data for testing and development.</p>
             </div>
 
-             <Alert variant="destructive" className="max-w-4xl mx-auto">
+             <Alert variant="destructive" className="max-w-5xl mx-auto">
                 <AlertTriangle className="h-4 w-4" />
                 <AlertDescription>
                     These tools are for development purposes only and will perform destructive operations on the database. Use with caution.
                 </AlertDescription>
             </Alert>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-4xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
@@ -167,6 +210,54 @@ export default function DevPage() {
                                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                                     <AlertDialogAction onClick={handleDeleteAllSampleUsers} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
                                         Yes, delete them
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    </CardContent>
+                </Card>
+                 <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <PlusCircle /> Create Tribe Manually
+                        </CardTitle>
+                        <CardDescription>
+                            Manually create a new tribe by selecting from a list of users.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Button asChild className="w-full">
+                            <Link href="/dev/create-tribe">Create Tribe</Link>
+                        </Button>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <UserPlus /> Seed Sample Users
+                        </CardTitle>
+                        <CardDescription>
+                            Create 100 sample users with random data for testing matching and tribe creation.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                         <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button disabled={isSeedingUsers} className="w-full">
+                                    {isSeedingUsers ? "Creating Users..." : "Seed 100 Sample Users"}
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        This will create 100 new user documents in the database, which will require cleanup later.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={handleSeedUsers}>
+                                        Yes, create them
                                     </AlertDialogAction>
                                 </AlertDialogFooter>
                             </AlertDialogContent>

@@ -1,9 +1,9 @@
 
 'use server';
 
-import { collection, doc, getDoc, getDocs, query, where } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, query, where, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import type { Tribe, User, TribeHistory } from '@/lib/types';
+import type { Tribe, User, PastTribe as TribeHistory } from '@/lib/types';
 import { getAllUsers, getUser } from './user-service';
 import { getNextMatchTime } from '@/lib/utils';
 
@@ -105,4 +105,15 @@ export async function getTribeHistory(userId: string): Promise<TribeHistory[]> {
       reason: 'The tribe completed its 4-week cycle.',
     },
   ];
+}
+
+export async function createTribe(tribeData: Omit<Tribe, 'id'>): Promise<Tribe> {
+  const newTribeRef = doc(collection(db, 'tribes'));
+  const newTribe: Tribe = {
+    id: newTribeRef.id,
+    ...tribeData,
+    is_active: false,
+  };
+  await setDoc(newTribeRef, newTribe);
+  return newTribe;
 }

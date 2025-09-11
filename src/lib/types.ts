@@ -28,6 +28,7 @@ export type User = {
   tribePreferences?: TribePreferences;
   lastActive?: string; // ISO date string
   lastTribeDate?: string; // ISO date string
+  is_sample_user?: boolean;
   is_admin?: boolean;
 };
 
@@ -107,4 +108,5 @@ export type Tribe = {
     meetupDate: string;
     meetupTime?: string;
     location: string;
+    is_active: boolean;
 }

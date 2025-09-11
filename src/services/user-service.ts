@@ -72,6 +72,7 @@ export async function createUser(userId: string, data: Omit<User, 'id'>): Promis
   const dataToSave: any = { 
     ...data,
     is_admin: false,
+    is_sample_user: false, // Default to false for new users
     lastActive: Timestamp.now(), // Set initial activity
   };
 
@@ -108,17 +109,16 @@ export async function updateUser(userId: string, data: Partial<User>): Promise<v
 
 /**
  * Deletes all sample user profiles from the database.
- * Sample users are identified by their document ID starting with "seed_user_".
+ * Sample users are identified by the `is_sample_user` flag.
  */
 export async function deleteSampleUsers(): Promise<void> {
     const batch = writeBatch(db);
     const usersCollection = collection(db, 'users');
-    const allUsersSnapshot = await getDocs(usersCollection);
+    const q = query(usersCollection, where('is_sample_user', '==', true));
+    const sampleUsersSnapshot = await getDocs(q);
 
-    allUsersSnapshot.forEach(doc => {
-        if (doc.id.startsWith('seed_user_')) {
-            batch.delete(doc.ref);
-        }
+    sampleUsersSnapshot.forEach(doc => {
+        batch.delete(doc.ref);
     });
 
     await batch.commit();
