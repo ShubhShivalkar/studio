@@ -71,6 +71,7 @@ export async function createUser(userId: string, data: Omit<User, 'id'>): Promis
   const userDocRef = doc(db, 'users', userId);
   const dataToSave: any = { 
     ...data,
+    is_admin: false,
     lastActive: Timestamp.now(), // Set initial activity
   };
 

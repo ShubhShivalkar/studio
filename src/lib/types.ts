@@ -28,6 +28,7 @@ export type User = {
   tribePreferences?: TribePreferences;
   lastActive?: string; // ISO date string
   lastTribeDate?: string; // ISO date string
+  is_admin?: boolean;
 };
 
 export type Connection = {
