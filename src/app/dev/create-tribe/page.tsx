@@ -7,14 +7,17 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { getAllUsers } from "@/services/user-service";
-import { createTribe } from "@/services/tribe-service";
-import type { User, MatchedUser } from "@/lib/types";
+import { createTribe, getAllTribes, updateTribe, deleteTribe, updateAllTribesStatus, deleteInactiveAndArchiveActiveTribes } from "@/services/tribe-service";
+import type { User, MatchedUser, Tribe } from "@/lib/types";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Switch } from "@/components/ui/switch";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 export default function CreateTribePage() {
     const { toast } = useToast();
@@ -26,6 +29,7 @@ export default function CreateTribePage() {
     const [meetupTime, setMeetupTime] = useState("");
     const [location, setLocation] = useState("");
     const [isLoading, setIsLoading] = useState(false);
+    const [allTribes, setAllTribes] = useState<Tribe[]>([]);
 
     // Filter states
     const [genderFilter, setGenderFilter] = useState<string[]>([]);
@@ -45,9 +49,15 @@ export default function CreateTribePage() {
         const users = await getAllUsers();
         setAllUsers(users);
     };
+    
+    const fetchAllTribes = async () => {
+        const tribes = await getAllTribes();
+        setAllTribes(tribes);
+    };
 
     useEffect(() => {
         fetchUsers();
+        fetchAllTribes();
     }, []);
 
     useEffect(() => {
@@ -108,7 +118,6 @@ export default function CreateTribePage() {
         setEligibleUsers(filtered);
     }, [allUsers, genderFilter, mbtiFilter, minAgeFilter, maxAgeFilter, hobbiesFilter, locationFilter]);
 
-
     const handleUserSelection = (userId: string) => {
         setSelectedUsers(prev =>
             prev.includes(userId) ? prev.filter(id => id !== userId) : [...prev, userId]
@@ -147,12 +156,12 @@ export default function CreateTribePage() {
 
             toast({ title: "Success", description: "Tribe created successfully." });
             
-            // Reset form and refetch users
             setSelectedUsers([]);
             setMeetupDate("");
             setMeetupTime("");
             setLocation("");
             fetchUsers();
+            fetchAllTribes();
 
         } catch (error) {
             console.error("Failed to create tribe:", error);
@@ -165,164 +174,331 @@ export default function CreateTribePage() {
     const toggleFilter = (filter: string[], setFilter: (value: string[]) => void, value: string) => {
         setFilter(filter.includes(value) ? filter.filter(v => v !== value) : [...filter, value]);
     };
+
+    const handleTribeStatusChange = async (tribeId: string, is_active: boolean) => {
+        try {
+            await updateTribe(tribeId, { is_active });
+            toast({ title: "Success", description: `Tribe status updated successfully.` });
+            fetchAllTribes();
+        } catch (error) {
+            console.error("Failed to update tribe status:", error);
+            toast({ variant: "destructive", title: "Error", description: "Could not update tribe status." });
+        }
+    };
+
+    const handleDeleteTribe = async (tribeId: string, members: MatchedUser[]) => {
+        try {
+            await deleteTribe(tribeId, members);
+            toast({ title: "Success", description: "Tribe deleted successfully." });
+            fetchAllTribes();
+            fetchUsers(); // To update eligible users list
+        } catch (error) {
+            console.error("Failed to delete tribe:", error);
+            toast({ variant: "destructive", title: "Error", description: "Could not delete tribe." });
+        }
+    };
+
+    const handleMakeAllActive = async () => {
+        try {
+            const tribeIds = allTribes.map(t => t.id);
+            await updateAllTribesStatus(tribeIds, true);
+            toast({ title: "Success", description: "All tribes set to active." });
+            fetchAllTribes();
+        } catch (error) {
+            console.error("Failed to set all tribes to active:", error);
+            toast({ variant: "destructive", title: "Error", description: "Could not set all tribes to active." });
+        }
+    };
+
+    const handleCleanupTribes = async () => {
+        try {
+            await deleteInactiveAndArchiveActiveTribes(allTribes);
+            toast({ title: "Success", description: "Tribe cleanup completed successfully." });
+            fetchAllTribes();
+            fetchUsers();
+        } catch (error) {
+            console.error("Failed to cleanup tribes:", error);
+            toast({ variant: "destructive", title: "Error", description: "Could not complete tribe cleanup." });
+        }
+    };
     
     return (
-        <div className="container mx-auto py-10 flex space-x-8">
-            <div className="w-2/3">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Eligible Users for Tribe Creation</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="flex items-center space-x-4 mb-6 p-4 border rounded-lg">
-                            {/* Gender Filter */}
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="outline">Gender {genderFilter.length > 0 && `(${genderFilter.length})`}</Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent>
-                                    <DropdownMenuLabel>Filter by Gender</DropdownMenuLabel>
-                                    <DropdownMenuSeparator />
-                                    {genders.map(gender => (
-                                        <DropdownMenuCheckboxItem key={gender} checked={genderFilter.includes(gender)} onCheckedChange={() => toggleFilter(genderFilter, setGenderFilter, gender)}>
-                                            {gender}
-                                        </DropdownMenuCheckboxItem>
-                                    ))}
-                                </DropdownMenuContent>
-                            </DropdownMenu>
+        <div className="container mx-auto py-10 space-y-8">
+            <div className="flex space-x-8">
+                <div className="w-2/3">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Eligible Users for Tribe Creation</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="flex items-center space-x-4 mb-6 p-4 border rounded-lg">
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="outline">Gender {genderFilter.length > 0 && `(${genderFilter.length})`}</Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent>
+                                        <DropdownMenuLabel>Filter by Gender</DropdownMenuLabel>
+                                        <DropdownMenuSeparator />
+                                        {genders.map(gender => (
+                                            <DropdownMenuCheckboxItem key={gender} checked={genderFilter.includes(gender)} onCheckedChange={() => toggleFilter(genderFilter, setGenderFilter, gender)}>
+                                                {gender}
+                                            </DropdownMenuCheckboxItem>
+                                        ))}
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
 
-                            {/* MBTI Filter */}
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="outline">MBTI {mbtiFilter.length > 0 && `(${mbtiFilter.length})`}</Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent>
-                                    <DropdownMenuLabel>Filter by MBTI</DropdownMenuLabel>
-                                    <DropdownMenuSeparator />
-                                    {mbtiTypes.map(type => (
-                                        <DropdownMenuCheckboxItem key={type} checked={mbtiFilter.includes(type)} onCheckedChange={() => toggleFilter(mbtiFilter, setMbtiFilter, type)}>
-                                            {type}
-                                        </DropdownMenuCheckboxItem>
-                                    ))}
-                                </DropdownMenuContent>
-                            </DropdownMenu>
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="outline">MBTI {mbtiFilter.length > 0 && `(${mbtiFilter.length})`}</Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent>
+                                        <DropdownMenuLabel>Filter by MBTI</DropdownMenuLabel>
+                                        <DropdownMenuSeparator />
+                                        {mbtiTypes.map(type => (
+                                            <DropdownMenuCheckboxItem key={type} checked={mbtiFilter.includes(type)} onCheckedChange={() => toggleFilter(mbtiFilter, setMbtiFilter, type)}>
+                                                {type}
+                                            </DropdownMenuCheckboxItem>
+                                        ))}
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
 
-                             {/* Hobbies Filter */}
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="outline">Hobbies {hobbiesFilter.length > 0 && `(${hobbiesFilter.length})`}</Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent className="max-h-80 overflow-y-auto">
-                                    <DropdownMenuLabel>Filter by Hobbies</DropdownMenuLabel>
-                                    <DropdownMenuSeparator />
-                                    {allHobbies.map(hobby => (
-                                        <DropdownMenuCheckboxItem key={hobby} checked={hobbiesFilter.includes(hobby)} onCheckedChange={() => toggleFilter(hobbiesFilter, setHobbiesFilter, hobby)}>
-                                            {hobby}
-                                        </DropdownMenuCheckboxItem>
-                                    ))}
-                                </DropdownMenuContent>
-                            </DropdownMenu>
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="outline">Hobbies {hobbiesFilter.length > 0 && `(${hobbiesFilter.length})`}</Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent className="max-h-80 overflow-y-auto">
+                                        <DropdownMenuLabel>Filter by Hobbies</DropdownMenuLabel>
+                                        <DropdownMenuSeparator />
+                                        {allHobbies.map(hobby => (
+                                            <DropdownMenuCheckboxItem key={hobby} checked={hobbiesFilter.includes(hobby)} onCheckedChange={() => toggleFilter(hobbiesFilter, setHobbiesFilter, hobby)}>
+                                                {hobby}
+                                            </DropdownMenuCheckboxItem>
+                                        ))}
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
 
-                            {/* Location Filter */}
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="outline">Location {locationFilter.length > 0 && `(${locationFilter.length})`}</Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent className="max-h-80 overflow-y-auto">
-                                    <DropdownMenuLabel>Filter by Location</DropdownMenuLabel>
-                                    <DropdownMenuSeparator />
-                                    {allLocations.map(location => (
-                                        <DropdownMenuCheckboxItem key={location} checked={locationFilter.includes(location)} onCheckedChange={() => toggleFilter(locationFilter, setLocationFilter, location)}>
-                                            {location}
-                                        </DropdownMenuCheckboxItem>
-                                    ))}
-                                </DropdownMenuContent>
-                            </DropdownMenu>
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="outline">Location {locationFilter.length > 0 && `(${locationFilter.length})`}</Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent className="max-h-80 overflow-y-auto">
+                                        <DropdownMenuLabel>Filter by Location</DropdownMenuLabel>
+                                        <DropdownMenuSeparator />
+                                        {allLocations.map(location => (
+                                            <DropdownMenuCheckboxItem key={location} checked={locationFilter.includes(location)} onCheckedChange={() => toggleFilter(locationFilter, setLocationFilter, location)}>
+                                                {location}
+                                            </DropdownMenuCheckboxItem>
+                                        ))}
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
 
-                            {/* Age Range Filter */}
-                           <div className="flex items-center space-x-2">
-                               <Label>Age:</Label>
-                                <Input className="w-20" id="min-age-filter" type="number" placeholder="Min" value={minAgeFilter} onChange={e => setMinAgeFilter(e.target.value)} />
-                                <Input className="w-20" id="max-age-filter" type="number" placeholder="Max" value={maxAgeFilter} onChange={e => setMaxAgeFilter(e.target.value)} />
+                               <div className="flex items-center space-x-2">
+                                   <Label>Age:</Label>
+                                    <Input className="w-20" id="min-age-filter" type="number" placeholder="Min" value={minAgeFilter} onChange={e => setMinAgeFilter(e.target.value)} />
+                                    <Input className="w-20" id="max-age-filter" type="number" placeholder="Max" value={maxAgeFilter} onChange={e => setMaxAgeFilter(e.target.value)} />
+                                </div>
                             </div>
-                        </div>
 
-                        <div className="border rounded-lg overflow-auto max-h-[60vh]">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead className="w-[50px]">Select</TableHead>
-                                        <TableHead>Name</TableHead>
-                                        <TableHead>Hobbies</TableHead>
-                                        <TableHead>Persona</TableHead>
-                                        <TableHead>MBTI</TableHead>
-                                        <TableHead>Location</TableHead>
-                                        <TableHead>Age</TableHead>
-                                        <TableHead>Gender</TableHead>
-                                        <TableHead>Tribe Pref.</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {eligibleUsers.map(user => (
-                                        <TableRow key={user.id}>
-                                            <TableCell>
-                                                <Checkbox
-                                                    id={`select-${user.id}`}
-                                                    onCheckedChange={() => handleUserSelection(user.id)}
-                                                    checked={selectedUsers.includes(user.id)}
-                                                />
-                                            </TableCell>
-                                            <TableCell className="font-medium">{user.name}</TableCell>
-                                            <TableCell>{user.hobbies?.slice(0, 2).join(', ')}</TableCell>
-                                            <TableCell className="max-w-[200px] truncate" title={user.persona}>{user.persona}</TableCell>
-                                            <TableCell>{user.mbti}</TableCell>
-                                            <TableCell>{user.location}</TableCell>
-                                            <TableCell>{calculateAge(user.dob)}</TableCell>
-                                            <TableCell>{user.gender}</TableCell>
-                                            <TableCell>{`${user.tribePreferences?.gender}, ${user.tribePreferences?.ageRange.join('-')}`}</TableCell>
+                            <div className="border rounded-lg overflow-auto max-h-[60vh]">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead className="w-[50px]">Select</TableHead>
+                                            <TableHead>Name</TableHead>
+                                            <TableHead>Hobbies</TableHead>
+                                            <TableHead>Persona</TableHead>
+                                            <TableHead>MBTI</TableHead>
+                                            <TableHead>Location</TableHead>
+                                            <TableHead>Age</TableHead>
+                                            <TableHead>Gender</TableHead>
+                                            <TableHead>Tribe Pref.</TableHead>
                                         </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
-            <div className="w-1/3">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Create New Tribe</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                        <div className="space-y-2">
-                            <Label>Selected Users</Label>
-                            <div className="flex flex-wrap gap-2">
-                                {selectedUsers.map(userId => {
-                                    const user = allUsers.find(u => u.id === userId);
-                                    return user ? <Badge key={userId} variant="secondary">{user.name}</Badge> : null;
-                                })}
+                                    </TableHeader>
+                                    <TableBody>
+                                        {eligibleUsers.map(user => (
+                                            <TableRow key={user.id}>
+                                                <TableCell>
+                                                    <Checkbox
+                                                        id={`select-${user.id}`}
+                                                        onCheckedChange={() => handleUserSelection(user.id)}
+                                                        checked={selectedUsers.includes(user.id)}
+                                                    />
+                                                </TableCell>
+                                                <TableCell className="font-medium">{user.name}</TableCell>
+                                                <TableCell>{user.hobbies?.slice(0, 2).join(', ')}</TableCell>
+                                                <TableCell className="max-w-[200px] truncate" title={user.persona}>{user.persona}</TableCell>
+                                                <TableCell>{user.mbti}</TableCell>
+                                                <TableCell>{user.location}</TableCell>
+                                                <TableCell>{calculateAge(user.dob)}</TableCell>
+                                                <TableCell>{user.gender}</TableCell>
+                                                <TableCell>{`${user.tribePreferences?.gender}, ${user.tribePreferences?.ageRange.join('-')}`}</TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
                             </div>
-                        </div>
-                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        </CardContent>
+                    </Card>
+                </div>
+                <div className="w-1/3">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Create New Tribe</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
                             <div className="space-y-2">
-                                <Label htmlFor="meetupDate">Meetup Date</Label>
-                                <Input id="meetupDate" type="date" value={meetupDate} onChange={e => setMeetupDate(e.target.value)} />
+                                <Label>Selected Users</Label>
+                                <div className="flex flex-wrap gap-2">
+                                    {selectedUsers.map(userId => {
+                                        const user = allUsers.find(u => u.id === userId);
+                                        return user ? <Badge key={userId} variant="secondary">{user.name}</Badge> : null;
+                                    })}
+                                </div>
+                            </div>
+                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="meetupDate">Meetup Date</Label>
+                                    <Input id="meetupDate" type="date" value={meetupDate} onChange={e => setMeetupDate(e.target.value)} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="meetupTime">Time (Optional)</Label>
+                                    <Input id="meetupTime" type="time" value={meetupTime} onChange={e => setMeetupTime(e.target.value)} />
+                                </div>
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="meetupTime">Time (Optional)</Label>
-                                <Input id="meetupTime" type="time" value={meetupTime} onChange={e => setMeetupTime(e.target.value)} />
+                                <Label htmlFor="location">Location</Label>
+                                <Input id="location" type="text" value={location} onChange={e => setLocation(e.target.value)} placeholder="e.g., Central Park Cafe" />
                             </div>
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="location">Location</Label>
-                            <Input id="location" type="text" value={location} onChange={e => setLocation(e.target.value)} placeholder="e.g., Central Park Cafe" />
-                        </div>
-                        <Button onClick={handleCreateTribe} disabled={isLoading || selectedUsers.length === 0} className="w-full">
-                            {isLoading ? "Creating Tribe..." : "Create Tribe"}
-                        </Button>
-                    </CardContent>
-                </Card>
+                            <Button onClick={handleCreateTribe} disabled={isLoading || selectedUsers.length === 0} className="w-full">
+                                {isLoading ? "Creating Tribe..." : "Create Tribe"}
+                            </Button>
+                        </CardContent>
+                    </Card>
+                </div>
             </div>
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle>All Tribes ({allTribes.length})</CardTitle>
+                    <div className="flex space-x-2">
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="outline">Send Invitations</Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        This will mark all tribes as active and send invitations to the members.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={handleMakeAllActive}>
+                                        Yes, proceed
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="destructive">Cleanup Tribes</Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        This will move all active tribes to the archive and release their members. All currently inactive tribes will be permanently deleted. This action cannot be undone.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={handleCleanupTribes}>
+                                        Yes, cleanup tribes
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    <Accordion type="single" collapsible className="w-full">
+                        {allTribes.map(tribe => (
+                            <AccordionItem value={tribe.id} key={tribe.id}>
+                                <AccordionTrigger>
+                                    <div className="flex justify-between w-full pr-4 items-center">
+                                        <span>Tribe ID: {tribe.id.substring(0, 8)}...</span>
+                                        <div className="flex items-center space-x-4">
+                                            <Badge>{(tribe.members as MatchedUser[]).length} Members</Badge>
+                                            <Badge variant={tribe.is_active ? "default" : "secondary"}>
+                                                {tribe.is_active ? "Active" : "Inactive"}
+                                            </Badge>
+                                        </div>
+                                    </div>
+                                </AccordionTrigger>
+                                <AccordionContent>
+                                    <div className="flex items-center space-x-4 mb-4">
+                                        <div className="flex items-center space-x-2">
+                                            <Switch
+                                                id={`status-${tribe.id}`}
+                                                checked={tribe.is_active}
+                                                onCheckedChange={(is_active) => handleTribeStatusChange(tribe.id, is_active)}
+                                            />
+                                            <Label htmlFor={`status-${tribe.id}`}>
+                                                {tribe.is_active ? "Set to Inactive" : "Set to Active"}
+                                            </Label>
+                                        </div>
+                                        <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                                <Button variant="destructive">Delete</Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        This action cannot be undone. This will permanently delete the tribe and remove all members.
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={() => handleDeleteTribe(tribe.id, tribe.members as MatchedUser[])}>
+                                                        Yes, delete it
+                                                    </AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
+                                    </div>
+                                    <p><strong>Formed On:</strong> {new Date(tribe.formedDate as string).toLocaleDateString()}</p>
+                                    <p><strong>Meetup:</strong> {new Date(tribe.meetupDate as string).toLocaleString()} at {tribe.location}</p>
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Name</TableHead>
+                                                <TableHead>Email</TableHead>
+                                                <TableHead>Compatibility</TableHead>
+                                                <TableHead>RSVP</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {(tribe.members as MatchedUser[]).map(member => (
+                                                <TableRow key={member.userId}>
+                                                    <TableCell>{member.user?.name}</TableCell>
+                                                    <TableCell>{member.user?.email}</TableCell>
+                                                    <TableCell>{member.compatibilityScore}%</TableCell>
+                                                    <TableCell>
+                                                        <Badge variant={member.rsvpStatus === 'accepted' ? 'default' : member.rsvpStatus === 'declined' ? 'destructive' : 'secondary'}>
+                                                            {member.rsvpStatus}
+                                                        </Badge>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </AccordionContent>
+                            </AccordionItem>
+                        ))}
+                    </Accordion>
+                </CardContent>
+            </Card>
         </div>
     );
 }
