@@ -91,10 +91,17 @@ export default function CreateTribePage() {
     };
 
     useEffect(() => {
+        const usersInAnyTribe = new Set<string>();
+        allTribes.forEach(tribe => {
+            (tribe.members as MatchedUser[]).forEach(member => {
+                usersInAnyTribe.add(member.userId);
+            });
+        });
+
         let filtered = allUsers.filter(user =>
             user.persona &&
             user.interestedInMeetups &&
-            !user.currentTribeId
+            !usersInAnyTribe.has(user.id)
         );
 
         if (genderFilter.length > 0) {
@@ -129,7 +136,7 @@ export default function CreateTribePage() {
         }
 
         setEligibleUsers(filtered);
-    }, [allUsers, genderFilter, mbtiFilter, minAgeFilter, maxAgeFilter, hobbiesFilter, locationFilter, dateFilter]);
+    }, [allUsers, allTribes, genderFilter, mbtiFilter, minAgeFilter, maxAgeFilter, hobbiesFilter, locationFilter, dateFilter]);
 
     const handleUserSelection = (userId: string) => {
         setSelectedUsers(prev =>
