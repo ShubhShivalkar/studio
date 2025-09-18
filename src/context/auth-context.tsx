@@ -43,8 +43,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setProfile(userProfile);
           Object.assign(currentUser, userProfile);
         } else {
-          // Auth record exists but no profile (e.g., incomplete onboarding)
-          setProfile(null);
+          // Auth record exists but no profile.
+          // Check if onboarding was just completed by looking at the mock object.
+          if (currentUser && currentUser.id === user.uid) {
+            setProfile(currentUser);
+          } else {
+            setProfile(null);
+          }
         }
         setProfileLoading(false);
       });
