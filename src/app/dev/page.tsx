@@ -8,9 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/auth-context";
-import { addSampleEntries, deleteAllUserData, seedSampleUsers } from "@/services/dev-service";
+import { addSampleEntries, deleteAllUserData, seedSampleUsers, getSystemStatus, updateWaitlistStatus } from "@/services/dev-service";
 import { deleteSampleUsers } from "@/services/user-service";
-import { AlertTriangle, DatabaseZap, Trash2, Users, PlusCircle, UserPlus, Server } from "lucide-react";
+import { AlertTriangle, PlusCircle, Server, Power, Users } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   AlertDialog,
@@ -23,6 +23,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 export default function DevPage() {
     const { user, profile, loading } = useAuth();
@@ -32,6 +34,8 @@ export default function DevPage() {
     const [isDeletingUsers, setIsDeletingUsers] = useState(false);
     const [isSeedingUsers, setIsSeedingUsers] = useState(false);
     const [isDeletingAllData, setIsDeletingAllData] = useState(false);
+    const [isWaitlistActive, setIsWaitlistActive] = useState(false);
+    const [isUpdatingWaitlist, setIsUpdatingWaitlist] = useState(false);
 
     useEffect(() => {
         if (!loading && !profile?.is_admin) {
@@ -40,6 +44,16 @@ export default function DevPage() {
             }, 3000);
         }
     }, [loading, profile, router]);
+
+    useEffect(() => {
+        const fetchStatus = async () => {
+            const status = await getSystemStatus();
+            if (status) {
+                setIsWaitlistActive(status.isWaitlistActive);
+            }
+        };
+        fetchStatus();
+    }, []);
 
     const handleAddData = async () => {
         if (!user) {
@@ -98,6 +112,20 @@ export default function DevPage() {
             toast({ variant: "destructive", title: "Error", description: "Could not create sample users." });
         } finally {
             setIsSeedingUsers(false);
+        }
+    }
+
+    const handleWaitlistToggle = async (isChecked: boolean) => {
+        setIsUpdatingWaitlist(true);
+        try {
+            await updateWaitlistStatus(isChecked);
+            setIsWaitlistActive(isChecked);
+            toast({ title: "Success", description: `Waitlist has been ${isChecked ? 'activated' : 'deactivated'}.` });
+        } catch (error) {
+            console.error("Failed to update waitlist status:", error);
+            toast({ variant: "destructive", title: "Error", description: "Could not update waitlist status." });
+        } finally {
+            setIsUpdatingWaitlist(false);
         }
     }
 
@@ -183,7 +211,7 @@ export default function DevPage() {
                                 Use these tools to manage all user data in the database.
                             </CardDescription>
                         </CardHeader>
-                        <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <AlertDialog>
                                 <AlertDialogTrigger asChild>
                                     <Button disabled={isSeedingUsers} className="w-full">
@@ -226,9 +254,45 @@ export default function DevPage() {
                                     </AlertDialogFooter>
                                 </AlertDialogContent>
                             </AlertDialog>
+                        </CardContent>
+                    </Card>
+                     <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <PlusCircle /> Tribe Management
+                            </CardTitle>
+                            <CardDescription>
+                                Manually create a new tribe with selected users.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
                             <Button asChild className="w-full">
                                 <Link href="/dev/create-tribe">Create Tribe</Link>
                             </Button>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <Power /> System Status
+                            </CardTitle>
+                            <CardDescription>
+                                Control system-wide settings.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="flex items-center justify-between">
+                            <Label htmlFor="waitlist-toggle" className="flex items-center gap-2">
+                                Waitlist Status
+                                <span className={`text-sm ${isWaitlistActive ? 'text-green-500' : 'text-red-500'}`}>
+                                    ({isWaitlistActive ? "Active" : "Inactive"})
+                                </span>
+                            </Label>
+                            <Switch
+                                id="waitlist-toggle"
+                                checked={isWaitlistActive}
+                                onCheckedChange={handleWaitlistToggle}
+                                disabled={isUpdatingWaitlist}
+                            />
                         </CardContent>
                     </Card>
                 </div>
