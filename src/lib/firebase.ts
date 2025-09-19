@@ -19,9 +19,11 @@ const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 export const db = getFirestore(app);
 export const auth = getAuth(app);
 
-// Set session persistence
-setPersistence(auth, browserLocalPersistence)
-  .catch((error) => {
-    // Handle errors here.
-    console.error("Error setting auth persistence:", error);
-  });
+// Set session persistence only in the browser
+if (typeof window !== 'undefined') {
+  setPersistence(auth, browserLocalPersistence)
+    .catch((error) => {
+      // Handle errors here.
+      console.error("Error setting auth persistence:", error);
+    });
+}
