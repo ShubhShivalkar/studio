@@ -1,83 +1,115 @@
 
 "use client";
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { pastTribes } from "@/lib/mock-data";
-import { format, parseISO } from 'date-fns';
-import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation";
-import { ArrowLeft, CheckCircle, XCircle } from "lucide-react";
+import { useEffect, useState } from 'react';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft, Users, Calendar, MapPin, Check, X, HelpCircle } from 'lucide-react';
+import Link from 'next/link';
+import { useAuth } from '@/context/auth-context';
+import { getArchivedTribes } from '@/services/tribe-service';
+import type { Tribe } from '@/lib/types';
+import { format } from 'date-fns';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function TribeHistoryPage() {
-  const router = useRouter();
+    const { user } = useAuth();
+    const [history, setHistory] = useState<Tribe[]>([]);
+    const [loading, setLoading] = useState(true);
 
-  return (
-    <Card>
-      <CardHeader>
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-                <CardTitle>Meet-up History</CardTitle>
-                <CardDescription>
-                A record of all your past tribe meetups.
-                </CardDescription>
-            </div>
-            <Button variant="outline" onClick={() => router.back()} className="w-full sm:w-auto">
-                <ArrowLeft className="mr-2" /> Back to Tribe
-            </Button>
-        </div>
-      </CardHeader>
-      <CardContent>
-        {(!pastTribes || pastTribes.length === 0) ? (
-            <div className="flex flex-col items-center justify-center text-center h-64 text-muted-foreground border-2 border-dashed rounded-lg">
-                <p className="text-lg">You have no past tribe events.</p>
-            </div>
-        ) : (
-            <Table>
-            <TableHeader>
-                <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead className="hidden sm:table-cell">Tribe ID</TableHead>
-                <TableHead>Location</TableHead>
-                <TableHead>Status</TableHead>
-                </TableRow>
-            </TableHeader>
-            <TableBody>
-                {pastTribes.map((tribe) => (
-                <TableRow key={tribe.id}>
-                    <TableCell className="font-medium">
-                    {format(parseISO(tribe.meetupDate), 'MMM d, yyyy')}
-                    </TableCell>
-                    <TableCell className="hidden sm:table-cell">
-                    <Badge variant="secondary">{tribe.id}</Badge>
-                    </TableCell>
-                    <TableCell>{tribe.location}</TableCell>
-                    <TableCell>
-                    <Badge variant={tribe.attendance === 'attended' ? 'default' : 'destructive'}>
-                        {tribe.attendance === 'attended' ? <CheckCircle className="mr-2" /> : <XCircle className="mr-2" />}
-                        {tribe.attendance.charAt(0).toUpperCase() + tribe.attendance.slice(1)}
-                    </Badge>
-                    </TableCell>
-                </TableRow>
-                ))}
-            </TableBody>
-            </Table>
-        )}
-      </CardContent>
-    </Card>
-  );
+    useEffect(() => {
+        async function fetchHistory() {
+            if (user) {
+                try {
+                    const pastTribes = await getArchivedTribes(user.uid);
+                    setHistory(pastTribes);
+                } catch (error) {
+                    console.error("Failed to fetch tribe history:", error);
+                } finally {
+                    setLoading(false);
+                }
+            }
+        }
+        fetchHistory();
+    }, [user]);
+
+    const getRsvpStatus = (tribe: Tribe) => {
+        const currentUser = tribe.members.find(member => member.userId === user?.uid);
+        if (!currentUser) return { icon: <HelpCircle className="text-gray-500" />, label: 'Unknown' };
+
+        switch (currentUser.rsvpStatus) {
+            case 'accepted':
+                return { icon: <Check className="text-green-500" />, label: 'Accepted' };
+            case 'rejected':
+                return { icon: <X className="text-red-500" />, label: 'Declined' };
+            default:
+                return { icon: <HelpCircle className="text-yellow-500" />, label: 'Pending' };
+        }
+    };
+
+    return (
+        <Card>
+            <CardHeader>
+                <div className="flex items-center justify-between">
+                    <div>
+                        <CardTitle>Meetup History</CardTitle>
+                        <CardDescription>A record of your past tribe meetups.</CardDescription>
+                    </div>
+                    <Button asChild variant="outline">
+                        <Link href="/tribe">
+                            <ArrowLeft className="mr-2 h-4 w-4" />
+                            Back to Tribe
+                        </Link>
+                    </Button>
+                </div>
+            </CardHeader>
+            <CardContent>
+                {loading ? (
+                    <div className="space-y-4">
+                        <Skeleton className="h-12 w-full" />
+                        <Skeleton className="h-12 w-full" />
+                        <Skeleton className="h-12 w-full" />
+                    </div>
+                ) : history.length > 0 ? (
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead><Calendar className="inline-block mr-2 h-4 w-4" />Date</TableHead>
+                                <TableHead><MapPin className="inline-block mr-2 h-4 w-4" />Location</TableHead>
+                                <TableHead><Users className="inline-block mr-2 h-4 w-4" />Members</TableHead>
+                                <TableHead>Your RSVP</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {history.map((tribe) => {
+                                const rsvp = getRsvpStatus(tribe);
+                                return (
+                                    <TableRow key={tribe.id}>
+                                        <TableCell>{format(new Date(tribe.meetupDate), 'PPP')}</TableCell>
+                                        <TableCell>{tribe.location}</TableCell>
+                                        <TableCell>{tribe.members.length}</TableCell>
+                                        <TableCell>
+                                            <Badge variant={
+                                                rsvp.label === 'Accepted' ? 'default' : 
+                                                rsvp.label === 'Declined' ? 'destructive' : 'secondary'
+                                            }>
+                                                {rsvp.icon}
+                                                <span className="ml-1">{rsvp.label}</span>
+                                            </Badge>
+                                        </TableCell>
+                                    </TableRow>
+                                );
+                            })}
+                        </TableBody>
+                    </Table>
+                ) : (
+                    <div className="text-center py-12">
+                        <p className="text-gray-500">You have no past tribe events.</p>
+                    </div>
+                )}
+            </CardContent>
+        </Card>
+    );
 }
