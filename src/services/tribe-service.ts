@@ -40,38 +40,18 @@ export async function getAllTribes(): Promise<Tribe[]> {
 
 
 /**
- * Retrieves all active tribes.
- * @returns A list of active tribes with their members.
+ * Retrieves all active tribes from the 'tribes' collection.
+ * @returns A list of active tribes.
  */
 export async function getActiveTribes(): Promise<Tribe[]> {
-  const allUsers = await getAllUsers();
-  const usersInTribes = allUsers.filter(u => u.currentTribeId);
-
-  if (usersInTribes.length === 0) {
-    return [];
-  }
-
-  const tribesMap = new Map<string, User[]>();
-
-  for (const user of usersInTribes) {
-    if (user.currentTribeId) {
-      if (!tribesMap.has(user.currentTribeId)) {
-        tribesMap.set(user.currentTribeId, []);
-      }
-      tribesMap.get(user.currentTribeId)!.push(user);
-    }
-  }
-
-  const tribes: Tribe[] = [];
-  for (const [tribeId, members] of tribesMap.entries()) {
-    tribes.push({
-      id: tribeId,
-      members: members,
-      formedDate: members[0].lastTribeDate || new Date().toISOString(),
+    const tribesRef = collection(db, 'tribes');
+    const q = query(tribesRef, where('is_active', '==', true));
+    const querySnapshot = await getDocs(q);
+    const tribes: Tribe[] = [];
+    querySnapshot.forEach((doc) => {
+        tribes.push({ id: doc.id, ...doc.data() } as Tribe);
     });
-  }
-
-  return tribes;
+    return tribes;
 }
 
 /**
@@ -156,7 +136,6 @@ export async function createTribe(tribeData: Omit<Tribe, 'id'>): Promise<Tribe> 
         ...tribeData,
         id: newTribeRef.id,
         formedDate: new Date().toISOString(),
-        is_active: true,
         memberIds: memberIds, 
     };
     

@@ -35,6 +35,7 @@ export default function CreateTribePage() {
     const [location, setLocation] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [allTribes, setAllTribes] = useState<Tribe[]>([]);
+    const [compatibilityScore, setCompatibilityScore] = useState(0);
 
     // Filter states
     const [genderFilter, setGenderFilter] = useState<string[]>([]);
@@ -144,6 +145,68 @@ export default function CreateTribePage() {
         );
     };
 
+    const calculateCompatibilityScore = (users: User[]): number => {
+        if (users.length < 2) return 0;
+
+        let totalScore = 0;
+        const numUsers = users.length;
+
+        // Persona Similarity (25%)
+        const personaScore = 100;
+        totalScore += personaScore * 0.25;
+
+        // Location Proximity (20%)
+        const sameLocation = users.every(u => u.location === users[0].location);
+        totalScore += (sameLocation ? 100 : 0) * 0.20;
+
+        // Shared Hobbies (20%)
+        const allHobbies = users.flatMap(u => u.hobbies || []);
+        const uniqueHobbies = [...new Set(allHobbies)];
+        const sharedHobbies = uniqueHobbies.filter(h => users.every(u => u.hobbies?.includes(h)));
+        const hobbyScore = (sharedHobbies.length / uniqueHobbies.length) * 100;
+        totalScore += hobbyScore * 0.20;
+
+        // MBTI Compatibility (15%)
+        const mbtiGroups = {
+            'Analysts': ['INTJ', 'INTP', 'ENTJ', 'ENTP'],
+            'Diplomats': ['INFJ', 'INFP', 'ENFJ', 'ENFP'],
+            'Sentinels': ['ISTJ', 'ISFJ', 'ESTJ', 'ESFJ'],
+            'Explorers': ['ISTP', 'ISFP', 'ESTP', 'ESFP'],
+        };
+        const groupCounts = Object.values(mbtiGroups).map(group =>
+            users.filter(u => u.mbti && group.includes(u.mbti)).length
+        );
+        const maxGroup = Math.max(...groupCounts);
+        const mbtiScore = (maxGroup / numUsers) * 100;
+        totalScore += mbtiScore * 0.15;
+
+        // Age Range (10%)
+        const ages = users.map(u => calculateAge(u.dob));
+        const ageRange = Math.max(...ages) - Math.min(...ages);
+        const ageScore = Math.max(0, 100 - (ageRange * 5));
+        totalScore += ageScore * 0.10;
+
+        // Gender Balance (10%)
+        const genderCounts = users.reduce((acc, u) => {
+            acc[u.gender] = (acc[u.gender] || 0) + 1;
+            return acc;
+        }, {} as Record<string, number>);
+        const balance = 1 - (Math.abs(Object.values(genderCounts).reduce((a, b) => a - b, 0)) / numUsers);
+        const genderScore = balance * 100;
+        totalScore += genderScore * 0.10;
+
+        return Math.round(totalScore);
+    };
+    
+    useEffect(() => {
+        if (selectedUsers.length > 1) {
+            const users = allUsers.filter(u => selectedUsers.includes(u.id));
+            setCompatibilityScore(calculateCompatibilityScore(users));
+        } else {
+            setCompatibilityScore(0);
+        }
+    }, [selectedUsers, allUsers]);
+
     const handleCreateTribe = async () => {
         if (selectedUsers.length === 0) {
             toast({ variant: "destructive", title: "Error", description: "Please select at least one user." });
@@ -160,7 +223,7 @@ export default function CreateTribePage() {
             const matchedUsers: MatchedUser[] = memberUsers.map(user => ({
                 userId: user.id,
                 user,
-                compatibilityScore: 100, // Default score for manual creation
+                compatibilityScore: compatibilityScore,
                 persona: user.persona || "N/A",
                 matchReason: "Manually created tribe",
                 rsvpStatus: "pending",
@@ -438,9 +501,29 @@ export default function CreateTribePage() {
                                 <Label htmlFor="location">Location</Label>
                                 <Input id="location" type="text" value={location} onChange={e => setLocation(e.target.value)} placeholder="e.g., Central Park Cafe" />
                             </div>
-                            <Button onClick={handleCreateTribe} disabled={isLoading || selectedUsers.length === 0} className="w-full">
-                                {isLoading ? "Creating Tribe..." : "Create Tribe"}
-                            </Button>
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button disabled={isLoading || selectedUsers.length === 0} className="w-full">
+                                        {isLoading ? "Creating Tribe..." : "Create Tribe"}
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>Are you sure you want to create this tribe?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            This will create a new tribe with the selected users. The tribe will be inactive by default.
+                                            <br /><br />
+                                            <strong>Compatibility Score: {compatibilityScore}%</strong>
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction onClick={handleCreateTribe}>
+                                            Yes, create tribe
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
                         </CardContent>
                     </Card>
                 </div>
