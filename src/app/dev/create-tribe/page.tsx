@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -163,7 +162,7 @@ export default function CreateTribePage() {
         const allHobbies = users.flatMap(u => u.hobbies || []);
         const uniqueHobbies = [...new Set(allHobbies)];
         const sharedHobbies = uniqueHobbies.filter(h => users.every(u => u.hobbies?.includes(h)));
-        const hobbyScore = (sharedHobbies.length / uniqueHobbies.length) * 100;
+        const hobbyScore = (uniqueHobbies.length > 0 ? (sharedHobbies.length / uniqueHobbies.length) : 0) * 100;
         totalScore += hobbyScore * 0.20;
 
         // MBTI Compatibility (15%)
@@ -223,7 +222,7 @@ export default function CreateTribePage() {
             const matchedUsers: MatchedUser[] = memberUsers.map(user => ({
                 userId: user.id,
                 user,
-                compatibilityScore: compatibilityScore,
+                compatibilityScore: compatibilityScore, // Individual compatibility for display if needed
                 persona: user.persona || "N/A",
                 matchReason: "Manually created tribe",
                 rsvpStatus: "pending",
@@ -235,6 +234,7 @@ export default function CreateTribePage() {
                 meetupTime,
                 location,
                 is_active: false, // Tribes are inactive by default
+                overallCompatibilityScore: compatibilityScore,
             });
 
             toast({ title: "Success", description: "Tribe created successfully and is set to inactive." });
@@ -584,6 +584,9 @@ export default function CreateTribePage() {
                                             <Badge variant={tribe.is_active ? "default" : "secondary"}>
                                                 {tribe.is_active ? "Active" : "Inactive"}
                                             </Badge>
+                                            {tribe.overallCompatibilityScore !== undefined && (
+                                                <Badge variant="outline">Comp: {tribe.overallCompatibilityScore}%</Badge>
+                                            )}
                                         </div>
                                     </div>
                                 </AccordionTrigger>

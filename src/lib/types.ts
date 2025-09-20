@@ -109,4 +109,5 @@ export type Tribe = {
     meetupTime?: string;
     location: string;
     is_active: boolean;
+    overallCompatibilityScore?: number;
 }

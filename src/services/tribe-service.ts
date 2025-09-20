@@ -1,4 +1,3 @@
-
 'use server';
 
 import { collection, doc, getDoc, getDocs, query, where, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
@@ -126,18 +125,22 @@ export async function getArchivedTribes(userId: string): Promise<Tribe[]> {
     return userTribes;
 }
 
-export async function createTribe(tribeData: Omit<Tribe, 'id'>): Promise<Tribe> {
+export async function createTribe(tribeData: Omit<Tribe, 'id' | 'overallCompatibilityScore'> & { overallCompatibilityScore?: number }): Promise<Tribe> {
     const batch = writeBatch(db);
     const newTribeRef = doc(collection(db, 'tribes'));
     
     const memberIds = tribeData.members.map(member => (member as MatchedUser).userId);
 
-    const newTribe = {
+    const newTribe: Tribe = {
         ...tribeData,
         id: newTribeRef.id,
         formedDate: new Date().toISOString(),
-        memberIds: memberIds, 
-    };
+        memberIds: memberIds,
+    } as Tribe;
+
+    if (tribeData.overallCompatibilityScore !== undefined) {
+      newTribe.overallCompatibilityScore = tribeData.overallCompatibilityScore;
+    }
     
     batch.set(newTribeRef, newTribe);
 
