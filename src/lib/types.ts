@@ -11,13 +11,13 @@ export type User = {
   name: string;
   avatar: string;
   persona?: string;
-  dob: string;
+  dob: string; // YYYY-MM-DD
   gender: 'Male' | 'Female' | 'Other' | 'Prefer not to say';
   journalEntries?: string[];
   email?: string | null;
   phone?: string;
   interestedInMeetups?: boolean;
-  availableDates?: string[]; // YYY-MM-DD
+  availableDates?: string[]; // YYYY-MM-DD
   personaLastGenerated?: string; // ISO date string
   hobbies?: string[];
   interests?: string[];
@@ -88,8 +88,10 @@ export type PastTribe = {
 
 export type DiscoveredTribe = {
     id: string;
-    members: Pick<User, 'id' | 'name' | 'avatar' | 'dob' | 'gender' | 'location'>[];
+    members: Pick<User, 'id' | 'name' | 'avatar' | 'dob' | 'gender' | 'location' | 'hobbies'>[];
     compatibilityScore: number;
+    commonHobbies: string[];
+    averageAge: number;
 };
 
 export type MatchedUser = {
