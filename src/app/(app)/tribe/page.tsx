@@ -10,7 +10,7 @@ import {
   CardTitle,
   CardFooter,
 } from "@/components/ui/card";
-import { Bot, Users, ShieldAlert, CheckCircle, XCircle, MessageSquare, Info, UserX, UserCheck, Heart, History, AlertTriangle, CalendarClock, Compass } from "lucide-react";
+import { Bot, Users, ShieldAlert, CheckCircle, XCircle, MessageSquare, Info, UserX, UserCheck, Heart, History, AlertTriangle, CalendarClock, Compass, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -177,10 +177,24 @@ export default function TribePage() {
         member.userId === profile?.id ? { ...member, rsvpStatus: 'accepted', rejectionReason: undefined } : member
     );
 
-    await updateTribe(tribe.id, { members: updatedMembers });
-    setTribe({ ...tribe, members: updatedMembers });
-
-    toast({ title: "RSVP Confirmed!", description: "You've accepted the invitation. See you there!" });
+    try {
+      await updateTribe(tribe.id, { members: updatedMembers });
+      setTribe({ ...tribe, members: updatedMembers });
+      toast({ title: "RSVP Confirmed!", description: "You've accepted the invitation. See you there!" });
+    } catch (error: any) {
+      if (error.message.includes('Tribe with ID') && error.message.includes('not found')) {
+        toast({
+          variant: "destructive",
+          title: "Tribe Not Found",
+          description: "It seems this tribe no longer exists. Please refresh the page.",
+        });
+        clearTribe();
+        setTribeState("no-matches"); // Or a more appropriate state like "no-tribe"
+      } else {
+        toast({ variant: "destructive", title: "Error", description: `Failed to accept RSVP: ${error.message}` });
+      }
+      console.error("Error accepting RSVP:", error);
+    }
   }
 
   const handleDeclineSubmit = async () => {
@@ -193,14 +207,27 @@ export default function TribePage() {
         member.userId === profile?.id ? { ...member, rsvpStatus: 'rejected', rejectionReason: rejectionReason } : member
     );
     
-    await updateTribe(tribe.id, { members: updatedMembers });
-
-    toast({ title: "RSVP Updated", description: "You have declined the invitation." });
-    setRejectionReason("");
-    setIsDeclineDialogOpen(false);
-    
-    clearTribe();
-    setTribeState("declined");
+    try {
+      await updateTribe(tribe.id, { members: updatedMembers });
+      toast({ title: "RSVP Updated", description: "You have declined the invitation." });
+      setRejectionReason("");
+      setIsDeclineDialogOpen(false);
+      clearTribe();
+      setTribeState("declined");
+    } catch (error: any) {
+        if (error.message.includes('Tribe with ID') && error.message.includes('not found')) {
+            toast({
+                variant: "destructive",
+                title: "Tribe Not Found",
+                description: "It seems this tribe no longer exists. Please refresh the page.",
+            });
+            clearTribe();
+            setTribeState("no-matches"); // Or a more appropriate state like "no-tribe"
+        } else {
+            toast({ variant: "destructive", title: "Error", description: `Failed to decline RSVP: ${error.message}` });
+        }
+        console.error("Error declining RSVP:", error);
+    }
   }
 
   const handleReport = (userName: string) => {
@@ -414,52 +441,64 @@ export default function TribePage() {
                                 )}
                             </CardContent>
                             <CardFooter className="flex flex-col sm:flex-row items-center justify-center gap-2 pt-4">
-                               <p className="text-sm font-medium">Your RSVP:</p>
-                                <div className="flex gap-2">
-                                   <Button 
-                                     size="sm" 
-                                     onClick={() => handleRsvp('accepted')} 
-                                     variant={currentUserRsvp === 'accepted' ? 'default' : 'outline'}
-                                     className="bg-white text-primary hover:bg-white/90 border-white"
-                                    >
-                                       <CheckCircle className="mr-2" /> Accept
-                                   </Button>
-                                   <Dialog open={isDeclineDialogOpen} onOpenChange={setIsDeclineDialogOpen}>
-                                       <DialogTrigger asChild>
-                                           <Button 
-                                               size="sm" 
-                                               variant={currentUserRsvp === 'rejected' ? 'destructive' : 'outline'}
-                                               className="bg-transparent text-white hover:bg-white/10 border-white"
-                                               onClick={() => handleRsvp('rejected')}
-                                           >
-                                               <XCircle className="mr-2"/> Decline
-                                           </Button>
-                                       </DialogTrigger>
-                                       <DialogContent>
-                                           <DialogHeader>
-                                               <DialogTitle>Decline Invitation</DialogTitle>
-                                               <DialogDescription>Please provide a reason for declining. This will be shared with the rest of your tribe.</DialogDescription>
-                                           </DialogHeader>
-                                           <div className="space-y-4">
-                                                <Textarea 
-                                                placeholder="E.g., Sorry, I have a prior commitment."
-                                                value={rejectionReason}
-                                                onChange={(e) => setRejectionReason(e.target.value)}
-                                                />
-                                                <Alert variant="destructive">
-                                                    <AlertTriangle className="h-4 w-4" />
-                                                    <AlertDescription>
-                                                        You will not be able to join this tribe again or any other tribe until next Monday.
-                                                    </AlertDescription>
-                                                </Alert>
-                                           </div>
-                                           <DialogFooter>
-                                               <Button variant="outline" onClick={() => setIsDeclineDialogOpen(false)}>Cancel</Button>
-                                               <Button variant="destructive" onClick={handleDeclineSubmit}>Submit</Button>
-                                           </DialogFooter>
-                                       </DialogContent>
-                                   </Dialog>
-                                </div>
+                               {currentUserRsvp === 'accepted' ? (
+                                   <p className="text-sm font-medium flex items-center gap-1">
+                                        <CheckCircle className="h-4 w-4 text-green-400" />
+                                        Yay! You've accepted the invitation. Contact us for any further questions: 
+                                        <a href="https://wa.me/918879154191" target="_blank" rel="noopener noreferrer" className="text-white underline flex items-center gap-1">
+                                            <Phone className="h-4 w-4" /> +91 8879154191
+                                        </a>
+                                   </p>
+                               ) : (
+                                <>
+                                   <p className="text-sm font-medium">Your RSVP:</p>
+                                    <div className="flex gap-2">
+                                       <Button 
+                                         size="sm" 
+                                         onClick={() => handleRsvp('accepted')} 
+                                         variant={currentUserRsvp === 'accepted' ? 'default' : 'outline'}
+                                         className="bg-white text-primary hover:bg-white/90 border-white"
+                                        >
+                                           <CheckCircle className="mr-2" /> Accept
+                                       </Button>
+                                       <Dialog open={isDeclineDialogOpen} onOpenChange={setIsDeclineDialogOpen}>
+                                           <DialogTrigger asChild>
+                                               <Button 
+                                                   size="sm" 
+                                                   variant={currentUserRsvp === 'rejected' ? 'destructive' : 'outline'}
+                                                   className="bg-transparent text-white hover:bg-white/10 border-white"
+                                                   onClick={() => handleRsvp('rejected')}
+                                               >
+                                                   <XCircle className="mr-2"/> Decline
+                                               </Button>
+                                           </DialogTrigger>
+                                           <DialogContent>
+                                               <DialogHeader>
+                                                   <DialogTitle>Decline Invitation</DialogTitle>
+                                                   <DialogDescription>Please provide a reason for declining. This will be shared with the rest of your tribe.</DialogDescription>
+                                               </DialogHeader>
+                                               <div className="space-y-4">
+                                                    <Textarea 
+                                                    placeholder="E.g., Sorry, I have a prior commitment."
+                                                    value={rejectionReason}
+                                                    onChange={(e) => setRejectionReason(e.target.value)}
+                                                    />
+                                                    <Alert variant="destructive">
+                                                        <AlertTriangle className="h-4 w-4" />
+                                                        <AlertDescription>
+                                                            You will not be able to join this tribe again or any other tribe until next Monday.
+                                                        </AlertDescription>
+                                                    </Alert>
+                                               </div>
+                                               <DialogFooter>
+                                                   <Button variant="outline" onClick={() => setIsDeclineDialogOpen(false)}>Cancel</Button>
+                                                   <Button variant="destructive" onClick={handleDeclineSubmit}>Submit</Button>
+                                               </DialogFooter>
+                                           </DialogContent>
+                                       </Dialog>
+                                    </div>
+                                </> 
+                               )}
                             </CardFooter>
                         </Card>
 
@@ -507,17 +546,6 @@ export default function TribePage() {
                                                         <div className="flex flex-wrap gap-2">
                                                             {member.user.hobbies.map((hobby, index) => (
                                                                 <Badge key={index} variant="secondary">{hobby}</Badge>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                )}
-
-                                                {member.user.interests && member.user.interests.length > 0 && (
-                                                    <div>
-                                                        <h3 className="font-semibold mb-2">Interests</h3>
-                                                        <div className="flex flex-wrap gap-2">
-                                                            {member.user.interests.map((interest, index) => (
-                                                                <Badge key={index} variant="secondary">{interest}</Badge>
                                                             ))}
                                                         </div>
                                                     </div>

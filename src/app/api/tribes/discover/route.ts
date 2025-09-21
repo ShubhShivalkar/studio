@@ -1,75 +1,69 @@
-import { NextResponse } from 'next/server';
-import { db } from '@/lib/firebase'; // Assuming you have a firebase config for db
-import { collection, query, where, getDocs } from 'firebase/firestore';
-import type { DiscoveredTribe, User, MatchedUser } from '@/lib/types'; // Assuming these types are defined
+import { NextRequest, NextResponse } from 'next/server';
+import { getActiveTribes } from '@/services/tribe-service';
+import type { DiscoveredTribe, Tribe, User } from '@/lib/types';
+import { differenceInYears, parseISO } from 'date-fns';
 
-export async function GET() {
+const calculateAge = (dob: string): number => {
+  const birthDate = parseISO(dob);
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const m = today.getMonth() - birthDate.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  return age;
+};
+
+export async function GET(request: NextRequest) {
   try {
-    const tribesRef = collection(db, 'tribes');
-    const q = query(tribesRef, where('is_active', '==', true)); // Fetch only active tribes
-    const querySnapshot = await getDocs(q);
-
+    const activeTribes = await getActiveTribes();
     const discoveredTribes: DiscoveredTribe[] = [];
-    const currentYear = new Date().getFullYear();
 
-    for (const docSnapshot of querySnapshot.docs) {
-      const tribeData = docSnapshot.data();
-      const members: Pick<User, 'id' | 'name' | 'avatar' | 'dob' | 'gender' | 'location' | 'hobbies'>[] = [];
-      let totalAge = 0;
-      const allHobbies: string[] = [];
+    for (const tribe of activeTribes) {
+      // Ensure the tribe has members and is active before processing
+      if (!tribe.members || tribe.members.length === 0 || !tribe.is_active) {
+        continue;
+      }
 
-      if (tribeData.members && Array.isArray(tribeData.members)) {
-        for (const member of tribeData.members as MatchedUser[]) {
-          if (member.user) {
-            const userData = member.user;
-            members.push({
-              id: userData.id,
-              name: userData.name,
-              avatar: userData.avatar || '',
-              dob: userData.dob || '',
-              gender: userData.gender || 'Prefer not to say',
-              location: userData.location || '',
-              hobbies: userData.hobbies || [],
-            });
+      const memberUsers = tribe.members.map(m => m.user).filter(Boolean) as User[];
+      if (memberUsers.length === 0) continue;
 
-            // Calculate age
-            if (userData.dob) {
-              const birthYear = parseInt(userData.dob.substring(0, 4), 10);
-              if (!isNaN(birthYear)) {
-                totalAge += (currentYear - birthYear);
-              }
-            }
+      // Calculate average age
+      const totalAge = memberUsers.reduce((sum, user) => sum + calculateAge(user.dob), 0);
+      const averageAge = Math.round(totalAge / memberUsers.length);
 
-            // Collect all hobbies
-            if (userData.hobbies && Array.isArray(userData.hobbies)) {
-              allHobbies.push(...userData.hobbies);
-            }
-          }
+      // Find common hobbies (simple intersection)
+      let commonHobbies: string[] = [];
+      if (memberUsers.length > 0) {
+        commonHobbies = memberUsers[0].hobbies || [];
+        for (let i = 1; i < memberUsers.length; i++) {
+          const userHobbies = new Set(memberUsers[i].hobbies || []);
+          commonHobbies = commonHobbies.filter(hobby => userHobbies.has(hobby));
         }
       }
 
-      const averageAge = members.length > 0 ? Math.round(totalAge / members.length) : 0;
-
-      const hobbyCounts: Record<string, number> = {};
-      allHobbies.forEach(hobby => {
-          hobbyCounts[hobby] = (hobbyCounts[hobby] || 0) + 1;
-      });
-
-      // Common hobbies are those shared by at least two members
-      const commonHobbies = Object.keys(hobbyCounts).filter(hobby => hobbyCounts[hobby] > 1);
-
+      // Construct DiscoveredTribe object
       discoveredTribes.push({
-        id: docSnapshot.id,
-        members: members,
-        compatibilityScore: tribeData.overallCompatibilityScore || 0,
-        commonHobbies: commonHobbies,
+        id: tribe.id,
+        members: memberUsers.map(user => ({ // Pick only necessary user fields
+          id: user.id,
+          name: user.name,
+          avatar: user.avatar,
+          dob: user.dob,
+          gender: user.gender,
+          location: user.location,
+          hobbies: user.hobbies,
+        })),
+        compatibilityScore: tribe.overallCompatibilityScore || 0, // Use overall score from tribe
+        commonHobbies: commonHobbies.slice(0, 3), // Limit to top 3 common hobbies
         averageAge: averageAge,
+        meetupDate: tribe.meetupDate, // Include meetupDate
       });
     }
 
-    return NextResponse.json(discoveredTribes);
+    return NextResponse.json(discoveredTribes, { status: 200 });
   } catch (error) {
-    console.error('Error fetching discovered tribes:', error);
-    return NextResponse.json({ message: 'Error fetching discovered tribes', error }, { status: 500 });
+    console.error("Error fetching discovered tribes:", error);
+    return NextResponse.json({ message: 'Failed to fetch tribes for discovery.' }, { status: 500 });
   }
 }

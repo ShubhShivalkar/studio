@@ -163,6 +163,12 @@ export async function createTribe(tribeData: Omit<Tribe, 'id' | 'overallCompatib
  */
 export async function updateTribe(tribeId: string, updates: Partial<Tribe>): Promise<void> {
   const tribeRef = doc(db, 'tribes', tribeId);
+  const tribeDoc = await getDoc(tribeRef);
+
+  if (!tribeDoc.exists()) {
+    throw new Error(`Tribe with ID ${tribeId} not found for update.`);
+  }
+
   await updateDoc(tribeRef, updates);
 }
 

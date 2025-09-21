@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Users, CheckCircle, Clock, MapPin } from 'lucide-react';
+import { ArrowLeft, Users, CheckCircle, Clock, MapPin, CalendarDays } from 'lucide-react'; // Import CalendarDays icon
 import type { DiscoveredTribe, User, Tribe, MatchedUser } from '@/lib/types';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
@@ -36,8 +36,11 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import useTribeStore from '@/store/tribe';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns'; // Import parseISO
 import { useAuth } from '@/context/auth-context'; // Assuming an auth context for current user
+import { Input } from "@/components/ui/input"; // Import Input component
+import { Label } from "@/components/ui/label";   // Import Label component
+import { Slider } from "@/components/ui/slider"; // Import Slider component
 
 const getTribeCategory = (members: Pick<User, 'gender'>[]): 'Male' | 'Female' | 'Mixed' => {
   const genders = members.map(m => m.gender);
@@ -71,6 +74,8 @@ const categorySymbols = {
   Mixed: '♂♀',
 };
 
+// Maximum members a tribe can have, consistent with backend logic
+const MAX_TRIBE_MEMBERS = 8;
 
 export default function DiscoverTribesPage() {
   const router = useRouter();
@@ -84,6 +89,10 @@ export default function DiscoverTribesPage() {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [locationFilter, setLocationFilter] = useState('all');
   const [sortBy, setSortBy] = useState('default');
+
+  // Age range filter states
+  const [minAgeFilter, setMinAgeFilter] = useState<string>('');
+  const [maxAgeFilter, setMaxAgeFilter] = useState<string>('');
 
   useEffect(() => {
     const fetchTribes = async () => {
@@ -121,7 +130,7 @@ export default function DiscoverTribesPage() {
   }, [tribes]);
 
   const filteredAndSortedTribes = useMemo(() => {
-    const filtered = tribes.filter(tribe => {
+    let filtered = tribes.filter(tribe => {
       const status = getTribeStatus(tribe.members.length);
       const category = getTribeCategory(tribe.members);
       const commonLocation = getMostCommonLocation(tribe.members);
@@ -142,18 +151,26 @@ export default function DiscoverTribesPage() {
       return statusMatch && categoryMatch && locationMatch && genderFilterMatch;
     });
 
+    // Apply age range filter
+    const minAge = minAgeFilter ? parseInt(minAgeFilter, 10) : 18; // Default min age for filtering
+    const maxAge = maxAgeFilter ? parseInt(maxAgeFilter, 10) : 99; // Default max age for filtering
+
+    filtered = filtered.filter(tribe => tribe.averageAge >= minAge && tribe.averageAge <= maxAge);
+
     switch (sortBy) {
-        case 'compatibility_desc':
-            return filtered.sort((a, b) => b.compatibilityScore - a.compatibilityScore);
         case 'members_desc':
             return filtered.sort((a, b) => b.members.length - a.members.length);
         case 'members_asc':
             return filtered.sort((a, b) => a.members.length - b.members.length);
+        case 'age_asc':
+            return filtered.sort((a, b) => a.averageAge - b.averageAge);
+        case 'age_desc':
+            return filtered.sort((a, b) => b.averageAge - a.averageAge);
         default:
             return filtered;
     }
 
-  }, [tribes, statusFilter, categoryFilter, locationFilter, sortBy, profile]);
+  }, [tribes, statusFilter, categoryFilter, locationFilter, sortBy, profile, minAgeFilter, maxAgeFilter]);
 
   const handleJoinRequest = async (tribe: DiscoveredTribe) => {
     if (!profile) {
@@ -251,7 +268,7 @@ export default function DiscoverTribesPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
             <div className="flex-1">
               <label htmlFor="status-filter" className="text-sm font-medium">Status</label>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -293,6 +310,27 @@ export default function DiscoverTribesPage() {
                 </SelectContent>
               </Select>
             </div>
+            <div className="flex flex-col space-y-2">
+                <Label htmlFor="age-filter" className="text-sm font-medium">Age Range</Label>
+                <div className="flex items-center space-x-2">
+                    <Input className="w-20" type="number" placeholder="Min" value={minAgeFilter} onChange={e => setMinAgeFilter(e.target.value)} />
+                    <Input className="w-20" type="number" placeholder="Max" value={maxAgeFilter} onChange={e => setMaxAgeFilter(e.target.value)} />
+                </div>
+                <Slider
+                    min={18}
+                    max={99}
+                    step={1}
+                    value={[
+                        minAgeFilter ? parseInt(minAgeFilter, 10) : 18,
+                        maxAgeFilter ? parseInt(maxAgeFilter, 10) : 99,
+                    ]}
+                    onValueChange={(range) => {
+                        setMinAgeFilter(String(range[0]));
+                        setMaxAgeFilter(String(range[1]));
+                    }}
+                    className="w-[180px]"
+                />
+            </div>
              <div className="flex-1">
                <label htmlFor="sort-by" className="text-sm font-medium">Sort by</label>
               <Select value={sortBy} onValueChange={setSortBy}>
@@ -301,9 +339,10 @@ export default function DiscoverTribesPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="default">Default</SelectItem>
-                  <SelectItem value="compatibility_desc">Compatibility (High to Low)</SelectItem>
                   <SelectItem value="members_desc">Members (High to Low)</SelectItem>
                   <SelectItem value="members_asc">Members (Low to High)</SelectItem>
+                  <SelectItem value="age_asc">Average Age (Low to High)</SelectItem>
+                  <SelectItem value="age_desc">Average Age (High to Low)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -315,6 +354,8 @@ export default function DiscoverTribesPage() {
                 const status = getTribeStatus(tribe.members.length);
                 const category = getTribeCategory(tribe.members);
                 const commonLocation = getMostCommonLocation(tribe.members);
+                const isTribeFull = tribe.members.length >= MAX_TRIBE_MEMBERS;
+
                 return (
                  <AlertDialog key={tribe.id}>
                   <Card className="p-4">
@@ -324,19 +365,25 @@ export default function DiscoverTribesPage() {
                               <h3 className="font-semibold text-lg">Tribe <span className="font-mono text-primary">{tribe.id}</span></h3>
                               <div className="flex gap-2">
                                   <Badge className={cn('border-transparent', status === 'Complete' ? 'bg-green-500 hover:bg-green-500/80 text-white' : 'bg-orange-500 hover:bg-orange-500/80 text-white')}>
-                                      {status === 'Complete' ? <CheckCircle className="mr-1.5"/> : <Clock className="mr-1.5"/>}
                                       {status}
                                   </Badge>
                                   <Badge variant="outline">{categorySymbols[category]}</Badge>
                               </div>
                           </div>
 
+                          {tribe.meetupDate && (
+                              <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                  <CalendarDays className="h-4 w-4" />
+                                  <span>{format(parseISO(tribe.meetupDate), 'PPP')}</span>
+                              </div>
+                          )}
+
                           <div className="space-y-1">
                                <div className="flex justify-between items-center text-sm text-muted-foreground">
                                   <span>Members</span>
-                                  <span>{tribe.members.length} / 8</span>
+                                  <span>{tribe.members.length} / {MAX_TRIBE_MEMBERS}</span>
                               </div>
-                              <Progress value={(tribe.members.length / 8) * 100} />
+                              <Progress value={(tribe.members.length / MAX_TRIBE_MEMBERS) * 100} />
                           </div>
 
                           <div className="flex items-center gap-2 text-sm">
@@ -369,12 +416,19 @@ export default function DiscoverTribesPage() {
                                   </Avatar>
                               ))}
                           </div>
-                          <AlertDialogTrigger asChild>
-                             <Button className="w-full sm:w-auto mt-2">
-                                  <Users className="mr-2"/>
-                                  Join Tribe
-                              </Button>
-                          </AlertDialogTrigger>
+                          {!isTribeFull && (
+                            <AlertDialogTrigger asChild>
+                              <Button className="w-full sm:w-auto mt-2">
+                                    <Users className="mr-2"/>
+                                    Join Tribe
+                                </Button>
+                            </AlertDialogTrigger>
+                          )}
+                          {isTribeFull && (
+                            <Badge variant="outline" className="w-full sm:w-auto mt-2 py-2 px-4 text-center justify-center">
+                                Tribe Full
+                            </Badge>
+                          )}
                       </div>
                     </div>
                   </Card>

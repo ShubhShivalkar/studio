@@ -92,6 +92,7 @@ export type DiscoveredTribe = {
     compatibilityScore: number;
     commonHobbies: string[];
     averageAge: number;
+    meetupDate: string; // Add meetupDate here
 };
 
 export type MatchedUser = {
