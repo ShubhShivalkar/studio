@@ -11,6 +11,7 @@ import { useAuth } from "@/context/auth-context";
 import { upsertManualJournalEntry, getJournalEntryForDate } from "@/services/journal-service";
 import { format } from "date-fns";
 import type { DailySummary } from "@/lib/types";
+import { useRouter } from "next/navigation";
 
 const MOOD_EMOJIS: DailySummary['mood'][] = ['😊', '😢', '😠', '😮', '😐'];
 
@@ -135,6 +136,7 @@ export default function JournalPage() {
   const [cardDescription, setCardDescription] = useState("Engage in a conversation to explore your thoughts and feelings.");
   const { user } = useAuth();
   const today = format(new Date(), 'yyyy-MM-dd');
+  const router = useRouter();
 
   const shuffleIdeas = () => {
     const shuffled = JOURNAL_IDEAS.sort(() => 0.5 - Math.random());
@@ -217,6 +219,13 @@ export default function JournalPage() {
                     <CardDescription>{cardDescription}</CardDescription>
                 </div>
                 <div className="flex items-center space-x-2">
+                    <Button 
+                        variant="outline" 
+                        onClick={() => router.push('/journal/history')}
+                        className="mr-2"
+                    >
+                        Journal Entries
+                    </Button>
                     <Label htmlFor="journal-mode-switch">Manual</Label>
                     <Switch
                         id="journal-mode-switch"

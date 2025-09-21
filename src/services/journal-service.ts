@@ -1,27 +1,43 @@
-
-'use server';
-
-import { collection, query, where, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, Timestamp } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-import type { DailySummary, User } from '@/lib/types';
-import { format } from 'date-fns';
+import { db } from "@/lib/firebase";
+import { collection, query, where, getDocs, Timestamp, orderBy, doc, updateDoc, arrayUnion, addDoc, deleteDoc } from "firebase/firestore";
+import { DailySummary } from "@/lib/types";
+import { format } from "date-fns";
 
 /**
- * Retrieves all journal entries for a user.
+ * Upserts a manual journal entry for a specific user and date.
+ * If an entry for the date exists, it will be updated; otherwise, a new one will be created.
  * @param userId The UID of the user.
- * @returns An array of journal entries.
+ * @param dateString The date of the entry in 'yyyy-MM-dd' format.
+ * @param summary The journal entry text.
+ * @param mood The mood associated with the entry (optional).
  */
-export async function getJournalEntries(userId: string): Promise<DailySummary[]> {
-  const q = query(collection(db, 'journalEntries'), where('userId', '==', userId));
-  const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(doc => {
-    const data = doc.data();
-    // Firestore Timestamps need to be converted to string dates
-    if (data.date instanceof Timestamp) {
-        data.date = format(data.date.toDate(), 'yyyy-MM-dd');
+export async function upsertManualJournalEntry(
+    userId: string,
+    dateString: string,
+    summary: string,
+    mood?: DailySummary['mood']
+) {
+    const entryDate = new Date(dateString + 'T00:00:00');
+    const journalEntryRef = collection(db, 'journalEntries');
+    const q = query(journalEntryRef, where('userId', '==', userId), where('date', '==', Timestamp.fromDate(entryDate)));
+
+    const querySnapshot = await getDocs(q);
+
+    if (!querySnapshot.empty) {
+        // Entry exists, update it
+        const docRef = querySnapshot.docs[0].ref;
+        await updateDoc(docRef, { summary, mood, updatedAt: Timestamp.now() });
+    } else {
+        // No entry, create a new one
+        await addDoc(journalEntryRef, {
+            userId,
+            date: Timestamp.fromDate(entryDate),
+            summary,
+            mood,
+            createdAt: Timestamp.now(),
+            updatedAt: Timestamp.now(),
+        });
     }
-    return { id: doc.id, ...data } as DailySummary
-  });
 }
 
 /**
@@ -51,101 +67,79 @@ export async function getJournalEntryForDate(userId: string, dateString: string)
 }
 
 /**
- * Creates or updates a journal entry for a specific date.
- * If a summary already exists for the day, the new summary will be appended.
+ * Retrieves all journal entries for a specific user.
  * @param userId The UID of the user.
- * @param entry The daily summary object.
+ * @returns An array of DailySummary objects, sorted by date in descending order.
  */
-export async function setJournalEntry(userId: string, entry: Partial<DailySummary> & { date: string }): Promise<void> {
-    const { date, ...entryData } = entry;
-    const entryDate = new Date(date + 'T00:00:00'); // Ensure it's a clean date
-    
-    // Check if an entry for this date already exists
-    const q = query(collection(db, 'journalEntries'), where('userId', '==', userId), where('date', '==', Timestamp.fromDate(entryDate)));
+export async function getAllJournalEntries(userId: string): Promise<DailySummary[]> {
+    const q = query(
+        collection(db, 'journalEntries'),
+        where('userId', '==', userId),
+        orderBy('date', 'desc')
+    );
     const querySnapshot = await getDocs(q);
 
-    if (querySnapshot.empty) {
-        // Create new entry
-        const newEntryRef = doc(collection(db, 'journalEntries'));
-        await setDoc(newEntryRef, {
-            userId,
-            date: Timestamp.fromDate(entryDate),
-            ...entryData
-        });
-    } else {
-        // Update existing entry
-        const existingDoc = querySnapshot.docs[0];
-        const docRef = existingDoc.ref;
-        const existingData = existingDoc.data() as DailySummary;
-
-        const updatePayload: Partial<DailySummary> = { ...entryData };
-
-        // If a new summary is being added and one already exists, append it.
-        if (entryData.summary && existingData.summary) {
-            updatePayload.summary = `${existingData.summary}\n\n${entryData.summary}`;
+    const entries: DailySummary[] = [];
+    querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        if (data.date instanceof Timestamp) {
+            data.date = format(data.date.toDate(), 'yyyy-MM-dd');
         }
-        
-        await updateDoc(docRef, updatePayload);
+        entries.push({ id: doc.id, ...data } as DailySummary);
+    });
+    return entries;
+}
+
+// Alias for getAllJournalEntries, as used in journal-chat.tsx
+export async function getJournalEntries(userId: string): Promise<DailySummary[]> {
+    return getAllJournalEntries(userId);
+}
+
+/**
+ * Sets a journal entry for a specific user and date. This will overwrite any existing entry for that date.
+ * @param userId The UID of the user.
+ * @param entry The DailySummary object to set.
+ */
+export async function setJournalEntry(userId: string, entry: Partial<DailySummary>) {
+    const entryDate = new Date(entry.date + 'T00:00:00');
+    const journalEntryRef = collection(db, 'journalEntries');
+    const q = query(journalEntryRef, where('userId', '==', userId), where('date', '==', Timestamp.fromDate(entryDate)));
+
+    const querySnapshot = await getDocs(q);
+
+    if (!querySnapshot.empty) {
+        // Entry exists, update it
+        const docRef = querySnapshot.docs[0].ref;
+        await updateDoc(docRef, { ...entry, date: Timestamp.fromDate(entryDate), updatedAt: Timestamp.now() });
+    } else {
+        // No entry, create a new one
+        await addDoc(journalEntryRef, {
+            userId,
+            ...entry,
+            date: Timestamp.fromDate(entryDate),
+            createdAt: Timestamp.now(),
+            updatedAt: Timestamp.now(),
+        });
     }
 }
 
 /**
- * Creates or updates a manual journal entry for a specific date, replacing the summary if it exists.
+ * Adds a journal summary to the user's profile.
  * @param userId The UID of the user.
- * @param dateString The date of the entry in 'yyyy-MM-dd' format.
- * @param summary The manual journal entry text.
- * @param mood The selected mood emoji.
- * @returns The ID of the created or updated journal entry.
+ * @param summary The summary text to add.
  */
-export async function upsertManualJournalEntry(userId: string, dateString: string, summary: string, mood?: DailySummary['mood']): Promise<string> {
-    const entryDate = new Date(dateString + 'T00:00:00');
-    const q = query(collection(db, 'journalEntries'), where('userId', '==', userId), where('date', '==', Timestamp.fromDate(entryDate)));
-    const querySnapshot = await getDocs(q);
-
-    const entryData: Partial<DailySummary> = { summary };
-    if (mood) {
-        entryData.mood = mood;
-    }
-
-    if (querySnapshot.empty) {
-        // Create new entry
-        const newEntryRef = doc(collection(db, 'journalEntries'));
-        await setDoc(newEntryRef, {
-            userId,
-            date: Timestamp.fromDate(entryDate),
-            ...entryData,
-        });
-        return newEntryRef.id;
-    } else {
-        // Update existing entry
-        const existingDoc = querySnapshot.docs[0];
-        const docRef = existingDoc.ref;
-        await updateDoc(docRef, entryData);
-        return existingDoc.id;
-    }
+export async function addJournalSummaryToUser(userId: string, summary: string) {
+    const userRef = doc(db, 'users', userId);
+    await updateDoc(userRef, {
+        journalEntries: arrayUnion(summary)
+    });
 }
 
 /**
  * Deletes a journal entry by its ID.
- * @param entryId The ID of the journal entry document.
+ * @param entryId The ID of the journal entry document to delete.
  */
-export async function deleteJournalEntry(entryId: string): Promise<void> {
-  const docRef = doc(db, 'journalEntries', entryId);
-  await deleteDoc(docRef);
-}
-
-/**
- * Adds a journal entry summary to a user's profile array.
- * This is used for persona generation.
- * @param userId The UID of the user.
- * @param summary The journal summary text.
- */
-export async function addJournalSummaryToUser(userId: string, summary: string) {
-    const userRef = doc(db, 'users', userId);
-    const userSnap = await getDoc(userRef);
-    if(userSnap.exists()) {
-        const userData = userSnap.data() as User;
-        const updatedEntries = [...(userData.journalEntries || []), summary];
-        await updateDoc(userRef, { journalEntries: updatedEntries });
-    }
+export async function deleteJournalEntry(entryId: string) {
+    const entryRef = doc(db, 'journalEntries', entryId);
+    await deleteDoc(entryRef);
 }
