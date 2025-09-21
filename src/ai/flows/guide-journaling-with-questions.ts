@@ -110,6 +110,7 @@ const guideJournalingWithQuestionsFlow = ai.defineFlow(
     outputSchema: GuideJournalingWithQuestionsOutputSchema,
   },
   async input => {
+    console.log('guideJournalingWithQuestionsFlow triggered');
     try {
       const {output} = await prompt(input);
       if (!output) {

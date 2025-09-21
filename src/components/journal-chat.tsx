@@ -17,7 +17,7 @@ import { getReminders } from "@/services/reminder-service";
 import { getChecklists } from "@/services/checklist-service";
 import { setJournalEntry, addJournalSummaryToUser, getJournalEntries } from "@/services/journal-service";
 
-const MAX_AI_QUESTIONS = 10;
+const MAX_AI_QUESTIONS = 5;
 
 const PROMPT_SUGGESTIONS = [
     "a recent accomplishment", "something I'm grateful for", "a challenge I'm facing", "a dream I had recently",
