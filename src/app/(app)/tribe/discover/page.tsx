@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -11,9 +10,8 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Users, CheckCircle, Clock, MapPin } from 'lucide-react';
-import { discoveredTribes as mockTribes, currentUser } from '@/lib/mock-data';
-import type { DiscoveredTribe, User, Tribe } from '@/lib/types';
+import { ArrowLeft, Users, CheckCircle, Clock, MapPin, CalendarDays } from 'lucide-react'; // Import CalendarDays icon
+import type { DiscoveredTribe, User, Tribe, MatchedUser } from '@/lib/types';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -38,7 +36,11 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import useTribeStore from '@/store/tribe';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns'; // Import parseISO
+import { useAuth } from '@/context/auth-context'; // Assuming an auth context for current user
+import { Input } from "@/components/ui/input"; // Import Input component
+import { Label } from "@/components/ui/label";   // Import Label component
+import { Slider } from "@/components/ui/slider"; // Import Slider component
 
 const getTribeCategory = (members: Pick<User, 'gender'>[]): 'Male' | 'Female' | 'Mixed' => {
   const genders = members.map(m => m.gender);
@@ -72,16 +74,49 @@ const categorySymbols = {
   Mixed: '♂♀',
 };
 
+// Maximum members a tribe can have, consistent with backend logic
+const MAX_TRIBE_MEMBERS = 8;
 
 export default function DiscoverTribesPage() {
   const router = useRouter();
   const { toast } = useToast();
   const { setTribe } = useTribeStore();
-  const [tribes] = useState<DiscoveredTribe[]>(mockTribes);
+  const { profile } = useAuth(); // Get current user profile from auth context
+  const [tribes, setTribes] = useState<DiscoveredTribe[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [locationFilter, setLocationFilter] = useState('all');
   const [sortBy, setSortBy] = useState('default');
+
+  // Age range filter states
+  const [minAgeFilter, setMinAgeFilter] = useState<string>('');
+  const [maxAgeFilter, setMaxAgeFilter] = useState<string>('');
+
+  useEffect(() => {
+    const fetchTribes = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('/api/tribes/discover');
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data: DiscoveredTribe[] = await response.json();
+        setTribes(data);
+      } catch (e: any) {
+        setError(e.message);
+        toast({
+          title: "Error fetching tribes",
+          description: e.message,
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchTribes();
+  }, [toast]);
 
   const uniqueLocations = useMemo(() => {
     const locations = new Set<string>();
@@ -95,65 +130,125 @@ export default function DiscoverTribesPage() {
   }, [tribes]);
 
   const filteredAndSortedTribes = useMemo(() => {
-    const filtered = tribes.filter(tribe => {
+    let filtered = tribes.filter(tribe => {
       const status = getTribeStatus(tribe.members.length);
       const category = getTribeCategory(tribe.members);
       const commonLocation = getMostCommonLocation(tribe.members);
 
+      // UI Filter Matches
       const statusMatch = statusFilter === 'all' || status.toLowerCase() === statusFilter;
       const categoryMatch = categoryFilter === 'all' || category.toLowerCase() === categoryFilter;
       const locationMatch = locationFilter === 'all' || commonLocation === locationFilter;
 
-      return statusMatch && categoryMatch && locationMatch;
+      // Mandatory Gender Filter Logic
+      let genderFilterMatch = true; // Default to true for users with 'Other' gender or if user is not loaded
+      if (profile?.gender === 'Male') {
+        genderFilterMatch = category === 'Male' || category === 'Mixed';
+      } else if (profile?.gender === 'Female') {
+        genderFilterMatch = category === 'Female' || category === 'Mixed';
+      }
+
+      return statusMatch && categoryMatch && locationMatch && genderFilterMatch;
     });
 
+    // Apply age range filter
+    const minAge = minAgeFilter ? parseInt(minAgeFilter, 10) : 18; // Default min age for filtering
+    const maxAge = maxAgeFilter ? parseInt(maxAgeFilter, 10) : 99; // Default max age for filtering
+
+    filtered = filtered.filter(tribe => tribe.averageAge >= minAge && tribe.averageAge <= maxAge);
+
     switch (sortBy) {
-        case 'compatibility_desc':
-            return filtered.sort((a, b) => b.compatibilityScore - a.compatibilityScore);
         case 'members_desc':
             return filtered.sort((a, b) => b.members.length - a.members.length);
         case 'members_asc':
             return filtered.sort((a, b) => a.members.length - b.members.length);
+        case 'age_asc':
+            return filtered.sort((a, b) => a.averageAge - b.averageAge);
+        case 'age_desc':
+            return filtered.sort((a, b) => b.averageAge - a.averageAge);
         default:
             return filtered;
     }
 
-  }, [tribes, statusFilter, categoryFilter, locationFilter, sortBy]);
-  
-  const handleJoinRequest = (tribe: DiscoveredTribe) => {
-    const newTribeForStore: Tribe = {
-      id: tribe.id,
-      members: [
-        {
-          userId: currentUser.id,
-          user: currentUser,
-          compatibilityScore: 100,
-          persona: currentUser.persona!,
-          matchReason: 'This is you!',
-          rsvpStatus: 'pending',
-        },
-        ...tribe.members.map(member => ({
-            userId: member.id,
-            user: member as User, // Cast for simplicity in mock
-            compatibilityScore: tribe.compatibilityScore,
-            persona: "A friendly and outgoing individual.", // Mock persona
-            matchReason: "Shared interests in art and technology.", // Mock reason
-            rsvpStatus: 'pending',
-        }))
-      ],
-      meetupDate: format(new Date(), 'yyyy-MM-dd'),
-      meetupTime: '3:00 PM',
-      location: getMostCommonLocation(tribe.members) || 'The Cozy Cafe',
-    };
+  }, [tribes, statusFilter, categoryFilter, locationFilter, sortBy, profile, minAgeFilter, maxAgeFilter]);
 
-    setTribe(newTribeForStore);
-    
-    toast({
-        title: "Hurray! 🎉",
-        description: "You've been invited to join the event.",
-    });
-    
-    router.push('/tribe');
+  const handleJoinRequest = async (tribe: DiscoveredTribe) => {
+    if (!profile) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in to join a tribe.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/tribes/join', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ tribeId: tribe.id, userId: profile.id }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to send join request.');
+      }
+
+      const updatedTribe: Tribe = await response.json();
+
+      setTribe(updatedTribe); // Update the global tribe store
+
+      toast({
+          title: "Hurray! 🎉",
+          description: "You've been invited to join the event.",
+      });
+
+      router.push('/tribe');
+    } catch (e: any) {
+      toast({
+        title: "Failed to join tribe",
+        description: e.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Discover Tribes</CardTitle>
+            <CardDescription>
+              Finding tribes that match your vibe...
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center text-muted-foreground py-16">Loading tribes...</div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Discover Tribes</CardTitle>
+            <CardDescription>
+              Find and request to join existing tribes that match your vibe.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center text-red-500 py-16">Error: {error}</div>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   return (
@@ -173,7 +268,7 @@ export default function DiscoverTribesPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
             <div className="flex-1">
               <label htmlFor="status-filter" className="text-sm font-medium">Status</label>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -215,6 +310,27 @@ export default function DiscoverTribesPage() {
                 </SelectContent>
               </Select>
             </div>
+            <div className="flex flex-col space-y-2">
+                <Label htmlFor="age-filter" className="text-sm font-medium">Age Range</Label>
+                <div className="flex items-center space-x-2">
+                    <Input className="w-20" type="number" placeholder="Min" value={minAgeFilter} onChange={e => setMinAgeFilter(e.target.value)} />
+                    <Input className="w-20" type="number" placeholder="Max" value={maxAgeFilter} onChange={e => setMaxAgeFilter(e.target.value)} />
+                </div>
+                <Slider
+                    min={18}
+                    max={99}
+                    step={1}
+                    value={[
+                        minAgeFilter ? parseInt(minAgeFilter, 10) : 18,
+                        maxAgeFilter ? parseInt(maxAgeFilter, 10) : 99,
+                    ]}
+                    onValueChange={(range) => {
+                        setMinAgeFilter(String(range[0]));
+                        setMaxAgeFilter(String(range[1]));
+                    }}
+                    className="w-[180px]"
+                />
+            </div>
              <div className="flex-1">
                <label htmlFor="sort-by" className="text-sm font-medium">Sort by</label>
               <Select value={sortBy} onValueChange={setSortBy}>
@@ -223,9 +339,10 @@ export default function DiscoverTribesPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="default">Default</SelectItem>
-                  <SelectItem value="compatibility_desc">Compatibility (High to Low)</SelectItem>
                   <SelectItem value="members_desc">Members (High to Low)</SelectItem>
                   <SelectItem value="members_asc">Members (Low to High)</SelectItem>
+                  <SelectItem value="age_asc">Average Age (Low to High)</SelectItem>
+                  <SelectItem value="age_desc">Average Age (High to Low)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -237,62 +354,89 @@ export default function DiscoverTribesPage() {
                 const status = getTribeStatus(tribe.members.length);
                 const category = getTribeCategory(tribe.members);
                 const commonLocation = getMostCommonLocation(tribe.members);
+                const isTribeFull = tribe.members.length >= MAX_TRIBE_MEMBERS;
+
                 return (
                  <AlertDialog key={tribe.id}>
-                  <Card className="flex flex-col sm:flex-row items-start sm:items-center p-4 gap-4">
-                    <div className="flex-1 space-y-3">
-                        <div className="flex items-center gap-4">
-                            <h3 className="font-semibold text-lg">Tribe <span className="font-mono text-primary">{tribe.id}</span></h3>
-                            <div className="flex gap-2">
-                                <Badge className={cn('border-transparent', status === 'Complete' ? 'bg-green-500 hover:bg-green-500/80 text-white' : 'bg-orange-500 hover:bg-orange-500/80 text-white')}>
-                                    {status === 'Complete' ? <CheckCircle className="mr-1.5"/> : <Clock className="mr-1.5"/>}
-                                    {status}
-                                </Badge>
-                                <Badge variant="outline">{categorySymbols[category]}</Badge>
+                  <Card className="p-4">
+                    <div className="flex flex-col sm:flex-row items-start gap-4">
+                      <div className="flex-1 space-y-3">
+                          <div className="flex items-center gap-4">
+                              <h3 className="font-semibold text-lg">Tribe <span className="font-mono text-primary">{tribe.id}</span></h3>
+                              <div className="flex gap-2">
+                                  <Badge className={cn('border-transparent', status === 'Complete' ? 'bg-green-500 hover:bg-green-500/80 text-white' : 'bg-orange-500 hover:bg-orange-500/80 text-white')}>
+                                      {status}
+                                  </Badge>
+                                  <Badge variant="outline">{categorySymbols[category]}</Badge>
+                              </div>
+                          </div>
+
+                          {tribe.meetupDate && (
+                              <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                  <CalendarDays className="h-4 w-4" />
+                                  <span>{format(parseISO(tribe.meetupDate), 'PPP')}</span>
+                              </div>
+                          )}
+
+                          <div className="space-y-1">
+                               <div className="flex justify-between items-center text-sm text-muted-foreground">
+                                  <span>Members</span>
+                                  <span>{tribe.members.length} / {MAX_TRIBE_MEMBERS}</span>
+                              </div>
+                              <Progress value={(tribe.members.length / MAX_TRIBE_MEMBERS) * 100} />
+                          </div>
+
+                          <div className="flex items-center gap-2 text-sm">
+                              <span className="text-muted-foreground">Average Age</span>
+                              <Badge variant="outline">{tribe.averageAge} years</Badge>
+                          </div>
+
+                          {tribe.commonHobbies && tribe.commonHobbies.length > 0 && (
+                            <div className="flex flex-wrap items-center gap-2 text-sm">
+                              <span className="text-muted-foreground">Common Hobbies:</span>
+                              {tribe.commonHobbies.map(hobby => (
+                                <Badge key={hobby} variant="secondary">{hobby}</Badge>
+                              ))}
                             </div>
-                        </div>
-                        
-                        <div className="space-y-1">
-                             <div className="flex justify-between items-center text-sm text-muted-foreground">
-                                <span>Members</span>
-                                <span>{tribe.members.length} / 8</span>
-                            </div>
-                            <Progress value={(tribe.members.length / 8) * 100} />
-                        </div>
-                       
-                        <div className="flex items-center justify-between text-sm">
-                            <span className="text-muted-foreground">Compatibility</span>
-                            <Badge variant="outline">{tribe.compatibilityScore}%</Badge>
-                        </div>
-                    </div>
-                    <div className="flex flex-col items-center gap-2 w-full sm:w-auto">
-                        <div className="flex -space-x-2 overflow-hidden">
-                            {tribe.members.slice(0, 5).map(member => (
-                                <Avatar key={member.id} className="inline-block h-8 w-8 rounded-full ring-2 ring-background">
-                                    <AvatarImage src={member.avatar} alt={member.name} data-ai-hint="person photo" />
-                                    <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
-                                </Avatar>
-                            ))}
-                        </div>
-                        <AlertDialogTrigger asChild>
-                           <Button className="w-full sm:w-auto mt-2">
-                                <Users className="mr-2"/>
-                                Join Tribe
-                            </Button>
-                        </AlertDialogTrigger>
-                         {commonLocation && (
-                            <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
-                                <MapPin className="h-4 w-4" />
-                                <span>{commonLocation}</span>
-                            </div>
-                        )}
+                          )}
+
+                          {commonLocation && (
+                              <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                  <MapPin className="h-4 w-4" />
+                                  <span>{commonLocation}</span>
+                              </div>
+                          )}
+                      </div>
+                      <div className="flex flex-col items-center gap-2 w-full sm:w-auto mt-4 sm:mt-0">
+                          <div className="flex -space-x-2 overflow-hidden">
+                              {tribe.members.slice(0, 5).map(member => (
+                                  <Avatar key={member.id} className="inline-block h-8 w-8 rounded-full ring-2 ring-background">
+                                      <AvatarImage src={member.avatar} alt={member.name} data-ai-hint="person photo" />
+                                      <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
+                                  </Avatar>
+                              ))}
+                          </div>
+                          {!isTribeFull && (
+                            <AlertDialogTrigger asChild>
+                              <Button className="w-full sm:w-auto mt-2">
+                                    <Users className="mr-2"/>
+                                    Join Tribe
+                                </Button>
+                            </AlertDialogTrigger>
+                          )}
+                          {isTribeFull && (
+                            <Badge variant="outline" className="w-full sm:w-auto mt-2 py-2 px-4 text-center justify-center">
+                                Tribe Full
+                            </Badge>
+                          )}
+                      </div>
                     </div>
                   </Card>
                     <AlertDialogContent>
                       <AlertDialogHeader>
                         <AlertDialogTitle>Join Tribe {tribe.id}?</AlertDialogTitle>
                         <AlertDialogDescription>
-                          Are you sure you want to send a request to join this tribe? This will replace any pending tribe invitations for this week.
+                          Woohoo! You wouldn't regret this. Just FYI, You wouldn't be able to join other tribe this week after joining.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>

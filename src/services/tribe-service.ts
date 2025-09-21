@@ -1,4 +1,3 @@
-
 'use server';
 
 import { collection, doc, getDoc, getDocs, query, where, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
@@ -40,38 +39,18 @@ export async function getAllTribes(): Promise<Tribe[]> {
 
 
 /**
- * Retrieves all active tribes.
- * @returns A list of active tribes with their members.
+ * Retrieves all active tribes from the 'tribes' collection.
+ * @returns A list of active tribes.
  */
 export async function getActiveTribes(): Promise<Tribe[]> {
-  const allUsers = await getAllUsers();
-  const usersInTribes = allUsers.filter(u => u.currentTribeId);
-
-  if (usersInTribes.length === 0) {
-    return [];
-  }
-
-  const tribesMap = new Map<string, User[]>();
-
-  for (const user of usersInTribes) {
-    if (user.currentTribeId) {
-      if (!tribesMap.has(user.currentTribeId)) {
-        tribesMap.set(user.currentTribeId, []);
-      }
-      tribesMap.get(user.currentTribeId)!.push(user);
-    }
-  }
-
-  const tribes: Tribe[] = [];
-  for (const [tribeId, members] of tribesMap.entries()) {
-    tribes.push({
-      id: tribeId,
-      members: members,
-      formedDate: members[0].lastTribeDate || new Date().toISOString(),
+    const tribesRef = collection(db, 'tribes');
+    const q = query(tribesRef, where('is_active', '==', true));
+    const querySnapshot = await getDocs(q);
+    const tribes: Tribe[] = [];
+    querySnapshot.forEach((doc) => {
+        tribes.push({ id: doc.id, ...doc.data() } as Tribe);
     });
-  }
-
-  return tribes;
+    return tribes;
 }
 
 /**
@@ -86,68 +65,95 @@ export async function getCurrentTribe(userId: string): Promise<Tribe | null> {
   }
 
   const tribeId = user.currentTribeId;
-  const usersInTribeQuery = query(collection(db, 'users'), where('currentTribeId', '==', tribeId));
-  const userDocs = await getDocs(usersInTribeQuery);
   
-  if (userDocs.empty) {
-    return null;
-  }
+  const tribeRef = doc(db, 'tribes', tribeId);
+  const tribeDoc = await getDoc(tribeRef);
 
-  const members = userDocs.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
+  if (!tribeDoc.exists()) {
+      console.warn(`User ${userId} has a stale tribe ID: ${tribeId}`);
+      return null;
+  }
   
+  const tribeData = tribeDoc.data() as Tribe;
+
+  const memberPromises = tribeData.members.map(async (member) => {
+      const memberUser = await getUser(member.userId);
+      return {
+          ...member,
+          user: memberUser, 
+      };
+  });
+
+  const membersWithUsers = (await Promise.all(memberPromises)).filter(m => m.user);
+
   return {
+    ...tribeData,
     id: tribeId,
-    members,
-    formedDate: new Date().toISOString(), // This should be stored on the tribe doc ideally
+    members: membersWithUsers,
   };
 }
 
 /**
- * Simulates retrieving a user's past tribe history.
- * For the demo, this returns a mock history.
+ * Retrieves a user's past tribes from the 'archived_tribes' collection.
  * @param userId The ID of the user.
- * @returns An array of past tribe histories.
+ * @returns An array of past tribes.
  */
-export async function getTribeHistory(userId: string): Promise<TribeHistory[]> {
-  // Mock implementation
-  // In a real app, you would query a 'tribe_history' collection.
-  return [
-    {
-      tribeId: 'tribe_history_1',
-      members: [], // Populate with past member data if needed
-      formedDate: '2024-04-01',
-      dissolvedDate: '2024-04-28',
-      reason: 'The tribe completed its 4-week cycle.',
-    },
-  ];
+export async function getArchivedTribes(userId: string): Promise<Tribe[]> {
+    // NOTE: The original query was incorrect because Firestore's `array-contains`
+    // cannot query for values within objects in an array. The correct, scalable
+    // solution is to use an index of member IDs.
+    //
+    // To ensure existing data is visible, this function fetches all archived
+    // tribes and filters them on the client. This is a temporary measure
+    // until the data can be migrated to include the `memberIds` field.
+    
+    const archivedTribesRef = collection(db, 'archived_tribes');
+    const querySnapshot = await getDocs(archivedTribesRef);
+    
+    if (querySnapshot.empty) {
+        return [];
+    }
+
+    const userTribes: Tribe[] = [];
+    querySnapshot.forEach(doc => {
+        const tribe = { id: doc.id, ...doc.data() } as Tribe;
+        if (tribe.members && tribe.members.some(member => member.userId === userId)) {
+            userTribes.push(tribe);
+        }
+    });
+
+    return userTribes;
 }
 
-export async function createTribe(tribeData: Omit<Tribe, 'id'>): Promise<Tribe> {
+export async function createTribe(tribeData: Omit<Tribe, 'id' | 'overallCompatibilityScore'> & { overallCompatibilityScore?: number }): Promise<Tribe> {
     const batch = writeBatch(db);
     const newTribeRef = doc(collection(db, 'tribes'));
+    
+    const memberIds = tribeData.members.map(member => (member as MatchedUser).userId);
 
-    const newTribe = {
+    const newTribe: Tribe = {
         ...tribeData,
         id: newTribeRef.id,
         formedDate: new Date().toISOString(),
-    };
+        memberIds: memberIds,
+    } as Tribe;
 
-    // Ensure is_active is set, defaulting to false.
-    if (newTribe.is_active === undefined) {
-        newTribe.is_active = false;
+    if (tribeData.overallCompatibilityScore !== undefined) {
+      newTribe.overallCompatibilityScore = tribeData.overallCompatibilityScore;
     }
     
     batch.set(newTribeRef, newTribe);
 
     for (const member of tribeData.members as MatchedUser[]) {
         const userRef = doc(db, 'users', member.userId);
-        batch.update(userRef, { currentTribeId: newTribe.id });
+        batch.update(userRef, { currentTribeId: newTribe.id, lastTribeDate: newTribe.formedDate });
     }
 
     await batch.commit();
 
     return newTribe as Tribe;
 }
+
 
 /**
  * Updates a tribe's data in Firestore.
@@ -157,6 +163,12 @@ export async function createTribe(tribeData: Omit<Tribe, 'id'>): Promise<Tribe> 
  */
 export async function updateTribe(tribeId: string, updates: Partial<Tribe>): Promise<void> {
   const tribeRef = doc(db, 'tribes', tribeId);
+  const tribeDoc = await getDoc(tribeRef);
+
+  if (!tribeDoc.exists()) {
+    throw new Error(`Tribe with ID ${tribeId} not found for update.`);
+  }
+
   await updateDoc(tribeRef, updates);
 }
 
@@ -168,17 +180,14 @@ export async function updateTribe(tribeId: string, updates: Partial<Tribe>): Pro
 export async function deleteTribe(tribeId: string, members: MatchedUser[]): Promise<void> {
   const batch = writeBatch(db);
 
-  // 1. Delete the tribe document
   const tribeRef = doc(db, 'tribes', tribeId);
   batch.delete(tribeRef);
 
-  // 2. Update all members to remove them from the tribe
   for (const member of members) {
     const userRef = doc(db, 'users', member.userId);
     batch.update(userRef, { currentTribeId: null });
   }
 
-  // 3. Commit the batch
   await batch.commit();
 }
 
@@ -206,19 +215,16 @@ export async function deleteInactiveAndArchiveActiveTribes(tribes: Tribe[]): Pro
   for (const tribe of tribes) {
     const originalTribeRef = doc(db, 'tribes', tribe.id);
 
-    // Release all members of the tribe regardless of its status
     for (const member of tribe.members as MatchedUser[]) {
       const userRef = doc(db, 'users', member.userId);
       batch.update(userRef, { currentTribeId: null });
     }
 
     if (tribe.is_active) {
-      // For active tribes, move them to the 'archived_tribes' collection
       const archivedTribeRef = doc(collection(db, 'archived_tribes'), tribe.id);
-      batch.set(archivedTribeRef, { ...tribe, is_active: false }); // Mark as inactive upon archival
-      batch.delete(originalTribeRef); // Delete from the main 'tribes' collection
+      batch.set(archivedTribeRef, { ...tribe, is_active: false });
+      batch.delete(originalTribeRef);
     } else {
-      // For inactive tribes, just delete them
       batch.delete(originalTribeRef);
     }
   }
