@@ -15,12 +15,52 @@ import { getChecklists, deleteChecklist, updateChecklist } from "@/services/chec
 import { getCurrentTribe } from '@/services/tribe-service';
 import type { DailySummary, Reminder, Checklist, GeneratePersonalityPersonaOutput, Tribe } from '@/lib/types';
 import { Skeleton } from "@/components/ui/skeleton";
-import { Bell, ListTodo, Trash2, Briefcase, HandHeart, Bot, Users, CheckCircle, XCircle } from 'lucide-react';
+import { Bell, ListTodo, Trash2, Briefcase, HandHeart, Bot, Users, CheckCircle, XCircle, Filter } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { useToast } from '@/hooks/use-toast';
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from '@/lib/utils';
 import { Badge } from "@/components/ui/badge";
+import _ from 'lodash';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { positiveQuotes } from '@/lib/positive-quotes';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+
+
+function JournalTimeline({ entries }: { entries: { [date: string]: DailySummary[] } }) {
+  const sortedDates = Object.keys(entries).sort((a, b) => b.localeCompare(a));
+
+  return (
+    <div className="flex">
+      <div className="w-full">
+        {sortedDates.map(date => {
+          const id = date;
+          const validEntries = entries[date].filter(entry => entry.summary !== null && entry.summary !== '');
+
+          if (validEntries.length === 0) {
+            return null;
+          }
+
+          return (
+            <div key={date} className="mb-6">
+              <h3 className="text-lg font-semibold mb-2" id={id}>{format(parseISO(date), 'MMMM d, yyyy')}</h3>
+              {validEntries.map(entry => (
+                <div key={entry.id} className="p-4 border rounded-lg shadow-sm">
+                  <p className="text-sm text-muted-foreground">
+                    {format(parseISO(entry.date), 'PPP p')}
+                  </p>
+                  <p className="text-lg font-medium">{entry.summary}</p>
+                  {entry.mood && <p className="text-sm text-gray-500">Mood: {entry.mood}</p>}
+                  {entry.collectionTag && <p className="text-sm text-primary">#{entry.collectionTag}</p>}
+                </div>
+              ))}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 export default function MySpacePage() {
   const { user, profile, loading: authLoading } = useAuth();
@@ -140,7 +180,7 @@ export default function MySpacePage() {
     } catch (error) {
       console.error("Failed to delete checklist:", error);
       setChecklists(originalChecklists);
-      toast({ variant: 'destructive', title: 'Error', description: 'Could not delete checklist.' });
+      toast({ variant: 'destructive', title: 'Error', description: 'Could not delete checklist item.' });
     }
   }
 
@@ -197,7 +237,16 @@ export default function MySpacePage() {
     if (rightSectionRef.current) {
       rightSectionRef.current.style.height = `${maxHeight}px`;
     }
-  }, [isLoading, journalEntries, reminders, checklists, showTribeCard]);
+  }, [isLoading, journalEntries, reminders, checklists, showTribeCard, tribe]);
+
+   const groupedJournalEntries = useMemo(() => {
+    return _(filteredEntries)
+      .groupBy(entry => format(parseISO(entry.date), 'yyyy-MM-dd'))
+      .value();
+  }, [filteredEntries]);
+  
+  const randomIndex = useMemo(() => Math.floor(Math.random() * positiveQuotes.length), []);
+  const randomQuote = positiveQuotes[randomIndex];
 
   return (
     <Card className="flex-1 flex flex-col">
@@ -215,8 +264,7 @@ export default function MySpacePage() {
             <Card className="flex flex-col">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Bot className="text-primary" /> Your Persona
-                </CardTitle>
+                  <Bot className="text-primary" /> Your Persona</CardTitle>
                 <CardDescription>
                   An AI-generated reflection of you based on your activities.
                 </CardDescription>
@@ -264,48 +312,36 @@ export default function MySpacePage() {
           </div>
 
           {/* Center Feed */}
-          <div className="flex flex-col" ref={centerSectionRef} style={{height: 'auto'}}>
-            <h2 className="text-xl font-semibold mb-4">My Journal Entries</h2>
-            <div className="flex flex-col sm:flex-row items-center gap-2 mb-4">
-              <Label htmlFor="hashtag-filter" className="sr-only">Filter by Hashtag</Label>
-              <Select onValueChange={setHashtagFilter} value={hashtagFilter}>
-                <SelectTrigger id="hashtag-filter" className="w-[180px]">
-                  <SelectValue placeholder="Filter by #hashtag" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Entries</SelectItem>
-                  {uniqueHashtags.map(tag => (
-                    <SelectItem key={tag} value={tag}>
-                      #{tag}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          <div className="flex flex-col relative" ref={centerSectionRef} style={{height: 'auto'}}>
+            <Card className="mb-4 bg-accent">
+                <CardContent>
+                    {randomQuote}</CardContent>
+            </Card>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold">My Journal Entries</h2>
+              <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                          <Filter className="h-4 w-4" />
+                          <span className="sr-only">Open filter menu</span>
+                      </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56" align="end" forceMount>
+                      <DropdownMenuItem onSelect={() => setHashtagFilter("all")}>
+                          All Entries
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      {uniqueHashtags.map(tag => (
+                          <DropdownMenuItem key={tag} onSelect={() => setHashtagFilter(tag)}>
+                              #{tag}
+                          </DropdownMenuItem>
+                      ))}
+                  </DropdownMenuContent>
+              </DropdownMenu>
             </div>
             <Separator className="my-4" />
-            <ScrollArea className="h-full w-full rounded-md border p-4" style={{ height: 'calc(100vh - 200px)' }}>
-              {isLoading ? (
-                <div className="space-y-4">
-                  <Skeleton className="h-24 w-full" />
-                  <Skeleton className="h-24 w-full" />
-                  <Skeleton className="h-24 w-full" />
-                </div>
-              ) : filteredEntries.length > 0 ? (
-                <div className="space-y-4">
-                  {filteredEntries.map((entry) => (
-                    <div key={entry.id} className="p-4 border rounded-lg shadow-sm">
-                      <p className="text-sm text-muted-foreground">
-                        {format(parseISO(entry.date), 'PPP p')}
-                      </p>
-                      <p className="text-lg font-medium">{entry.summary}</p>
-                      {entry.mood && <p className="text-sm text-gray-500">Mood: {entry.mood}</p>}
-                      {entry.collectionTag && <p className="text-sm text-primary">#{entry.collectionTag}</p>}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-muted-foreground text-center">No journal entries found {hashtagFilter !== "all" && `for #${hashtagFilter}`}.</p>
-              )}
+            <ScrollArea className="h-full w-full rounded-md border p-4">
+              <JournalTimeline entries={groupedJournalEntries} />
             </ScrollArea>
           </div>
 
@@ -318,15 +354,14 @@ export default function MySpacePage() {
                 <Skeleton className="h-48 w-full" />
               </div>
             ) : (
-              <>              
+              <>
                 {/* Tribe Invitation Section */}
                 {
                   showTribeCard ? (
                     <Card className="flex flex-col bg-gradient-to-br from-primary to-primary/90 text-primary-foreground">
                       <CardHeader>
                         <CardTitle className="flex items-center gap-2">
-                          <Users /> Your Tribe Invitation
-                        </CardTitle>
+                          <Users /> Your Tribe Invitation</CardTitle>
                         <CardDescription className="text-primary-foreground/80">
                           {isTribeComplete ? "You've been invited to a meetup!" : "A new tribe is forming."}
                         </CardDescription>
