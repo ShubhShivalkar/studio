@@ -72,6 +72,7 @@ const generatePersonalityPersonaFlow = ai.defineFlow(
     outputSchema: GeneratePersonalityPersonaOutputSchema,
   },
   async input => {
+    console.log('generatePersonalityPersonaFlow triggered');
     try {
       const {output} = await prompt(input);
       return output!;
