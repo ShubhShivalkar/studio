@@ -12,6 +12,8 @@ import { format, startOfDay, endOfDay } from "date-fns";
  * @param title The title of the entry (optional).
  * @param image The URL of an image for the entry (optional).
  * @param collectionTag A tag to categorize the entry (optional).
+ * @param isAvailable A boolean indicating if the user is available for tribe meetups (optional).
+ * @returns A DocumentReference for the newly added document.
  */
 export async function addManualJournalEntry(
     userId: string,
@@ -20,7 +22,8 @@ export async function addManualJournalEntry(
     mood?: DailySummary['mood'],
     title?: string,
     image?: string,
-    collectionTag?: string
+    collectionTag?: string,
+    isAvailable?: boolean
 ) {
     const journalEntryRef = collection(db, 'journalEntries');
     const newEntry: any = {
@@ -34,8 +37,9 @@ export async function addManualJournalEntry(
     if (title) { newEntry.title = title; }
     if (image) { newEntry.image = image; }
     if (collectionTag) { newEntry.collectionTag = collectionTag; }
+    if (isAvailable !== undefined) { newEntry.isAvailable = isAvailable; }
     
-    await addDoc(journalEntryRef, newEntry);
+    return await addDoc(journalEntryRef, newEntry);
 }
 
 /**
@@ -76,6 +80,7 @@ export async function getJournalEntriesForDate(userId: string, dateString: strin
  * @param title The updated title of the entry (optional).
  * @param image The updated URL of an image for the entry (optional).
  * @param collectionTag The updated tag to categorize the entry (optional).
+ * @param isAvailable The updated availability status (optional).
  */
 export async function updateJournalEntry(
     entryId: string,
@@ -83,7 +88,8 @@ export async function updateJournalEntry(
     mood?: DailySummary['mood'],
     title?: string,
     image?: string,
-    collectionTag?: string
+    collectionTag?: string,
+    isAvailable?: boolean
 ) {
     const entryRef = doc(db, 'journalEntries', entryId);
     const updatedFields: any = { summary, updatedAt: Timestamp.now() };
@@ -92,6 +98,7 @@ export async function updateJournalEntry(
     if (title) { updatedFields.title = title; } else { updatedFields.title = null; }
     if (image) { updatedFields.image = image; } else { updatedFields.image = null; }
     if (collectionTag) { updatedFields.collectionTag = collectionTag; } else { updatedFields.collectionTag = null; }
+    if (isAvailable !== undefined) { updatedFields.isAvailable = isAvailable; }
     
     await updateDoc(entryRef, updatedFields);
 }

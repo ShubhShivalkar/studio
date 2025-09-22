@@ -7,6 +7,7 @@ import {
   PenLine,
   UserCircle,
   Users,
+  LayoutDashboard
 } from "lucide-react";
 import Link from "next/link";
 import { type ReactNode, useEffect } from "react";
@@ -19,6 +20,7 @@ import { useAuth } from "@/context/auth-context";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const navLinks = [
+  { href: "/my-space", label: "My Space", icon: <LayoutDashboard className="h-5 w-5" /> },
   { href: "/journal", label: "Journal", icon: <BookText className="h-5 w-5" /> },
   { href: "/calendar", label: "Calendar", icon: <Calendar className="h-5 w-5" /> },
   { href: "/tribe", label: "Tribe", icon: <Users className="h-5 w-5" /> },

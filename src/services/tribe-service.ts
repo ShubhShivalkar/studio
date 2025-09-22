@@ -1,9 +1,9 @@
 'use server';
 
-import { collection, doc, getDoc, getDocs, query, where, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, query, where, writeBatch, limit } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import type { Tribe, User, PastTribe as TribeHistory, MatchedUser } from '@/lib/types';
-import { getAllUsers, getUser } from './user-service';
+import type { Tribe, User, MatchedUser } from '@/lib/types';
+import { getUser } from './user-service';
 import { getNextMatchTime } from '@/lib/utils';
 
 /**
@@ -54,41 +54,50 @@ export async function getActiveTribes(): Promise<Tribe[]> {
 }
 
 /**
- * Retrieves the current tribe for a user.
+ * Retrieves the current active tribe for a user by querying the tribes collection.
+ * This is a more robust method than relying on a direct ID on the user object.
  * @param userId The ID of the user.
- * @returns The tribe object with member details, or null if not in a tribe.
+ * @returns The tribe object with member details, or null if not in an active tribe.
  */
 export async function getCurrentTribe(userId: string): Promise<Tribe | null> {
-  const user = await getUser(userId);
-  if (!user || !user.currentTribeId) {
-    return null;
+  const tribesRef = collection(db, 'tribes');
+  
+  // Query for an active tribe where the user's ID is in the memberIds array.
+  const q = query(
+    tribesRef, 
+    where('is_active', '==', true), 
+    where('memberIds', 'array-contains', userId),
+    limit(1) // A user should only be in one active tribe at a time.
+  );
+
+  const querySnapshot = await getDocs(q);
+
+  if (querySnapshot.empty) {
+    return null; // No active tribe found for this user.
   }
 
-  const tribeId = user.currentTribeId;
-  
-  const tribeRef = doc(db, 'tribes', tribeId);
-  const tribeDoc = await getDoc(tribeRef);
-
-  if (!tribeDoc.exists()) {
-      console.warn(`User ${userId} has a stale tribe ID: ${tribeId}`);
-      return null;
-  }
-  
+  const tribeDoc = querySnapshot.docs[0];
   const tribeData = tribeDoc.data() as Tribe;
 
+  // The tribe data already contains member info, but we need to enrich it 
+  // with the full user object for each member, which is required by the UI.
   const memberPromises = tribeData.members.map(async (member) => {
       const memberUser = await getUser(member.userId);
+      // Return the original member data but enriched with the full user object.
       return {
           ...member,
-          user: memberUser, 
+          user: memberUser, // The user object might be null if the user doc is missing.
       };
   });
 
-  const membersWithUsers = (await Promise.all(memberPromises)).filter(m => m.user);
+  // Wait for all user profiles to be fetched.
+  const membersWithUsers = (await Promise.all(memberPromises))
+      // Filter out any members where the user document might have been deleted.
+      .filter(m => m.user) as (MatchedUser & { user: User })[];
 
   return {
     ...tribeData,
-    id: tribeId,
+    id: tribeDoc.id,
     members: membersWithUsers,
   };
 }
@@ -99,16 +108,9 @@ export async function getCurrentTribe(userId: string): Promise<Tribe | null> {
  * @returns An array of past tribes.
  */
 export async function getArchivedTribes(userId: string): Promise<Tribe[]> {
-    // NOTE: The original query was incorrect because Firestore's `array-contains`
-    // cannot query for values within objects in an array. The correct, scalable
-    // solution is to use an index of member IDs.
-    //
-    // To ensure existing data is visible, this function fetches all archived
-    // tribes and filters them on the client. This is a temporary measure
-    // until the data can be migrated to include the `memberIds` field.
-    
     const archivedTribesRef = collection(db, 'archived_tribes');
-    const querySnapshot = await getDocs(archivedTribesRef);
+    const q = query(archivedTribesRef, where('memberIds', 'array-contains', userId));
+    const querySnapshot = await getDocs(q);
     
     if (querySnapshot.empty) {
         return [];
@@ -116,10 +118,7 @@ export async function getArchivedTribes(userId: string): Promise<Tribe[]> {
 
     const userTribes: Tribe[] = [];
     querySnapshot.forEach(doc => {
-        const tribe = { id: doc.id, ...doc.data() } as Tribe;
-        if (tribe.members && tribe.members.some(member => member.userId === userId)) {
-            userTribes.push(tribe);
-        }
+        userTribes.push({ id: doc.id, ...doc.data() } as Tribe);
     });
 
     return userTribes;
@@ -129,6 +128,7 @@ export async function createTribe(tribeData: Omit<Tribe, 'id' | 'overallCompatib
     const batch = writeBatch(db);
     const newTribeRef = doc(collection(db, 'tribes'));
     
+    // Ensure memberIds is created for querying.
     const memberIds = tribeData.members.map(member => (member as MatchedUser).userId);
 
     const newTribe: Tribe = {
@@ -144,6 +144,8 @@ export async function createTribe(tribeData: Omit<Tribe, 'id' | 'overallCompatib
     
     batch.set(newTribeRef, newTribe);
 
+    // Update users with their currentTribeId. While the primary query method is now direct,
+    // this can still be useful for other parts of the app or for data consistency.
     for (const member of tribeData.members as MatchedUser[]) {
         const userRef = doc(db, 'users', member.userId);
         batch.update(userRef, { currentTribeId: newTribe.id, lastTribeDate: newTribe.formedDate });

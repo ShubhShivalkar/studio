@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
@@ -17,7 +16,7 @@ import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/context/auth-context';
-import { getJournalEntries, setJournalEntry, deleteJournalEntry } from '@/services/journal-service';
+import { getJournalEntries, updateJournalEntry, addManualJournalEntry, deleteJournalEntry } from '@/services/journal-service';
 import { getReminders, deleteReminder } from '@/services/reminder-service';
 import { getChecklists, deleteChecklist, updateChecklist } from '@/services/checklist-service';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -32,6 +31,7 @@ export default function CalendarPage() {
   const [dailySummaries, setDailySummaries] = useState<DailySummary[]>([]);
   
   const [selectedSummary, setSelectedSummary] = useState<DailySummary | null>(null);
+  const [selectedJournalEntries, setSelectedJournalEntries] = useState<DailySummary[]>([]); // New state for all journal entries on the day
   const [selectedReminders, setSelectedReminders] = useState<Reminder[]>([]);
   const [selectedChecklists, setSelectedChecklists] = useState<Checklist[]>([]);
   
@@ -97,17 +97,20 @@ export default function CalendarPage() {
   const handleDateSelect = (selectedDate: Date | undefined) => {
     setDate(selectedDate);
     if (selectedDate) {
-      const summary = dailySummaries.find(d => isSameDay(parseISO(d.date), selectedDate)) || null;
+      const dayJournalEntries = dailySummaries.filter(d => isSameDay(parseISO(d.date), selectedDate));
+      const summary = dayJournalEntries.length > 0 ? dayJournalEntries[0] : null; // Keep first for availability toggle
       const dayReminders = reminders.filter(r => isSameDay(parseISO(r.date), selectedDate));
       const dayChecklists = checklists.filter(c => isSameDay(parseISO(c.date), selectedDate));
       
       setSelectedSummary(summary);
+      setSelectedJournalEntries(dayJournalEntries); // Set all journal entries for the day
       setSelectedReminders(dayReminders);
       setSelectedChecklists(dayChecklists);
       setIsAvailableForTribe(summary?.isAvailable || false);
       setIsSheetOpen(true);
     } else {
       setSelectedSummary(null);
+      setSelectedJournalEntries([]); // Clear all journal entries
       setSelectedReminders([]);
       setSelectedChecklists([]);
       setIsSheetOpen(false);
@@ -128,7 +131,7 @@ export default function CalendarPage() {
       toast({
           variant: "destructive",
           title: "Reminder Deleted",
-          description: `"${reminderToDelete?.title}" has been removed.`
+          description: `\"${reminderToDelete?.title}\" has been removed.`
       });
     } catch (error) {
       console.error("Failed to delete reminder:", error);
@@ -151,7 +154,7 @@ export default function CalendarPage() {
       toast({
           variant: "destructive",
           title: "Checklist Deleted",
-          description: `"${checklistToDelete?.title}" has been removed.`
+          description: `\"${checklistToDelete?.title}\" has been removed.`
       });
     } catch (error) {
       console.error("Failed to delete checklist:", error);
@@ -196,21 +199,44 @@ export default function CalendarPage() {
     
     setIsAvailableForTribe(checked);
     const dateStr = format(date, 'yyyy-MM-dd');
-    const entryToUpdate = { date: dateStr, isAvailable: checked };
-
+    
     try {
-      await setJournalEntry(user.uid, entryToUpdate);
-      
-      const summaryIndex = dailySummaries.findIndex(d => d.date === dateStr);
-      let newSummaries;
-      if (summaryIndex > -1) {
-          newSummaries = dailySummaries.map((summary, index) => 
-            index === summaryIndex ? { ...summary, isAvailable: checked } : summary
-          );
+      if (selectedSummary && selectedSummary.id) {
+        // Update existing entry
+        await updateJournalEntry(selectedSummary.id, selectedSummary.summary || '', selectedSummary.mood, selectedSummary.title, selectedSummary.image, selectedSummary.collectionTag, checked);
+        
+        const newSummaries = dailySummaries.map(summary => 
+          summary.id === selectedSummary.id ? { ...summary, isAvailable: checked } : summary
+        );
+        setDailySummaries(newSummaries);
+        setSelectedSummary(prev => prev ? { ...prev, isAvailable: checked } : null);
+
       } else {
-          newSummaries = [...dailySummaries, entryToUpdate];
+        // Create a new entry
+        const newEntryData = {
+          userId: user.uid,
+          dateString: format(date, "yyyy-MM-dd'T'HH:mm:ss'Z'"), // ISO string for addManualJournalEntry
+          summary: '', // No summary for just availability
+          isAvailable: checked,
+        };
+        const newEntryRef = await addManualJournalEntry(newEntryData.userId, newEntryData.dateString, newEntryData.summary, undefined, undefined, undefined, undefined, newEntryData.isAvailable);
+
+        const newSummaries = [...dailySummaries, { 
+            id: newEntryRef.id,
+            userId: user.uid,
+            date: newEntryData.dateString,
+            summary: newEntryData.summary,
+            isAvailable: checked
+        }];
+        setDailySummaries(newSummaries);
+        setSelectedSummary({
+            id: newEntryRef.id,
+            userId: user.uid,
+            date: newEntryData.dateString,
+            summary: newEntryData.summary,
+            isAvailable: checked
+        });
       }
-      setDailySummaries(newSummaries);
       
       toast({
           title: "Availability Updated",
@@ -223,22 +249,24 @@ export default function CalendarPage() {
     }
   }
 
-  const handleDelete = async () => {
-    if (!user || !selectedSummary || !selectedSummary.id) return;
+  const handleDelete = async (entryId: string) => {
+    if (!user || !entryId) return;
     const originalSummaries = [...dailySummaries];
-    const summaryToDelete = selectedSummary;
+    const summaryToDelete = dailySummaries.find(s => s.id === entryId);
     
     // Optimistic UI update
-    setDailySummaries(prev => prev.filter(s => s.id !== summaryToDelete.id));
-    setIsSheetOpen(false);
-    setSelectedSummary(null);
+    setDailySummaries(prev => prev.filter(s => s.id !== entryId));
+    setSelectedJournalEntries(prev => prev.filter(s => s.id !== entryId));
+    if (selectedSummary?.id === entryId) {
+      setSelectedSummary(null);
+    }
 
     try {
-      await deleteJournalEntry(summaryToDelete.id);
+      await deleteJournalEntry(entryId);
       toast({
           variant: "destructive",
           title: "Deleted Summary",
-          description: `Entry for ${summaryToDelete.date} has been deleted.`
+          description: `Entry for ${summaryToDelete?.date} has been deleted.`
       });
     } catch(error) {
       console.error("Failed to delete summary:", error);
@@ -247,11 +275,11 @@ export default function CalendarPage() {
     }
   }
 
-  const handleEdit = () => {
-    if (!selectedSummary) return;
+  const handleEdit = (summary: DailySummary) => {
+    if (!summary) return;
     toast({
         title: "Editing Summary",
-        description: `Editing entry for ${selectedSummary.date}. (Functionality not implemented)`
+        description: `Editing entry for ${summary.date}. (Functionality not implemented)`
     })
   }
   
@@ -321,7 +349,7 @@ export default function CalendarPage() {
             </SheetDescription>
           </SheetHeader>
           <div className="py-4">
-            {selectedSummary || selectedReminders.length > 0 || selectedChecklists.length > 0 ? (
+            {(selectedJournalEntries.length > 0 || selectedReminders.length > 0 || selectedChecklists.length > 0) ? (
               <div className="space-y-4">
                 
                 {selectedSummary?.hasMeetup && selectedSummary.meetupDetails && (
@@ -388,30 +416,35 @@ export default function CalendarPage() {
                     </div>
                 )}
                 
-                {selectedSummary && selectedSummary.summary && (
-                    <>
-                        <div className="flex justify-between items-start pt-4 border-t">
-                        <div>
-                            <h3 className="font-semibold">Journal Summary</h3>
-                            <p className="text-sm text-muted-foreground italic">
-                            "{selectedSummary.summary}"
-                            </p>
+                {selectedJournalEntries.length > 0 && (
+                  <div className="space-y-4 pt-4 border-t">
+                    <h3 className="font-semibold">Journal Entries</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {selectedJournalEntries.map(entry => (
+                        <div key={entry.id} className="p-3 bg-card border rounded-lg flex flex-col justify-between">
+                          <div>
+                              <p className="text-sm text-muted-foreground italic mb-2">
+                                  "{entry.summary}"
+                              </p>
+                              {entry.mood && (
+                                  <div className="mb-2">
+                                      <h4 className="font-semibold text-sm">Vibe</h4>
+                                      <p className="text-lg">{entry.mood}</p>
+                                  </div>
+                              )}
+                          </div>
+                          <div className="flex gap-2 justify-end mt-auto">
+                              <Button variant="ghost" size="icon" onClick={() => handleEdit(entry)}>
+                                  <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => handleDelete(entry.id!)}>
+                                  <Trash2 className="h-4 w-4" />
+                              </Button>
+                          </div>
                         </div>
-                        <div className="flex gap-2">
-                            <Button variant="ghost" size="icon" onClick={handleEdit}>
-                                <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={handleDelete}>
-                                <Trash2 className="h-4 w-4" />
-                            </Button>
-                        </div>
-                        </div>
-
-                        <div>
-                            <h3 className="font-semibold">Vibe</h3>
-                            <p className="text-2xl">{selectedSummary.mood}</p>
-                        </div>
-                    </>
+                      ))}
+                    </div>
+                  </div>
                 )}
                 
                  {selectedSummary && !selectedSummary.hasMeetup && (
