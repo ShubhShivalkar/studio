@@ -297,7 +297,7 @@ export default function JournalPage() {
             ) : (
                 <div className="flex flex-col h-full p-4 overflow-y-auto">
                     <div className="mb-6 p-4 border rounded-lg bg-background shadow-sm">
-                        <h3 className="text-lg font-semibold mb-3">{editingEntryId ? "Edit Journal Entry" : "Add New Journal Entry"}</h3>
+                        <h3 className="text-lg font-semibold mb-3">{editingEntryId ? "Edit Journal Entry" : "What's new on your mind?"}</h3>
                         
                         <Input
                             placeholder="Title (Optional)"
