@@ -15,7 +15,7 @@ import { format } from 'date-fns';
 import { useAuth } from "@/context/auth-context";
 import { getReminders } from "@/services/reminder-service";
 import { getChecklists } from "@/services/checklist-service";
-import { setJournalEntry, addJournalSummaryToUser, getJournalEntries } from "@/services/journal-service";
+import { addManualJournalEntry, getJournalEntries } from "@/services/journal-service";
 
 const MAX_AI_QUESTIONS = 5;
 
@@ -47,13 +47,9 @@ const PROMPT_SUGGESTIONS = [
     "my favorite holiday", "a scent that brings back memories", "a question I'm pondering", "a new recipe I tried"
 ];
 
-const getInitialMessage = (name?: string, todaysSummary?: DailySummary | null) => {
+const getInitialMessage = (name?: string) => {
     const userName = name ? `, ${name.split(' ')[0]}` : '';
     let text = `Hi${userName}, I'm Anu, your journaling companion. What's on your mind today?`;
-
-    if (todaysSummary?.summary) {
-        text = `Hi${userName}! I see you've already written a bit today about:\n\n*"${todaysSummary.summary}"*\n\nWould you like to reflect more on that, or is there something new on your mind?`;
-    }
     
     return {
         id: '0',
@@ -73,7 +69,6 @@ export function JournalChat() {
   const [isInitialized, setIsInitialized] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [timezone, setTimezone] = useState('');
-  const [todaysSummary, setTodaysSummary] = useState<DailySummary | null>(null);
   
   const userName = useMemo(() => profile?.name.split(' ')[0] || 'there', [profile]);
   
@@ -112,7 +107,7 @@ export function JournalChat() {
   const handleNewChat = () => {
     if (!profile) return;
     localStorage.removeItem(STORAGE_KEY_MESSAGES);
-    const initialMessage = getInitialMessage(profile.name, todaysSummary);
+    const initialMessage = getInitialMessage(profile.name);
     setMessages([initialMessage]);
     setIsComplete(false);
     setInput("");
@@ -126,36 +121,31 @@ export function JournalChat() {
     const todayStr = format(today, 'yyyy-MM-dd');
     const storedDate = localStorage.getItem(STORAGE_KEY_DATE);
     
-    getJournalEntries(profile.id).then(entries => {
-        const summaryForToday = entries.find(e => e.date === todayStr) || null;
-        setTodaysSummary(summaryForToday);
-
-        const initialMessage = getInitialMessage(profile?.name, summaryForToday);
+    const initialMessage = getInitialMessage(profile?.name);
         
-        if (storedDate === todayStr) {
-            const storedMessages = localStorage.getItem(STORAGE_KEY_MESSAGES);
-            if (storedMessages) {
-                try {
-                    const parsedMessages = JSON.parse(storedMessages);
-                    parsedMessages[0] = initialMessage;
-                    setMessages(parsedMessages);
-                    const lastMessage = parsedMessages[parsedMessages.length - 1];
-                    if (lastMessage && lastMessage.text.includes("I've saved this as your journal entry.")) {
-                        setIsComplete(true);
-                    }
-                } catch (e) {
-                    setMessages([initialMessage]);
+    if (storedDate === todayStr) {
+        const storedMessages = localStorage.getItem(STORAGE_KEY_MESSAGES);
+        if (storedMessages) {
+            try {
+                const parsedMessages = JSON.parse(storedMessages);
+                parsedMessages[0] = initialMessage;
+                setMessages(parsedMessages);
+                const lastMessage = parsedMessages[parsedMessages.length - 1];
+                if (lastMessage && lastMessage.text.includes("I've saved this as your journal entry.")) {
+                    setIsComplete(true);
                 }
-            } else {
-                 setMessages([initialMessage]);
+            } catch (e) {
+                setMessages([initialMessage]);
             }
         } else {
-            localStorage.removeItem(STORAGE_KEY_MESSAGES);
-            localStorage.removeItem(STORAGE_KEY_DATE);
-            handleNewChat();
+             setMessages([initialMessage]);
         }
-        setIsInitialized(true);
-    });
+    } else {
+        localStorage.removeItem(STORAGE_KEY_MESSAGES);
+        localStorage.removeItem(STORAGE_KEY_DATE);
+        handleNewChat();
+    }
+    setIsInitialized(true);
     
   }, [STORAGE_KEY_DATE, STORAGE_KEY_MESSAGES, profile]);
 
@@ -206,7 +196,7 @@ export function JournalChat() {
      if (!profile) return;
      setIsLoading(true);
      try {
-      const journalHistory = profile.journalEntries?.join("\n\n") || "";
+      const journalHistory = (await getJournalEntries(profile.id)).map(entry => entry.summary).filter(Boolean).join("\n\n") || "";
       
       const reminders = await getReminders(profile.id);
       const checklists = await getChecklists(profile.id);
@@ -225,7 +215,7 @@ export function JournalChat() {
           timezone,
           dob: profile.dob,
           profession: profile.profession,
-          todaysSummary: todaysSummary?.summary,
+          todaysSummary: undefined, // No longer passing a single summary
       });
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -265,18 +255,8 @@ export function JournalChat() {
         };
         setMessages(prev => [...prev, summaryMessage]);
 
-        const today = new Date();
-        const todayStr = format(today, 'yyyy-MM-dd');
+        await addManualJournalEntry(profile.id, new Date().toISOString(), summary, mood);
         
-        await setJournalEntry(profile.id, { date: todayStr, summary, mood });
-        await addJournalSummaryToUser(profile.id, summary);
-        
-        if(profile.journalEntries) {
-            profile.journalEntries.push(summary);
-        } else {
-            profile.journalEntries = [summary];
-        }
-
         setIsComplete(true);
 
     } catch (error) {

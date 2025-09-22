@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/auth-context";
@@ -20,21 +20,17 @@ export default function JournalHistoryPage() {
   const router = useRouter();
 
   useEffect(() => {
-    console.log("JournalHistoryPage: User object changed:", user);
     if (user) {
       fetchJournalEntries();
     } else {
-      console.log("JournalHistoryPage: User not authenticated, not fetching entries.");
-      setJournalEntries([]); // Clear entries if user logs out
+      setJournalEntries([]);
     }
   }, [user]);
 
   const fetchJournalEntries = async () => {
     if (user) {
-      console.log("JournalHistoryPage: Fetching journal entries for user:", user.uid);
       try {
         const entries = await getAllJournalEntries(user.uid);
-        console.log("JournalHistoryPage: Fetched entries:", entries);
         setJournalEntries(entries.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
       } catch (error) {
         console.error("JournalHistoryPage: Error fetching journal entries:", error);
@@ -42,6 +38,24 @@ export default function JournalHistoryPage() {
       }
     }
   };
+
+  // Group entries by date
+  const groupedEntries = useMemo(() => {
+    const groups = new Map<string, DailySummary[]>();
+    journalEntries.forEach(entry => {
+      const dateKey = format(new Date(entry.date), 'yyyy-MM-dd');
+      if (!groups.has(dateKey)) {
+        groups.set(dateKey, []);
+      }
+      // Sort entries within each day by time (ascending) to maintain chronological order
+      groups.get(dateKey)?.push(entry);
+    });
+    // Sort entries within each day by time (ascending)
+    Array.from(groups.values()).forEach(entries => {
+      entries.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    });
+    return Array.from(groups.entries());
+  }, [journalEntries]);
 
   const truncateText = (text: string, wordLimit: number) => {
     const words = text.split(" ");
@@ -60,10 +74,9 @@ export default function JournalHistoryPage() {
     if (selectedEntry?.id) {
       try {
         await deleteJournalEntry(selectedEntry.id);
-        setIsDialogOpen(false); // Close the view dialog
-        setSelectedEntry(null); // Clear selected entry
-        fetchJournalEntries(); // Refresh the list of entries
-        console.log(`Journal entry with ID ${selectedEntry.id} deleted successfully.`);
+        setIsDialogOpen(false); 
+        setSelectedEntry(null); 
+        fetchJournalEntries(); 
       } catch (error) {
         console.error("Error deleting journal entry:", error);
       }
@@ -90,15 +103,36 @@ export default function JournalHistoryPage() {
         {journalEntries.length === 0 ? (
           <p className="text-center text-muted-foreground">No journal entries found.</p>
         ) : (
-          <div className="grid gap-4">
-            {journalEntries.map((entry) => (
-              <Card key={entry.id} className="cursor-pointer hover:bg-accent" onClick={() => handleViewFullEntry(entry)}>
-                <CardContent className="p-4">
-                  <p className="text-sm text-muted-foreground mb-1">{format(new Date(entry.date), "EEEE, MMMM d, yyyy")}</p>
-                  {entry.mood && <p className="text-xl mb-2">Mood: {entry.mood}</p>}
-                  <p className="whitespace-pre-wrap">{truncateText(entry.summary || '', 15)}</p>
-                </CardContent>
-              </Card>
+          <div className="grid gap-6">
+            {groupedEntries.map(([dateKey, entries]) => (
+              <div key={dateKey} className="space-y-3">
+                <h3 className="text-lg font-semibold border-b pb-2 mb-3 sticky top-0 bg-background z-10">
+                  {format(new Date(dateKey), "EEEE, MMMM d, yyyy")}
+                </h3>
+                <div className="grid gap-4">
+                  {entries.map((entry) => (
+                    <Card key={entry.id} className="cursor-pointer hover:bg-accent" onClick={() => handleViewFullEntry(entry)}>
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between mb-1">
+                            <p className="text-sm text-muted-foreground">
+                                {entry.title && <span className="font-bold mr-2">{entry.title}</span>}
+                                {format(new Date(entry.date), "h:mm a")}
+                            </p>
+                            {entry.mood && <span className="text-xl">{entry.mood}</span>}
+                        </div>
+                        {entry.image && (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={entry.image} alt={entry.title || "Journal entry image"} className="w-full h-auto rounded-md mb-2" />
+                        )}
+                        <p className="whitespace-pre-wrap">{truncateText(entry.summary || '', 15)}</p>
+                        {entry.collectionTag && (
+                            <p className="text-xs text-blue-500 mt-2">#{entry.collectionTag}</p>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
         )}
@@ -107,9 +141,17 @@ export default function JournalHistoryPage() {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>{selectedEntry ? format(new Date(selectedEntry.date), "EEEE, MMMM d, yyyy") : ""}</DialogTitle>
+            <DialogTitle>
+                {selectedEntry?.title && <span className="font-bold mr-2">{selectedEntry.title} - </span>}
+                {selectedEntry ? format(new Date(selectedEntry.date), "EEEE, MMMM d, yyyy - h:mm a") : ""}
+            </DialogTitle>
             {selectedEntry?.mood && <DialogDescription>Mood: {selectedEntry.mood}</DialogDescription>}
+            {selectedEntry?.collectionTag && <DialogDescription>Collection: #{selectedEntry.collectionTag}</DialogDescription>}
           </DialogHeader>
+          {selectedEntry?.image && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={selectedEntry.image} alt={selectedEntry.title || "Journal entry image"} className="w-full h-auto rounded-md mb-4" />
+          )}
           <p className="whitespace-pre-wrap mt-4 flex-1 overflow-y-auto max-h-[300px]">{selectedEntry?.summary}</p>
           <DialogFooter className="mt-4">
             <AlertDialog>
@@ -122,7 +164,7 @@ export default function JournalHistoryPage() {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This action cannot be undone. This will permanently delete your journal entry for {selectedEntry ? format(new Date(selectedEntry.date), "EEEE, MMMM d, yyyy") : "this date"}.
+                    This action cannot be undone. This will permanently delete your journal entry from {selectedEntry ? format(new Date(selectedEntry.date), "EEEE, MMMM d, yyyy h:mm a") : ""}.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
