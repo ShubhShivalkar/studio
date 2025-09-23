@@ -18,11 +18,18 @@ service cloud.firestore {
       allow read, write: if request.auth.uid == resource.data.userId;
     }
     
+    // Allow unauthenticated users to create waitlist entries.
+    match /waitlistEntries/{docId} {
+      allow create: if true;
+      allow read, update, delete: if request.auth != null; // Only authenticated users can manage existing entries
+    }
+    
     // Add similar rules for reminders, checklists, and tribes.
     
-    // Deny all other access by default.
+    // Allow read for all users, and write for authenticated users to all other documents.
     match /{document=**} {
-      allow read, write: if false;
+      allow read: if true;
+      allow write: if request.auth != null;
     }
   }
 }
