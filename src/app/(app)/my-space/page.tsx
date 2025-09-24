@@ -15,7 +15,7 @@ import { getChecklists, deleteChecklist, updateChecklist } from "@/services/chec
 import { getCurrentTribe } from '@/services/tribe-service';
 import type { DailySummary, Reminder, Checklist, GeneratePersonalityPersonaOutput, Tribe } from '@/lib/types';
 import { Skeleton } from "@/components/ui/skeleton";
-import { Bell, ListTodo, Trash2, Briefcase, HandHeart, Bot, Users, CheckCircle, XCircle, Filter } from 'lucide-react';
+import { Bell, ListTodo, Trash2, Bot, Users, CheckCircle, Filter, Menu } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { useToast } from '@/hooks/use-toast';
 import { Checkbox } from "@/components/ui/checkbox";
@@ -25,6 +25,7 @@ import _ from 'lodash';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { positiveQuotes } from '@/lib/positive-quotes';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import MobileRightSidebarPopup from '@/components/MobileRightSidebarPopup';
 
 
 function JournalTimeline({ entries }: { entries: { [date: string]: DailySummary[] } }) {
@@ -74,6 +75,8 @@ export default function MySpacePage() {
   const [persona, setPersona] = useState<GeneratePersonalityPersonaOutput | null>(null);
   const [tribe, setTribe] = useState<Tribe | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showRightSidebarPopup, setShowRightSidebarPopup] = useState(false);
+
 
   const leftSectionRef = useRef<HTMLDivElement>(null);
   const centerSectionRef = useRef<HTMLDivElement>(null);
@@ -154,7 +157,7 @@ export default function MySpacePage() {
       toast({
         variant: "destructive",
         title: "Reminder Deleted",
-        description: `\"${reminderToDelete?.title}\" has been removed.`
+        description: `"${reminderToDelete?.title}" has been removed.`
       });
     } catch (error) {
       console.error("Failed to delete reminder:", error);
@@ -175,7 +178,7 @@ export default function MySpacePage() {
       toast({
         variant: "destructive",
         title: "Checklist Deleted",
-        description: `\"${checklistToDelete?.title}\" has been removed.`
+        description: `"${checklistToDelete?.title}" has been removed.`
       });
     } catch (error) {
       console.error("Failed to delete checklist:", error);
@@ -219,22 +222,24 @@ export default function MySpacePage() {
   const showTribeCard = tribe && currentUserInTribe?.rsvpStatus !== 'rejected';
   const isTribeComplete = tribe && tribe.members.filter(m => m.rsvpStatus !== 'rejected').length >= 4;
 
+  // The height adjustment effect can be simplified or removed if sidebars are conditionally hidden by CSS.
+  // Keeping it for larger screens where sidebars are visible.
   useEffect(() => {
     if (isLoading) return;
-    
+
     const leftHeight = leftSectionRef.current?.offsetHeight || 0;
     const centerHeight = centerSectionRef.current?.offsetHeight || 0;
     const rightHeight = rightSectionRef.current?.offsetHeight || 0;
 
     const maxHeight = Math.max(leftHeight, centerHeight, rightHeight);
 
-    if (leftSectionRef.current) {
+    if (leftSectionRef.current && window.innerWidth >= 1024) { // Apply only on large screens
       leftSectionRef.current.style.height = `${maxHeight}px`;
     }
     if (centerSectionRef.current) {
       centerSectionRef.current.style.height = `${maxHeight}px`;
     }
-    if (rightSectionRef.current) {
+    if (rightSectionRef.current && window.innerWidth >= 1024) { // Apply only on large screens
       rightSectionRef.current.style.height = `${maxHeight}px`;
     }
   }, [isLoading, journalEntries, reminders, checklists, showTribeCard, tribe]);
@@ -244,7 +249,7 @@ export default function MySpacePage() {
       .groupBy(entry => format(parseISO(entry.date), 'yyyy-MM-dd'))
       .value();
   }, [filteredEntries]);
-  
+
   const randomIndex = useMemo(() => Math.floor(Math.random() * positiveQuotes.length), []);
   const randomQuote = positiveQuotes[randomIndex];
 
@@ -254,13 +259,10 @@ export default function MySpacePage() {
         <CardTitle>My Space</CardTitle>
       </CardHeader>
       <CardContent className="flex-1">
-        <div className="grid grid-cols-1 lg:grid-cols-[250px_1fr_250px] gap-4 h-full md:grid-cols-1">
+        <div className="grid grid-cols-1 lg:grid-cols-[250px_1fr_250px] gap-4 h-full">
 
-          {/* Left Sidebar */}
-          <div className="flex flex-col gap-4 sticky top-0 h-screen overflow-y-auto md:static md:h-auto" ref={leftSectionRef} style={{height: 'auto'}}>
-           
-
-            {/* Persona Section */}
+          {/* Left Sidebar - Persona Section (hidden on small screens) */}
+          <div className="hidden lg:flex flex-col gap-4 sticky top-0 h-screen overflow-y-auto" ref={leftSectionRef} style={{height: 'auto'}}>
             <Card className="flex flex-col">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -340,13 +342,24 @@ export default function MySpacePage() {
               </DropdownMenu>
             </div>
             <Separator className="my-4" />
-            <ScrollArea className="h-full w-full rounded-md border p-4">
+            <ScrollArea className="h-[calc(100vh-250px)] w-full rounded-md border p-4"> {/* Adjusted height for better mobile fit */}
               <JournalTimeline entries={groupedJournalEntries} />
             </ScrollArea>
+
+            {/* Mobile-only button to open right sidebar */}
+            <Button
+              className="fixed bottom-4 right-4 z-40 lg:hidden rounded-full p-0 h-12 w-12 shadow-lg"
+              onClick={() => setShowRightSidebarPopup(true)}
+              variant="default"
+              size="icon"
+            >
+              <Menu className="h-6 w-6" />
+              <span className="sr-only">Open Menu</span>
+            </Button>
           </div>
 
-          {/* Right Sidebar */}
-          <div className="flex flex-col gap-4 sticky top-0 h-screen overflow-y-auto md:static md:h-auto" ref={rightSectionRef} style={{height: 'auto'}}>
+          {/* Right Sidebar (hidden on small screens, content moved to popup) */}
+          <div className="hidden lg:flex flex-col gap-4 sticky top-0 h-screen overflow-y-auto" ref={rightSectionRef} style={{height: 'auto'}}>
             {isLoading ? (
               <div className="space-y-4">
                 <Skeleton className="h-48 w-full" />
@@ -467,11 +480,186 @@ export default function MySpacePage() {
                     )}
                   </ScrollArea>
                 </div>
-              </>)
-            }
+              </>)}
           </div>
         </div>
       </CardContent>
+
+      {/* Mobile Right Sidebar Popup */}
+      <MobileRightSidebarPopup isOpen={showRightSidebarPopup} onClose={() => setShowRightSidebarPopup(false)}>
+        {isLoading ? (
+          <div className="space-y-4">
+            <Skeleton className="h-48 w-full" />
+            <Skeleton className="h-48 w-full" />
+            <Skeleton className="h-48 w-full" />
+          </div>
+        ) : (
+          <>
+            {/* Persona Section in Popup */}
+            <Card className="flex flex-col mb-4">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Bot className="text-primary" /> Your Persona</CardTitle>
+                <CardDescription>
+                  An AI-generated reflection of you based on your activities.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex-1 flex flex-col">
+                {isPersonaValid ? (
+                  <ScrollArea className="h-full w-full rounded-md p-2">
+                    <div className="space-y-4">
+                      <p className="italic text-foreground/80">{persona?.persona}</p>
+                      {persona?.mbti && (
+                        <div>
+                          <h3 className="font-semibold mb-2">Personality Type</h3>
+                          <Badge variant="secondary">{persona.mbti}</Badge>
+                        </div>
+                      )}
+                      {persona?.hobbies.length > 0 && (
+                        <div>
+                          <h3 className="font-semibold mb-2">Hobbies</h3>
+                          <div className="flex flex-wrap gap-2">
+                            {persona.hobbies.map((hobby, index) => (
+                              <Badge key={index} variant="secondary">{hobby}</Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {persona?.interests.length > 0 && (
+                        <div>
+                          <h3 className="font-semibold mb-2">Interests</h3>
+                          <div className="flex flex-wrap gap-2">
+                            {persona.interests.map((interest, index) => (
+                              <Badge key={index} variant="secondary">{interest}</Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </ScrollArea>
+                ) : (
+                  <div className="text-center text-muted-foreground py-8 flex-1 flex flex-col items-center justify-center">
+                    <p>Generate your persona on the Profile page.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Tribe Invitation Section in Popup */}
+            {
+              showTribeCard ? (
+                <Card className="flex flex-col bg-gradient-to-br from-primary to-primary/90 text-primary-foreground mb-4">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Users /> Your Tribe Invitation</CardTitle>
+                    <CardDescription className="text-primary-foreground/80">
+                      {isTribeComplete ? "You've been invited to a meetup!" : "A new tribe is forming."}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex-1 space-y-2">
+                    {isTribeComplete ? (
+                      <div className='space-y-1'>
+                        <p><strong>Date:</strong> {format(parseISO(tribe.meetupDate), 'PPP')}</p>
+                        <p><strong>Time:</strong> {tribe.meetupTime}</p>
+                        <p><strong>Location:</strong> {tribe.location}</p>
+                      </div>
+                    ) : (
+                      <p>Your tribe is waiting for more members. We'll notify you when the details are confirmed.</p>
+                    )}
+
+                    {currentUserInTribe?.rsvpStatus === 'accepted' && (
+                      <Badge variant="secondary" className='flex items-center gap-1 w-fit'><CheckCircle className="h-4 w-4 text-green-500" /> You've Accepted</Badge>
+                    )}
+                    {currentUserInTribe?.rsvpStatus === 'pending' && (
+                      <Badge variant="secondary" className='w-fit'>RSVP Pending</Badge>
+                    )}
+                  </CardContent>
+                  <CardFooter>
+                    <Button asChild variant="secondary" className="w-full">
+                      <Link href="/tribe">View Tribe & RSVP</Link>
+                    </Button>
+                  </CardFooter>
+                </Card>
+              ) : (
+                <Card className="flex flex-col mb-4">
+                  <CardHeader>
+                    <CardTitle>Tribe Invitation</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    No active tribe invitations at the moment.
+                  </CardContent>
+                </Card>
+              )
+            }
+
+            {/* Checklists Section in Popup */}
+            <div className="checklists-section flex flex-col mb-4">
+              <h2 className="text-xl font-semibold mb-4">My Checklists</h2>
+              <ScrollArea className="h-[200px] w-full rounded-md border p-4">
+                {checklists.length > 0 ? (
+                  <div className="space-y-4">
+                    {checklists.map(checklist => (
+                      <div key={checklist.id} className="p-3 bg-card border rounded-lg">
+                        <div className="flex justify-between items-start mb-2">
+                          <div className="flex items-center gap-3">
+                            <ListTodo className="h-5 w-5 text-primary flex-shrink-0" />
+                            <h3 className="font-semibold">{checklist.title}</h3>
+                          </div>
+                          <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive flex-shrink-0" onClick={() => handleDeleteChecklist(checklist.id!)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <div className="space-y-1 pl-8">
+                          {checklist.items.map(item => (
+                            <div key={item.id} className="flex items-center gap-2">
+                              <Checkbox
+                                id={`${checklist.id}-${item.id}`}
+                                checked={item.completed}
+                                onCheckedChange={() => toggleChecklistItem(checklist.id!, item.id)}
+                              />
+                              <Label htmlFor={`${checklist.id}-${item.id}`} className={cn("text-sm", item.completed && "line-through text-muted-foreground")}>{item.text}</Label>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground text-center">No checklists found.</p>
+                )}
+              </ScrollArea>
+            </div>
+
+            {/* Reminders Section in Popup */}
+            <div className="reminders-section flex flex-col">
+              <h2 className="text-xl font-semibold mb-4">My Reminders</h2>
+              <ScrollArea className="h-[200px] w-full rounded-md border p-4">
+                {reminders.length > 0 ? (
+                  <div className="space-y-4">
+                    {reminders.map(reminder => (
+                      <div key={reminder.id} className="flex items-start gap-3 p-3 bg-card border rounded-lg">
+                        <Bell className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
+                        <div className="flex-grow">
+                          <h3 className="font-semibold">{reminder.title}</h3>
+                          <p className="text-sm text-muted-foreground">
+                            {format(new Date(`${reminder.date}T${reminder.time}`), 'PPP p')}
+                            {reminder.details && ` - ${reminder.details}`}
+                          </p>
+                        </div>
+                        <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive flex-shrink-0" onClick={() => handleDeleteReminder(reminder.id!)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground text-center">No reminders found.</p>
+                )}
+              </ScrollArea>
+            </div>
+          </>
+        )}
+      </MobileRightSidebarPopup>
     </Card>
   );
 }
