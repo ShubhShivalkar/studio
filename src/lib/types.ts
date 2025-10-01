@@ -53,10 +53,13 @@ export type Reminder = {
 }
 
 export type DailySummary = {
-    id?: string;
-    date: string; // YYYY-MM-DD
+    id: string; // Unique ID for each journal entry
+    date: string; // ISO date string (YYYY-MM-DDTHH:MM:SSZ)
+    title?: string; // New: Optional title for the entry
     summary?: string;
     mood?: '😊' | '😢' | '😠' | '😮' | '😐';
+    image?: string; // New: Optional image URL
+    collectionTag?: string; // New: Optional tag for grouping entries
     isAvailable?: boolean;
     hasMeetup?: boolean;
     meetupDetails?: {

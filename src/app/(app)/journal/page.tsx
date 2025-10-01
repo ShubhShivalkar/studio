@@ -1,17 +1,21 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { JournalChat } from "@/components/journal-chat";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/auth-context";
-import { upsertManualJournalEntry, getJournalEntryForDate } from "@/services/journal-service";
+import { addManualJournalEntry, getJournalEntriesForDate, updateJournalEntry, deleteJournalEntry, getAllJournalEntries } from "@/services/journal-service";
 import { format } from "date-fns";
 import type { DailySummary } from "@/lib/types";
 import { useRouter } from "next/navigation";
+import { CalendarIcon, PenSquare, Trash2, PlusCircle } from "lucide-react";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 const MOOD_EMOJIS: DailySummary['mood'][] = ['😊', '😢', '😠', '😮', '😐'];
 
@@ -30,7 +34,7 @@ const JOURNAL_IDEAS = [
   "Reflect on a decision you made today. Are you happy with it?",
   "What kind of energy did you bring into your day?",
   "Did you help anyone today, or did someone help you? Describe the interaction.",
-  "What song best describes your mood today? Why?",
+  "What song best describes your day? Why?",
   "If your day had a theme song, what would it be?",
   "What was the most beautiful thing you saw today?",
   "What did you observe about yourself today?",
@@ -43,7 +47,7 @@ const JOURNAL_IDEAS = [
   "What is one thing you wish you had done differently today?",
   "How did you contribute to someone else's happiness today?",
   "What did you consume today (food, media, information) that made you feel good?",
-  "What felt authentic about your actions today?",
+  "What felt authentic today?",
   "What felt draining today, and what felt energizing?",
   "Write about a place you visited or spent time in today.",
   "What did you notice about nature today?",
@@ -75,7 +79,7 @@ const JOURNAL_IDEAS = [
   "How did you listen to your intuition today?",
   "What challenges are you currently navigating, and how did today fit into that?",
   "What are you looking forward to doing in the next week?",
-  "Write about a dream you had last night or a daydream you had today.",
+  "Write about a dream you had last night or a daydream you had today?",
   "What did you create or contribute to today?",
   "How did you show up for yourself today?",
   "What did you learn from a mistake today?",
@@ -111,7 +115,7 @@ const JOURNAL_IDEAS = [
   "What is a goal you're working towards, and what step did you take today?",
   "What did you do today just for the joy of it?",
   "What self-limiting belief did you encounter today?",
-  "How did you embrace imperfection today?",
+  "What did you embrace imperfection today?",
   "What wisdom did you gain from a challenge?",
   "What do you need to forgive yourself for regarding today?",
   "What did you allow yourself to receive today?",
@@ -129,11 +133,18 @@ export default function JournalPage() {
     return true;
   });
   const [manualEntry, setManualEntry] = useState("");
-  const [todayEntry, setTodayEntry] = useState<DailySummary | null>(null); 
+  const [entryTitle, setEntryTitle] = useState<string>("");
+  const [entryImage, setEntryImage] = useState<string | null>(null); // New state for image URL
+  const [collectionTag, setCollectionTag] = useState<string>("");
+  const [todayEntries, setTodayEntries] = useState<DailySummary[]>([]); 
   const [selectedMood, setSelectedMood] = useState<DailySummary['mood'] | undefined>(undefined);
-  const [isEditing, setIsEditing] = useState(false);
+  const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
   const [displayedIdeas, setDisplayedIdeas] = useState<string[]>([]);
   const [cardDescription, setCardDescription] = useState("Engage in a conversation to explore your thoughts and feelings.");
+  const [allCollectionTags, setAllCollectionTags] = useState<string[]>([]);
+  const [newCollectionTagName, setNewCollectionTagName] = useState<string>("");
+  const [isNewCollectionDialogOpen, setIsNewCollectionDialogOpen] = useState<boolean>(false);
+
   const { user } = useAuth();
   const today = format(new Date(), 'yyyy-MM-dd');
   const router = useRouter();
@@ -153,62 +164,106 @@ export default function JournalPage() {
     if (!isAssistiveMode) {
       setCardDescription("Journaling is a mindfulness practice. It helps you clear your thoughts and encourages daily reflection.");
       if (user) {
-        fetchTodayEntry();
+        fetchTodayEntries();
+        fetchAllCollectionTags();
         shuffleIdeas();
       }
     } else {
       setCardDescription("Engage in a conversation to explore your thoughts and feelings.");
       setManualEntry("");
-      setTodayEntry(null);
+      setEntryTitle("");
+      setEntryImage(null);
+      setCollectionTag("");
+      setTodayEntries([]);
       setSelectedMood(undefined);
-      setIsEditing(false);
+      setEditingEntryId(null);
       setDisplayedIdeas([]);
+      setAllCollectionTags([]);
+      setNewCollectionTagName("");
+      setIsNewCollectionDialogOpen(false);
     }
   }, [isAssistiveMode, user]);
 
-  const fetchTodayEntry = async () => {
+  const fetchTodayEntries = async () => {
     if (user) {
       try {
-        const entry = await getJournalEntryForDate(user.uid, today);
-        if (entry) {
-          setTodayEntry(entry);
-          setManualEntry(entry.summary || "");
-          setSelectedMood(entry.mood || undefined);
-          setIsEditing(false);
-        } else {
-          setTodayEntry(null);
-          setManualEntry("");
-          setSelectedMood(undefined);
-          setIsEditing(true);
-        }
+        const entries = await getJournalEntriesForDate(user.uid, today);
+        setTodayEntries(entries);
       } catch (error) {
-        console.error("Error fetching today's journal entry:", error);
-        setTodayEntry(null);
-        setManualEntry("");
-        setSelectedMood(undefined);
-        setIsEditing(true);
+        console.error("Error fetching today's journal entries:", error);
+        setTodayEntries([]);
       }
     }
   };
 
-  const handleSaveManualEntry = async () => {
+  const fetchAllCollectionTags = async () => {
+    if (user) {
+      try {
+        const allEntries = await getAllJournalEntries(user.uid);
+        const tags = new Set<string>();
+        allEntries.forEach(entry => {
+          if (entry.collectionTag) {
+            tags.add(entry.collectionTag);
+          }
+        });
+        setAllCollectionTags(Array.from(tags).sort());
+      } catch (error) {
+        console.error("Error fetching all collection tags:", error);
+      }
+    }
+  };
+
+  const handleSaveEntry = async () => {
     if (user && manualEntry.trim()) {
       try {
-        await upsertManualJournalEntry(user.uid, today, manualEntry, selectedMood);
-        await fetchTodayEntry(); 
+        if (editingEntryId) {
+          await updateJournalEntry(editingEntryId, manualEntry, selectedMood, entryTitle, null, collectionTag);
+        } else {
+          await addManualJournalEntry(user.uid, new Date().toISOString(), manualEntry, selectedMood, entryTitle, null, collectionTag);
+        }
+        await fetchTodayEntries(); 
         setManualEntry("");
-        setIsEditing(false);
+        setEntryTitle("");
+        setEntryImage(null);
+        setCollectionTag("");
+        setSelectedMood(undefined);
+        setEditingEntryId(null);
       } catch (error) {
         console.error("Error saving manual journal entry:", error);
       }
     }
   };
 
-  const handleEditEntry = () => {
-    setManualEntry(todayEntry?.summary || "");
-    setSelectedMood(todayEntry?.mood || undefined);
-    setIsEditing(true);
+  const handleEditEntry = (entry: DailySummary) => {
+    setManualEntry(entry.summary || "");
+    setEntryTitle(entry.title || "");
+    setEntryImage(entry.image || null);
+    setCollectionTag(entry.collectionTag || "");
+    setSelectedMood(entry.mood || undefined);
+    setEditingEntryId(entry.id);
   };
+
+  const handleDeleteEntry = async (entryId: string) => {
+    if (confirm("Are you sure you want to delete this journal entry?")) {
+      try {
+        await deleteJournalEntry(entryId);
+        await fetchTodayEntries();
+        await fetchAllCollectionTags(); 
+      } catch (error) {
+        console.error("Error deleting journal entry:", error);
+      }
+    }
+  };
+
+  const handleAddNewCollection = () => {
+    if (newCollectionTagName.trim() && !allCollectionTags.includes(newCollectionTagName.trim())) {
+      setAllCollectionTags(prev => [...prev, newCollectionTagName.trim()].sort());
+      setCollectionTag(newCollectionTagName.trim());
+    }
+    setNewCollectionTagName("");
+    setIsNewCollectionDialogOpen(false);
+  };
+
 
   return (
     <Card className="h-full w-full flex flex-col">
@@ -222,9 +277,9 @@ export default function JournalPage() {
                     <Button 
                         variant="outline" 
                         onClick={() => router.push('/journal/history')}
-                        className="mr-2"
+                        className="mr-2 flex items-center gap-1"
                     >
-                        Journal Entries
+                        <CalendarIcon className="h-4 w-4" /> Journal Entries
                     </Button>
                     <Label htmlFor="journal-mode-switch">Manual</Label>
                     <Switch
@@ -240,16 +295,75 @@ export default function JournalPage() {
             {isAssistiveMode ? (
                 <JournalChat />
             ) : (
-                <div className="flex flex-col h-full p-4">
-                    {(isEditing || !todayEntry) ? (
-                        <>
-                            <Textarea
-                                placeholder="Write your journal entry here..."
-                                className="flex-1 mb-4"
-                                value={manualEntry}
-                                onChange={(e) => setManualEntry(e.target.value)}
-                            />
-                            <div className="mb-4 flex gap-2 justify-end">
+                <div className="flex flex-col h-full p-4 overflow-y-auto">
+                    <div className="mb-6 p-4 border rounded-lg bg-background shadow-sm">
+                        <h3 className="text-lg font-semibold mb-3">{editingEntryId ? "Edit Journal Entry" : "What's new on your mind?"}</h3>
+                        
+                        <Input
+                            placeholder="Title (Optional)"
+                            className="mb-3"
+                            value={entryTitle}
+                            onChange={(e) => setEntryTitle(e.target.value)}
+                        />
+                        
+                        <Textarea
+                            placeholder="Write your journal entry here..."
+                            className="flex-1 mb-4 min-h-[100px]"
+                            value={manualEntry}
+                            onChange={(e) => setManualEntry(e.target.value)}
+                        />
+
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <Label htmlFor="collection-tag-select">Collection:</Label>
+                                <Select onValueChange={setCollectionTag} value={collectionTag}>
+                                    <SelectTrigger id="collection-tag-select" className="w-[180px]">
+                                        <SelectValue placeholder="Select a collection" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectGroup>
+                                            <SelectLabel>Existing Collections</SelectLabel>
+                                            {allCollectionTags.length > 0 ? (
+                                                allCollectionTags.map(tag => (
+                                                    <SelectItem key={tag} value={tag}>{tag}</SelectItem>
+                                                ))
+                                            ) : (
+                                                <SelectItem value="no-collections" disabled>No collections yet</SelectItem>
+                                            )}
+                                        </SelectGroup>
+                                        <AlertDialog open={isNewCollectionDialogOpen} onOpenChange={setIsNewCollectionDialogOpen}>
+                                            <AlertDialogTrigger asChild>
+                                                <Button variant="ghost" className="w-full justify-start mt-1"><PlusCircle className="mr-2 h-4 w-4" /> Add New Collection</Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>Add New Collection Tag</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        Enter a new tag to categorize your journal entries.
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <Input
+                                                    placeholder="New Collection Name"
+                                                    value={newCollectionTagName}
+                                                    onChange={(e) => setNewCollectionTagName(e.target.value)}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter') {
+                                                            handleAddNewCollection();
+                                                        }
+                                                    }}
+                                                />
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={handleAddNewCollection}>Add Collection</AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="flex gap-2 items-center">
+                                <Label>Mood:</Label>
                                 {MOOD_EMOJIS.map((mood) => (
                                     <Button
                                         key={mood}
@@ -262,26 +376,72 @@ export default function JournalPage() {
                                     </Button>
                                 ))}
                             </div>
-                            <Button onClick={handleSaveManualEntry} className="self-end mb-4">Save Entry</Button>
-                            <div className="bg-accent p-4 rounded-md mt-4">
-                                <h3 className="text-lg font-semibold mb-2">Journaling Ideas:</h3>
-                                <ul className="list-disc list-inside text-sm text-muted-foreground max-h-48 overflow-y-auto">
-                                    {displayedIdeas.map((idea, index) => (
-                                        <li key={index} className="mb-1">{idea}</li>
-                                    ))}
-                                </ul>
-                                <Button onClick={shuffleIdeas} className="mt-2 w-full">Shuffle Ideas</Button>
+                        </div>
+
+
+                        <Button onClick={handleSaveEntry} className="self-end mb-4 w-full md:w-auto">
+                            {editingEntryId ? "Update Entry" : "Save Entry"}
+                        </Button>
+                        {editingEntryId && (
+                            <Button 
+                                variant="outline"
+                                onClick={() => {
+                                    setManualEntry("");
+                                    setEntryTitle("");
+                                    setEntryImage(null);
+                                    setCollectionTag("");
+                                    setSelectedMood(undefined);
+                                    setEditingEntryId(null);
+                                }}
+                                className="ml-2 w-full md:w-auto"
+                            >Cancel Edit</Button>
+                        )}
+                    </div>
+                    
+                    {todayEntries.length > 0 && (
+                        <div className="mt-6">
+                            <h3 className="text-lg font-semibold mb-3">Today's Entries:</h3>
+                            <div className="space-y-4">
+                                {todayEntries.map((entry) => (
+                                    <Card key={entry.id} className="p-4 flex flex-col">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <CardTitle className="text-md flex items-center gap-2">
+                                                {entry.title && <span className="font-bold">{entry.title} - </span>}
+                                                {format(new Date(entry.date), "h:mm a")}
+                                                {entry.mood && <span className="text-2xl ml-2">{entry.mood}</span>}
+                                            </CardTitle>
+                                            <div className="flex gap-2">
+                                                <Button variant="outline" size="icon" onClick={() => handleEditEntry(entry)}>
+                                                    <PenSquare className="h-4 w-4" />
+                                                </Button>
+                                                <Button variant="destructive" size="icon" onClick={() => handleDeleteEntry(entry.id)}>
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        </div>
+                                        {entry.image && (
+                                            // eslint-disable-next-line @next/next/no-img-element
+                                            <img src={entry.image} alt="Journal entry image" className="w-full h-auto rounded-md mb-2" />
+                                        )}
+                                        <p className="whitespace-pre-wrap text-sm text-muted-foreground">{entry.summary}</p>
+                                        {entry.collectionTag && (
+                                            <p className="text-xs text-blue-500 mt-2">#{entry.collectionTag}</p>
+                                        )}
+                                    </Card>
+                                ))}
                             </div>
-                        </>
-                    ) : (
-                        <Card className="p-4 flex flex-col items-center text-center max-h-[calc(100vh-200px)] overflow-y-auto"> {/* Removed h-full and justify-center, added max-h and overflow */}
-                            <CardTitle className="mb-2">{format(new Date(todayEntry.date), "EEEE, MMMM d, yyyy")}</CardTitle>
-                            {todayEntry?.mood && <p className="text-5xl mb-4">{todayEntry.mood}</p>}
-                            <p className="whitespace-pre-wrap mb-4">{todayEntry?.summary}</p> {/* Removed flex-1 */}
-                            <p className="text-sm text-muted-foreground mb-4">Congratulations! You took a small step towards mindfulness today.</p>
-                            <Button onClick={handleEditEntry} className="mt-2">Edit Entry</Button> {/* Removed self-end, added mt-2 */}
-                        </Card>
+                        </div>
                     )}
+
+                    <div className="bg-accent p-4 rounded-md mt-6">
+                        <h3 className="text-lg font-semibold mb-2">Journaling Ideas:</h3>
+                        <ul className="list-disc list-inside text-sm text-muted-foreground max-h-48 overflow-y-auto">
+                            {displayedIdeas.map((idea, index) => (
+                                <li key={index} className="mb-1">{idea}</li>
+                            ))}
+                        </ul>
+                        <Button onClick={shuffleIdeas} className="mt-2 w-full">Shuffle Ideas</Button>
+                    </div>
                 </div>
             )}
         </CardContent>
