@@ -24,6 +24,7 @@ export async function createGroup(name: string, members: string[]): Promise<stri
         members,
         createdAt: Timestamp.now(),
     };
+    console.log("New Group object before sending to Firestore:", newGroup);
     const docRef = await addDoc(groupsCollection, newGroup);
     return docRef.id;
 }

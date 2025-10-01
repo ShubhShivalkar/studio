@@ -28,39 +28,59 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, authLoading, error] = useAuthState(auth);
   const [profile, setProfile] = useState<User | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
+  const [sessionLoading, setSessionLoading] = useState(false); // New state for session cookie creation
 
   useEffect(() => {
     if (authLoading) {
-      // Still waiting for Firebase to determine auth state
       return;
     }
 
-    if (user) {
-      // User is authenticated, now fetch their profile
-      getUser(user.uid).then(userProfile => {
-        if (userProfile) {
-          // Profile found, update our state and the mock object
-          setProfile(userProfile);
-          Object.assign(currentUser, userProfile);
-        } else {
-          // Auth record exists but no profile.
-          // Check if onboarding was just completed by looking at the mock object.
-          if (currentUser && currentUser.id === user.uid) {
-            setProfile(currentUser);
-          } else {
-            setProfile(null);
-          }
+    const handleAuthChange = async () => {
+      if (user) {
+        setSessionLoading(true);
+        try {
+          const idToken = await user.getIdToken();
+          await fetch('/api/sessionLogin', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ idToken }),
+          });
+          // Session cookie created successfully
+        } catch (sessionError) {
+          console.error("Error creating session cookie:", sessionError);
+          // Handle error, maybe log out user or show a warning
+        } finally {
+          setSessionLoading(false);
         }
+
+        getUser(user.uid).then(userProfile => {
+          if (userProfile) {
+            setProfile(userProfile);
+            Object.assign(currentUser, userProfile);
+          } else {
+            if (currentUser && currentUser.id === user.uid) {
+              setProfile(currentUser);
+            } else {
+              setProfile(null);
+            }
+          }
+          setProfileLoading(false);
+        });
+      } else {
+        // No user is authenticated
+        setProfile(null);
         setProfileLoading(false);
-      });
-    } else {
-      // No user is authenticated
-      setProfile(null);
-      setProfileLoading(false);
-    }
+        // Optionally, clear session cookie if it exists when user logs out
+        // await fetch('/api/sessionLogout', { method: 'POST' });
+      }
+    };
+
+    handleAuthChange();
   }, [user, authLoading]);
 
-  const loading = authLoading || profileLoading;
+  const loading = authLoading || profileLoading || sessionLoading;
 
   return (
     <AuthContext.Provider value={{ user, profile, loading, error, setProfile }}>
