@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/auth-context";
 import { addSampleEntries, deleteAllUserData, seedSampleUsers, getSystemStatus, updateWaitlistStatus } from "@/services/dev-service";
 import { deleteSampleUsers } from "@/services/user-service";
-import { AlertTriangle, PlusCircle, Server, Power, Users } from "lucide-react";
+import { AlertTriangle, PlusCircle, Server, Power, Users, Layout } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   AlertDialog,
@@ -268,6 +268,21 @@ export default function DevPage() {
                         <CardContent>
                             <Button asChild className="w-full">
                                 <Link href="/dev/create-tribe">Create Tribe</Link>
+                            </Button>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <Layout /> Group Management
+                            </CardTitle>
+                            <CardDescription>
+                                Manually create a new group with selected users.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <Button asChild className="w-full">
+                                <Link href="/dev/create-group">Create Group</Link>
                             </Button>
                         </CardContent>
                     </Card>
