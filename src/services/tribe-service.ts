@@ -1,9 +1,9 @@
 'use server';
 
-import { collection, doc, getDoc, getDocs, query, where, writeBatch, limit } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { adminDb } from '@/lib/firebase-admin';
+import { Timestamp } from 'firebase-admin/firestore';
 import type { Tribe, User, MatchedUser } from '@/lib/types';
-import { getUser } from './user-service';
+import { getUser } from './user-service'; // Keep client-side getUser for now, as it might be fetching client-side
 import { getNextMatchTime } from '@/lib/utils';
 
 /**
@@ -28,8 +28,8 @@ export async function getTribeScheduleInfo(): Promise<{ day: string; time: strin
  * @returns A list of all tribes.
  */
 export async function getAllTribes(): Promise<Tribe[]> {
-    const tribesRef = collection(db, 'tribes');
-    const querySnapshot = await getDocs(tribesRef);
+    const tribesRef = adminDb.collection('tribes');
+    const querySnapshot = await tribesRef.get();
     const tribes: Tribe[] = [];
     querySnapshot.forEach((doc) => {
         tribes.push({ id: doc.id, ...doc.data() } as Tribe);
@@ -43,9 +43,9 @@ export async function getAllTribes(): Promise<Tribe[]> {
  * @returns A list of active tribes.
  */
 export async function getActiveTribes(): Promise<Tribe[]> {
-    const tribesRef = collection(db, 'tribes');
-    const q = query(tribesRef, where('is_active', '==', true));
-    const querySnapshot = await getDocs(q);
+    const tribesRef = adminDb.collection('tribes');
+    const q = tribesRef.where('is_active', '==', true);
+    const querySnapshot = await q.get();
     const tribes: Tribe[] = [];
     querySnapshot.forEach((doc) => {
         tribes.push({ id: doc.id, ...doc.data() } as Tribe);
@@ -60,17 +60,15 @@ export async function getActiveTribes(): Promise<Tribe[]> {
  * @returns The tribe object with member details, or null if not in an active tribe.
  */
 export async function getCurrentTribe(userId: string): Promise<Tribe | null> {
-  const tribesRef = collection(db, 'tribes');
+  const tribesRef = adminDb.collection('tribes');
   
   // Query for an active tribe where the user's ID is in the memberIds array.
-  const q = query(
-    tribesRef, 
-    where('is_active', '==', true), 
-    where('memberIds', 'array-contains', userId),
-    limit(1) // A user should only be in one active tribe at a time.
-  );
-
-  const querySnapshot = await getDocs(q);
+  const q = tribesRef
+    .where('is_active', '==', true)
+    .where('memberIds', 'array-contains', userId)
+    .limit(1); // A user should only be in one active tribe at a time.
+  
+  const querySnapshot = await q.get();
 
   if (querySnapshot.empty) {
     return null; // No active tribe found for this user.
@@ -108,9 +106,9 @@ export async function getCurrentTribe(userId: string): Promise<Tribe | null> {
  * @returns An array of past tribes.
  */
 export async function getArchivedTribes(userId: string): Promise<Tribe[]> {
-    const archivedTribesRef = collection(db, 'archived_tribes');
-    const q = query(archivedTribesRef, where('memberIds', 'array-contains', userId));
-    const querySnapshot = await getDocs(q);
+    const archivedTribesRef = adminDb.collection('archived_tribes');
+    const q = archivedTribesRef.where('memberIds', 'array-contains', userId);
+    const querySnapshot = await q.get();
     
     if (querySnapshot.empty) {
         return [];
@@ -125,8 +123,8 @@ export async function getArchivedTribes(userId: string): Promise<Tribe[]> {
 }
 
 export async function createTribe(tribeData: Omit<Tribe, 'id' | 'overallCompatibilityScore'> & { overallCompatibilityScore?: number }): Promise<Tribe> {
-    const batch = writeBatch(db);
-    const newTribeRef = doc(collection(db, 'tribes'));
+    const batch = adminDb.batch();
+    const newTribeRef = adminDb.collection('tribes').doc();
     
     // Ensure memberIds is created for querying.
     const memberIds = tribeData.members.map(member => (member as MatchedUser).userId);
@@ -147,7 +145,7 @@ export async function createTribe(tribeData: Omit<Tribe, 'id' | 'overallCompatib
     // Update users with their currentTribeId. While the primary query method is now direct,
     // this can still be useful for other parts of the app or for data consistency.
     for (const member of tribeData.members as MatchedUser[]) {
-        const userRef = doc(db, 'users', member.userId);
+        const userRef = adminDb.collection('users').doc(member.userId);
         batch.update(userRef, { currentTribeId: newTribe.id, lastTribeDate: newTribe.formedDate });
     }
 
@@ -164,14 +162,14 @@ export async function createTribe(tribeData: Omit<Tribe, 'id' | 'overallCompatib
  * @returns A promise that resolves when the update is complete.
  */
 export async function updateTribe(tribeId: string, updates: Partial<Tribe>): Promise<void> {
-  const tribeRef = doc(db, 'tribes', tribeId);
-  const tribeDoc = await getDoc(tribeRef);
+  const tribeRef = adminDb.collection('tribes').doc(tribeId);
+  const tribeDoc = await tribeRef.get();
 
   if (!tribeDoc.exists()) {
     throw new Error(`Tribe with ID ${tribeId} not found for update.`);
   }
 
-  await updateDoc(tribeRef, updates);
+  await tribeRef.update(updates);
 }
 
 /**
@@ -180,13 +178,13 @@ export async function updateTribe(tribeId: string, updates: Partial<Tribe>): Pro
  * @param members The members of the tribe.
  */
 export async function deleteTribe(tribeId: string, members: MatchedUser[]): Promise<void> {
-  const batch = writeBatch(db);
+  const batch = adminDb.batch();
 
-  const tribeRef = doc(db, 'tribes', tribeId);
+  const tribeRef = adminDb.collection('tribes').doc(tribeId);
   batch.delete(tribeRef);
 
   for (const member of members) {
-    const userRef = doc(db, 'users', member.userId);
+    const userRef = adminDb.collection('users').doc(member.userId);
     batch.update(userRef, { currentTribeId: null });
   }
 
@@ -199,9 +197,9 @@ export async function deleteTribe(tribeId: string, members: MatchedUser[]): Prom
  * @param is_active The new active status.
  */
 export async function updateAllTribesStatus(tribeIds: string[], is_active: boolean): Promise<void> {
-  const batch = writeBatch(db);
+  const batch = adminDb.batch();
   tribeIds.forEach(tribeId => {
-    const tribeRef = doc(db, 'tribes', tribeId);
+    const tribeRef = adminDb.collection('tribes').doc(tribeId);
     batch.update(tribeRef, { is_active });
   });
   await batch.commit();
@@ -212,18 +210,18 @@ export async function updateAllTribesStatus(tribeIds: string[], is_active: boole
  * @param tribes A list of all tribes to process.
  */
 export async function deleteInactiveAndArchiveActiveTribes(tribes: Tribe[]): Promise<void> {
-  const batch = writeBatch(db);
+  const batch = adminDb.batch();
 
   for (const tribe of tribes) {
-    const originalTribeRef = doc(db, 'tribes', tribe.id);
+    const originalTribeRef = adminDb.collection('tribes').doc(tribe.id);
 
     for (const member of tribe.members as MatchedUser[]) {
-      const userRef = doc(db, 'users', member.userId);
+      const userRef = adminDb.collection('users').doc(member.userId);
       batch.update(userRef, { currentTribeId: null });
     }
 
     if (tribe.is_active) {
-      const archivedTribeRef = doc(collection(db, 'archived_tribes'), tribe.id);
+      const archivedTribeRef = adminDb.collection('archived_tribes').doc(tribe.id);
       batch.set(archivedTribeRef, { ...tribe, is_active: false });
       batch.delete(originalTribeRef);
     } else {

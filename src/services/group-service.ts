@@ -1,8 +1,9 @@
 
 'use server';
 
-import { db } from '@/lib/firebase';
-import { collection, addDoc, Timestamp } from 'firebase/firestore';
+import { collection, addDoc } from 'firebase/firestore'; // These are no longer needed from client SDK
+import { adminDb } from '@/lib/firebase-admin'; 
+import { Timestamp } from 'firebase-admin/firestore'; // Import Timestamp from admin SDK
 
 interface Group {
     id?: string;
@@ -18,13 +19,14 @@ interface Group {
  * @returns The ID of the newly created group.
  */
 export async function createGroup(name: string, members: string[]): Promise<string> {
-    const groupsCollection = collection(db, 'groups');
+    // Use adminDb's collection method and add method
+    const groupsCollection = adminDb.collection('groups');
     const newGroup: Omit<Group, 'id'> = {
         name,
         members,
         createdAt: Timestamp.now(),
     };
     console.log("New Group object before sending to Firestore:", newGroup);
-    const docRef = await addDoc(groupsCollection, newGroup);
+    const docRef = await groupsCollection.add(newGroup);
     return docRef.id;
 }

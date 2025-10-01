@@ -1,4 +1,6 @@
+
 import { NextRequest, NextResponse } from 'next/server';
+import { adminAuth } from '@/lib/firebase-admin';
 
 // Control variable for the waitlist redirection
 const WAITLIST_CONTROL_SWITCH = false; // Set to true to activate waitlist redirection
@@ -7,19 +9,32 @@ export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   // Paths that do not require authentication even if the waitlist is active
-  const exemptedPaths = ['/waitlist', '/dev'];
+  const exemptedPaths = ['/waitlist', '/dev', '/api/sessionLogin']; // Added /api/sessionLogin to exempted paths
 
-  // Check if the user is authenticated (simplified check: presence of a session cookie)
-  // In a real application, you would typically verify a Firebase ID token from a cookie
-  // or a custom server-side session cookie set after successful client-side Firebase auth.
-  // For demonstration, we'll check for a common session cookie.
-  const hasSessionCookie = req.cookies.has('__session');
-  const isAuthenticated = hasSessionCookie; // Placeholder for actual auth check
+  // Check for the session cookie
+  const sessionCookie = req.cookies.get('__session')?.value;
+  let isAuthenticated = false;
+  let decodedClaims: admin.auth.DecodedIdToken | null = null;
 
   console.log(`[Middleware] Pathname: ${pathname}`);
   console.log(`[Middleware] WAITLIST_CONTROL_SWITCH: ${WAITLIST_CONTROL_SWITCH}`);
-  console.log(`[Middleware] Has __session cookie: ${hasSessionCookie}`);
-  console.log(`[Middleware] Is Authenticated (based on cookie): ${isAuthenticated}`);
+  console.log(`[Middleware] Has __session cookie: ${!!sessionCookie}`);
+
+  if (sessionCookie) {
+    try {
+      decodedClaims = await adminAuth.verifySessionCookie(sessionCookie, true); // Check for revoked tokens
+      isAuthenticated = true;
+      console.log(`[Middleware] Session cookie verified for UID: ${decodedClaims.uid}`);
+    } catch (error) {
+      console.error('[Middleware] Error verifying session cookie:', error);
+      // Session cookie is invalid or expired, clear it.
+      const response = NextResponse.next();
+      response.cookies.delete('__session');
+      return response;
+    }
+  }
+
+  console.log(`[Middleware] Is Authenticated (Session Cookie Active): ${isAuthenticated}`);
 
   if (WAITLIST_CONTROL_SWITCH && !isAuthenticated) {
     // If the waitlist is active, the user is unauthorized, and they are not on an exempted path
@@ -45,9 +60,9 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * - api (API routes, if they have their own auth logic)
      * - (Any other public assets or routes that should bypass this middleware)
+     * NOTE: API routes can be explicitly exempted or handled within their own logic.
      */
-    '/((?!_next/static|_next/image|favicon.ico|api).*)',
+    '/((?!_next/static|_next/image|favicon.ico).)',
   ],
 };
