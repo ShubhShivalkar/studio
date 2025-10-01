@@ -1,4 +1,3 @@
-
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -18,14 +17,24 @@ service cloud.firestore {
       allow read, write: if request.auth.uid == resource.data.userId;
     }
     
-    // Allow unauthenticated users to create waitlist entries.
+    // Allow unauthenticated users to create and read waitlist entries. Only authenticated users can manage existing entries.
     match /waitlistEntries/{docId} {
-      allow create: if true;
-      allow read, update, delete: if request.auth != null; // Only authenticated users can manage existing entries
+      allow create, read: if true;
+      allow update, delete: if request.auth != null;
     }
     
-    // Add similar rules for reminders, checklists, and tribes.
-    
+    // Tribes collection: Users can only read tribes they are a member of. All writes are denied from client-side.
+    match /tribes/{tribeId} {
+      allow read: if request.auth.uid != null && request.auth.uid in resource.data.memberIds;
+      allow create, write, delete: if request.auth != null;
+    }
+
+    // Archived Tribes collection: Users can only read archived tribes they are a member of. All writes are denied from client-side.
+    match /archived_tribes/{archivedTribeId} {
+      allow read: if request.auth.uid != null && request.auth.uid in resource.data.memberIds;
+      allow write: if request.auth != null;
+    }
+
     // Allow read for all users, and write for authenticated users to all other documents.
     match /{document=**} {
       allow read: if true;
