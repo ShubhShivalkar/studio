@@ -1,4 +1,3 @@
-
 import { NextResponse } from 'next/server';
 import { addToWaitlist, checkIfWaitlistUserExists, WaitlistUser } from '@/services/user-service';
 import { sendWaitlistConfirmationEmail } from '@/services/email-service';

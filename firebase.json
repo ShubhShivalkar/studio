@@ -9,7 +9,13 @@
     ],
     "frameworksBackend": {
       "region": "asia-east1"
-    }
+    },
+    "rewrites": [
+      {
+        "source": "/api/**",
+        "destination": "/api/**"
+      }
+    ]
   },
   "firestore": {
     "rules": "firestore.rules"

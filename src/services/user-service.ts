@@ -1,8 +1,8 @@
 
 'use server';
 
-import { doc, getDoc, setDoc, updateDoc, collection, query, getDocs, writeBatch, Timestamp, where, addDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { doc, getDoc, setDoc, updateDoc, collection, query, getDocs, writeBatch, Timestamp, where, addDoc } from 'firebase-admin/firestore';
+import { adminDb } from '@/lib/firebase-admin';
 import type { User } from '@/lib/types';
 import { format, parseISO } from 'date-fns';
 
@@ -22,17 +22,13 @@ export interface WaitlistUser {
  * @returns The user object or null if not found.
  */
 export async function getUser(userId: string): Promise<User | null> {
-  const userDocRef = doc(db, 'users', userId);
-  const userDoc = await getDoc(userDocRef);
-  if (userDoc.exists()) {
+  const userDocRef = adminDb.collection('users').doc(userId);
+  const userDoc = await userDocRef.get();
+  if (userDoc.exists) {
     const data = userDoc.data();
     // Re-fetch journal entries to ensure availability is up-to-date
-    const journalQuery = query(
-        collection(db, "journalEntries"), 
-        where("userId", "==", userId),
-        where("isAvailable", "==", true)
-    );
-    const journalSnapshot = await getDocs(journalQuery);
+    const journalQuery = adminDb.collection("journalEntries").where("userId", "==", userId).where("isAvailable", "==", true);
+    const journalSnapshot = await journalQuery.get();
     data.availableDates = journalSnapshot.docs.map(doc => format(doc.data().date.toDate(), 'yyyy-MM-dd'));
 
     if (data.dob && data.dob instanceof Timestamp) {
@@ -54,18 +50,14 @@ export async function getUser(userId: string): Promise<User | null> {
  * @returns An array of all users.
  */
 export async function getAllUsers(): Promise<User[]> {
-    const usersCollection = collection(db, 'users');
-    const userSnapshot = await getDocs(usersCollection);
+    const usersCollection = adminDb.collection('users');
+    const userSnapshot = await usersCollection.get();
     const users = userSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as User[];
 
     // Create a map to hold the promises for fetching journal entries for each user
     const availabilityPromises = users.map(user => {
-        const journalQuery = query(
-            collection(db, "journalEntries"), 
-            where("userId", "==", user.id),
-            where("isAvailable", "==", true)
-        );
-        return getDocs(journalQuery).then(journalSnapshot => {
+        const journalQuery = adminDb.collection("journalEntries").where("userId", "==", user.id).where("isAvailable", "==", true);
+        return journalQuery.get().then(journalSnapshot => {
             return {
                 userId: user.id,
                 availableDates: journalSnapshot.docs.map(doc => format(doc.data().date.toDate(), 'yyyy-MM-dd'))
@@ -108,7 +100,7 @@ export async function getAllUsers(): Promise<User[]> {
  * @param data The user profile data to save.
  */
 export async function createUser(userId: string, data: Omit<User, 'id'>): Promise<void> {
-  const userDocRef = doc(db, 'users', userId);
+  const userDocRef = adminDb.collection('users').doc(userId);
   const dataToSave: any = { 
     ...data,
     is_admin: false,
@@ -129,7 +121,7 @@ export async function createUser(userId: string, data: Omit<User, 'id'>): Promis
  * @param data A partial object of the user's data to update.
  */
 export async function updateUser(userId: string, data: Partial<User>): Promise<void> {
-  const userDocRef = doc(db, 'users', userId);
+  const userDocRef = adminDb.collection('users').doc(userId);
   const dataToUpdate: any = { 
     ...data,
     lastActive: Timestamp.now(), // Always update activity on any change
@@ -153,9 +145,9 @@ export async function updateUser(userId: string, data: Partial<User>): Promise<v
  */
 export async function deleteSampleUsers(): Promise<void> {
     // First, get all the sample user IDs from Firestore
-    const usersCollection = collection(db, 'users');
-    const q = query(usersCollection, where('is_sample_user', '==', true));
-    const sampleUsersSnapshot = await getDocs(q);
+    const usersCollection = adminDb.collection('users');
+    const q = usersCollection.where('is_sample_user', '==', true);
+    const sampleUsersSnapshot = await q.get();
     const userIds = sampleUsersSnapshot.docs.map(doc => doc.id);
 
     if (userIds.length === 0) {
@@ -185,9 +177,9 @@ export async function deleteSampleUsers(): Promise<void> {
  * @returns True if the user exists, false otherwise.
  */
 export async function checkIfWaitlistUserExists(email: string): Promise<boolean> {
-  const waitlistCollection = collection(db, 'waitlist');
-  const q = query(waitlistCollection, where("email", "==", email));
-  const querySnapshot = await getDocs(q);
+  const waitlistCollection = adminDb.collection('waitlist');
+  const q = waitlistCollection.where("email", "==", email);
+  const querySnapshot = await q.get();
   return !querySnapshot.empty;
 }
 
@@ -196,12 +188,12 @@ export async function checkIfWaitlistUserExists(email: string): Promise<boolean>
  * @param data The waitlist user data to save.
  */
 export async function addToWaitlist(data: WaitlistUser): Promise<string> {
-  const waitlistCollection = collection(db, 'waitlist');
+  const waitlistCollection = adminDb.collection('waitlist');
   const dataToSave = {
     ...data,
     dob: Timestamp.fromDate(parseISO(data.dob)),
     submittedAt: Timestamp.now(),
   };
-  const docRef = await addDoc(waitlistCollection, dataToSave);
+  const docRef = await waitlistCollection.add(dataToSave);
   return docRef.id;
 }

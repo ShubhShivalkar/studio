@@ -35,13 +35,13 @@ export async function sendWaitlistConfirmationEmail(user: WaitlistUser) {
   const transporter = nodemailer.createTransport({
     service: "gmail", // or use "smtp.ethereal.email" for testing
     auth: {
-      user: "info@igamingcompass.com",
-      pass: "orthqvfnjsdazljw", // app password, not your raw Gmail password
+      user: "pratikmukherjee32@gmail.com",
+      pass: "vdgnumeztqyifuko", // app password, not your raw Gmail password
     },
   });
 
   await transporter.sendMail({
-    from: `"My App Team" <${"info@igamingcompass.com"}>`,
+    from: `"My App Team" <${"pratikmukherjee32@gmail.com"}>`,
     to: user.email,
     subject: "You're on the waitlist 🎉",
     text: `Hi ${user.name},\n\nThanks for joining our waitlist! We'll keep you posted.\n\nCheers,\nTeam`,
