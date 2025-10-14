@@ -8,4 +8,10 @@ runConfig:
 
 env:
   - variable: GEMINI_API_KEY
-    secret: GEMINI_API_KEY
+    secret: AIzaSyBRxj6bF7q33X4sFCUyr0-Ts5vQNxmZ5Fo
+  - variable: FIREBASE_PROJECT_ID
+    secret: anubhav-anuvaad
+  - variable: FIREBASE_PRIVATE_KEY
+    secret: -----BEGIN PRIVATE KEY-----\\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDdGpzQi2uixT4B\\nzUR6BjQhfcbvg4Bq808M3mhYszDwHVxX9yDdefBjC9OqnxbDuvWd8h4dJyHtuQ8r\\nrw40bcfGZ8L/wMFt2Z9bovjNN1WOzq9rT/i1mv6jAoEm94LEmhez36DSlxginoNh\\n8ABS/sgSw7iq3omIOuMO6gks9FqBNIkSOzFtlKqutJycBIHtNc9pVlfhhxpgjYdF\\nCqg4AZJaAeKAAmLQNn0pO74jX3Ed/LQ4oZFH7v1uOU6vTBi1Bb+twxondzVrV7Fo\\nfqmQ7cy+7cGK3lLUQqh6sqzvAuhAweKhVhg5GACKwWKV+8rxVBLXk4GJUZfC1gyg\\nMWkRR6lrAgMBAAECggEAEO82XoSnKE7aGnI50ezCtmP3RiX4wnhDMDWioVSMJX/i\\nMDyV0FDEGBnySsmniTMzF69RHiN+pkH7xvk/6cUUvX36AfOl/P9jhLW9P56C146+\\nAcacwnAOG7cX5D+lzOAOe7DflPGMoC4q2ufyZmjsMv+5l6C2wO/dryk/rapDekzC\\n1ZAEHtw7tTuhJ7ApBSiYO7KW+nofchp6492fUtfB/LuTYfy9bVnZLmbGnshKeuYo\\n4ayuQS80y97eIjodFBoNTg70TvD+gEkwfCQD2Ewp0mJk1awMn+uQwk4EeaUBtiCh\\nCjcQJZYSFEbN8eAbFu/QH+xwg5FxJRB/43mqMoAIyQKBgQDyUEsfYxrUEG+I0KGb\\nWdzmU3pIx7r13pfB4qaj9bVuddHdIRFMt3ojMv1cLovhqwXW4R2sBUZ9AN01uDvZ\\nOyP8jfJ6Pic5qe7zpnvsRnPTwo7qYCsJs3waWBus2MpFWKjD1pSUh3IT2nMg9CHK\\nnBwJ4ATcWPcKw894XlP631hxAwKBgQDpl6PXCfkvQobzcY6srE519gS5L57omGeA\\n+WeAJHUnXCOSIXQjU6dJTBsw1t4nuomHinzV4/N/8FJ7zOYA4wOUqBomR3Htdf6L\\nC8IfK+0nCZGZ1alz62SsyxvekiEbUDmZdSUz/0K+l2xPazoQS0dVDHBakupjdJny\\n/jwa7WcVeQKBgQDYQEBK6q9uwpxHhao0cqZqB+YCPf3kn5rgNd5yRT5+Ljf1GSXP\\nSY9/CmqCcif0ZiT3+D/63VpjBPpmjt0aqWUcZ7IW1pE7LSVL3TCLVPTZ77CMCvdd\\n2QjQmgFY6MDb0pwK6t3/EEIG5dYJetcNcvSy+3JbFCqlOMtXqRdZtSnA8QKBgQDR\\nYyZwSfZeEKpbaj1UNxgV0TOmtDMjmAmfqPDIAuYpJASWpvot+HyJzXjKLLDyt9kz\\n8EW6jRzmYAvwAVljDhtVk/Hs0joje5NyHFYkDwID7iXf2ZCN4kFaSq5uslqO2zjm\\ngAWbOIMhySZDgoCHvpLwf7fu2KbWA91D3fUOxiOTMQKBgCc5fLyDq1l4wiFgSQ64\\nhbzUIUq1KpHXbK1OJFQoRT3UmMNZEvspd6D/0Dwql2xEfxjD5ELRXYgD1XzomCSK\\nwf6be7YUHhCvoFT/7VMtm/YibT1t0iPQ0rfomBTZJuE/zMu/v4a9PvUijExFzbEs\\neHzCKc6qH/wm6vRGtuFUfi3F\\n-----END PRIVATE KEY-----\\n
+  - variable: FIREBASE_CLIENT_EMAIL
+    secret: firebase-adminsdk-fbsvc@anubhav-anuvaad.iam.gserviceaccount.com
